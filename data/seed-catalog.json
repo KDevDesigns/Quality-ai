@@ -1,0 +1,260 @@
+{
+  "version": 1,
+  "source": "docs/PLAN.md §6.4 and docs/erp/bca-api-process-flow.md",
+  "areas": [
+    {
+      "title": "Seed: Meter reading validation",
+      "module": "BILLING",
+      "process": "Meter-to-Cash",
+      "summary": "Validate a new meter reading against the previous reading before billing. Rules for abnormal-high thresholds and estimated bills come from billing policy.",
+      "cases": [
+        { "title": "Reject current reading lower than previous", "technique": "Negative / abuse", "priority": "P1", "type": "UI", "steps": ["Open a QA- account with previous reading 1200", "Enter current reading 1199", "Save"], "expected": "Reading is rejected with a clear message unless meter replacement or rollover is selected", "tags": ["@critical", "@module:billing"] },
+        { "title": "Current reading equal to previous gives zero consumption", "technique": "Boundary value analysis", "priority": "P2", "type": "UI", "steps": ["Open a QA- account with previous reading 1200", "Enter current reading 1200", "Save"], "expected": "Reading is accepted with 0 m³ consumption; bill lines match the tariff oracle for zero consumption (minimum charge)", "tags": ["@module:billing"] },
+        { "title": "Meter rollover reading", "technique": "Equivalence partitioning", "priority": "P2", "type": "UI", "steps": ["Open a QA- account whose previous reading is near the meter maximum", "Enter a small current reading and mark it as rollover", "Save"], "expected": "Consumption is computed across the rollover; bill lines match the tariff oracle", "tags": ["@module:billing"] },
+        { "title": "Abnormal-high consumption is flagged", "technique": "Boundary value analysis", "priority": "P2", "type": "UI", "steps": ["Open a QA- account with a known average consumption", "Enter a reading just above the abnormal-high threshold", "Save"], "expected": "Reading is flagged for review; a reading just below the threshold is not flagged (threshold: unknown, per policy)", "tags": ["@module:billing"] },
+        { "title": "Missing reading produces an estimated bill per policy", "technique": "Decision table", "priority": "P2", "type": "PROCESS", "steps": ["Leave a QA- account unread in the book", "Run the bill run for its route"], "expected": "Account is billed as estimated per policy and marked estimated (policy: unknown)", "tags": ["@module:billing", "@process:meter-to-cash"] }
+      ]
+    },
+    {
+      "title": "Seed: Tariff computation",
+      "module": "BILLING",
+      "process": "Meter-to-Cash",
+      "summary": "Each customer class × each consumption tier boundary, minimum charge, fixed charges and approved discounts. Expected amounts always come from the tariff oracle and data/tariffs.",
+      "cases": [
+        { "title": "Consumption exactly at each tier boundary, per customer class", "technique": "Boundary value analysis", "priority": "P1", "type": "API", "steps": ["For each customer class and tier boundary, create a QA- reading at the boundary", "Generate the bill"], "expected": "Bill lines match the tariff oracle", "tags": ["@critical", "@module:billing"] },
+        { "title": "Consumption one m³ below and above each tier boundary", "technique": "Boundary value analysis", "priority": "P1", "type": "API", "steps": ["For each boundary, create QA- readings at boundary − 1 and boundary + 1", "Generate the bills"], "expected": "Bill lines match the tariff oracle", "tags": ["@critical", "@module:billing"] },
+        { "title": "Minimum charge applies at low consumption", "technique": "Equivalence partitioning", "priority": "P1", "type": "API", "steps": ["Create a QA- reading inside the minimum-charge block", "Generate the bill"], "expected": "Minimum charge applies; bill lines match the tariff oracle", "tags": ["@critical", "@module:billing"] },
+        { "title": "Tariff table drives the bill for every class", "technique": "Data-driven", "priority": "P1", "type": "API", "steps": ["Load the approved tariff data file", "Generate one QA- bill per class and tier"], "expected": "Every bill matches the tariff oracle for the effective date", "tags": ["@critical", "@regression", "@module:billing"] },
+        { "title": "Approved discount applied only to eligible accounts", "technique": "Decision table", "priority": "P2", "type": "API", "steps": ["Create QA- accounts with and without the discount flag", "Generate bills"], "expected": "Discount appears only on eligible accounts; amounts match the tariff oracle (eligibility rules: unknown)", "tags": ["@module:billing"] }
+      ]
+    },
+    {
+      "title": "Seed: Bill run per zone/route",
+      "module": "BILLING",
+      "process": "Meter-to-Cash",
+      "summary": "A bill run for a zone or route creates exactly one bill per active billable account, with totals equal to the sum of lines.",
+      "cases": [
+        { "title": "Bill count equals active billable accounts", "technique": "Equivalence partitioning", "priority": "P1", "type": "RECON", "steps": ["Run the bill run for a QA- route", "Count bills and active billable accounts on the route"], "expected": "Counts are equal (recon check)", "tags": ["@critical", "@module:billing"] },
+        { "title": "Re-running a bill run creates no duplicates", "technique": "Negative / abuse", "priority": "P1", "type": "PROCESS", "steps": ["Run the bill run for a QA- route", "Run it again for the same period"], "expected": "Second run is refused or creates no duplicate bills (duplicate-bill recon check passes)", "tags": ["@critical", "@module:billing"] },
+        { "title": "Bill total equals the sum of its lines", "technique": "Equivalence partitioning", "priority": "P1", "type": "RECON", "steps": ["Run the bill run for a QA- route", "Compare each bill total with the sum of its lines"], "expected": "Every total equals the sum of lines (recon check)", "tags": ["@critical", "@module:billing"] }
+      ]
+    },
+    {
+      "title": "Seed: Penalties",
+      "module": "BILLING",
+      "process": "Meter-to-Cash",
+      "summary": "Penalties apply after the due date. Weekend and holiday handling and waiver approval follow policy.",
+      "cases": [
+        { "title": "Payment on the due date has no penalty", "technique": "Boundary value analysis", "priority": "P1", "type": "API", "steps": ["Pay a QA- bill on its due date"], "expected": "No penalty is applied", "tags": ["@critical", "@module:billing"] },
+        { "title": "Payment one day after the due date has a penalty", "technique": "Boundary value analysis", "priority": "P1", "type": "API", "steps": ["Pay a QA- bill one day after its due date"], "expected": "Penalty is applied; amount matches the tariff oracle", "tags": ["@critical", "@module:billing"] },
+        { "title": "Due date on a weekend or holiday", "technique": "Decision table", "priority": "P2", "type": "API", "steps": ["Create a QA- bill whose due date falls on a holiday", "Pay on the next working day"], "expected": "Penalty follows the holiday policy (policy: unknown)", "tags": ["@module:billing"] },
+        { "title": "Penalty waiver needs approval", "technique": "Role-based", "priority": "P1", "type": "UI", "steps": ["As a preparer, request a penalty waiver on a QA- bill", "Try to apply it without approval"], "expected": "Waiver is not applied until an approver other than the preparer approves it", "tags": ["@critical", "@module:billing"] }
+      ]
+    },
+    {
+      "title": "Seed: Payments and ORs",
+      "module": "BILLING",
+      "process": "Meter-to-Cash",
+      "summary": "Full, partial and advance payments, multiple bills, reversal with approval, duplicate prevention, and a unique, gap-free OR sequence per collector/series.",
+      "cases": [
+        { "title": "Full payment clears the bill", "technique": "Equivalence partitioning", "priority": "P1", "type": "UI", "steps": ["Pay the full balance of a QA- bill", "Open the account ledger"], "expected": "Bill is paid, an OR is issued, and the balance matches the ledger oracle", "tags": ["@critical", "@smoke", "@module:billing"] },
+        { "title": "Partial payment leaves the correct balance", "technique": "Equivalence partitioning", "priority": "P1", "type": "UI", "steps": ["Pay part of a QA- bill"], "expected": "Remaining balance matches the ledger oracle; an OR is issued", "tags": ["@critical", "@module:billing"] },
+        { "title": "Overpayment is held as advance", "technique": "Boundary value analysis", "priority": "P1", "type": "UI", "steps": ["Pay more than the balance of a QA- bill"], "expected": "Excess is recorded as an advance and applied to the next bill per policy", "tags": ["@critical", "@module:billing"] },
+        { "title": "Duplicate payment is prevented", "technique": "Negative / abuse", "priority": "P1", "type": "API", "steps": ["Submit the same QA- payment twice quickly"], "expected": "Only one payment and one OR are recorded", "tags": ["@critical", "@module:billing"] },
+        { "title": "Payment reversal needs approval", "technique": "Role-based", "priority": "P1", "type": "UI", "steps": ["As a collector, reverse a QA- payment"], "expected": "Reversal waits for approval by a different user; the original OR stays linked", "tags": ["@critical", "@module:billing"] },
+        { "title": "OR numbers are unique and gap-free per collector", "technique": "Equivalence partitioning", "priority": "P1", "type": "RECON", "steps": ["Post several QA- payments for one collector and series", "Run the OR sequence recon check"], "expected": "No gaps or duplicates in the series", "tags": ["@critical", "@module:billing"] }
+      ]
+    },
+    {
+      "title": "Seed: Disconnection and reconnection",
+      "module": "BILLING",
+      "process": "Meter-to-Cash",
+      "summary": "Disconnection and reconnection lifecycle states and fees.",
+      "cases": [
+        { "title": "Disconnect, pay, reconnect", "technique": "State transition", "priority": "P2", "type": "PROCESS", "steps": ["Disconnect a QA- account with arrears", "Pay the arrears and reconnection fee", "Reconnect"], "expected": "Each state change is recorded; the fee matches the tariff oracle", "tags": ["@module:billing"] },
+        { "title": "Reconnection refused while arrears remain", "technique": "Negative / abuse", "priority": "P2", "type": "UI", "steps": ["Try to reconnect a disconnected QA- account with unpaid arrears"], "expected": "Reconnection is refused with a clear message", "tags": ["@module:billing"] }
+      ]
+    },
+    {
+      "title": "Seed: Collection posting",
+      "module": "BILLING",
+      "process": "Meter-to-Cash",
+      "summary": "Daily collection report = sum of ORs = cash/bank deposit = GL cash and AR entries.",
+      "cases": [
+        { "title": "Daily collection report equals the sum of ORs", "technique": "Equivalence partitioning", "priority": "P1", "type": "RECON", "steps": ["Post QA- payments for a day", "Generate the daily collection report"], "expected": "Report total = sum of ORs (recon check)", "tags": ["@critical", "@module:billing"] },
+        { "title": "Collections post balanced GL cash and AR entries", "technique": "Equivalence partitioning", "priority": "P1", "type": "PROCESS", "steps": ["Post the day's QA- collections to the GL"], "expected": "Cash and AR entries balance and equal the report total (ledger oracle)", "tags": ["@critical", "@process:meter-to-cash"] }
+      ]
+    },
+    {
+      "title": "Seed: BAM and debit/credit memos",
+      "module": "BILLING",
+      "process": "BAM / Debit-Credit memo",
+      "summary": "BAMs and debit/credit memos go through validation, approval and posting. Balances change only at posting, and the approver must differ from the preparer.",
+      "cases": [
+        { "title": "Balance unchanged until the memo is posted", "technique": "State transition", "priority": "P1", "type": "PROCESS", "steps": ["Prepare a QA- credit memo", "Validate and approve it", "Check the account balance", "Post it"], "expected": "Balance changes only after posting; the change matches the ledger oracle", "tags": ["@critical", "@process:bam-debit-credit-memo"] },
+        { "title": "Preparer cannot approve their own memo", "technique": "Role-based", "priority": "P1", "type": "UI", "steps": ["Prepare a QA- BAM", "Try to approve it as the same user"], "expected": "Approval is refused", "tags": ["@critical", "@module:billing"] },
+        { "title": "Posting an unapproved memo is refused", "technique": "Negative / abuse", "priority": "P1", "type": "API", "steps": ["Call the post endpoint for a validated but unapproved QA- memo"], "expected": "Request is rejected; no balance change", "tags": ["@critical", "@module:billing"] },
+        { "title": "Each memo stage writes an audit entry", "technique": "State transition", "priority": "P2", "type": "PROCESS", "steps": ["Take a QA- debit memo through prepare, validate, approve and post", "Open the audit trail"], "expected": "Each stage shows who, when, and before → after", "tags": ["@module:billing"] }
+      ]
+    },
+    {
+      "title": "Seed: Meter-reading book workflow",
+      "module": "BILLING",
+      "process": "Meter reading field-to-bill",
+      "summary": "Book states To Do → For Download → Downloaded → In Progress → Complete → For Review → Verified. Reader records are NotUploaded, Read, Unreadable, Missed or NotRequired. Upload completion compares the phone manifest with stored records in one transaction.",
+      "cases": [
+        { "title": "Book moves through every state in order", "technique": "State transition", "priority": "P2", "type": "PROCESS", "steps": ["Schedule a QA- book", "Download it as the assigned reader", "Upload readings", "Review and verify as supervisor"], "expected": "Book passes To Do → For Download → Downloaded → In Progress → Complete → For Review → Verified", "tags": ["@process:meter-reading-field-to-bill"] },
+        { "title": "Reader cannot download another reader's book", "technique": "Role-based", "priority": "P1", "type": "API", "steps": ["As reader A, request the download of a book assigned to reader B"], "expected": "Request is refused", "tags": ["@critical", "@module:billing"] },
+        { "title": "Reader login refused outside the allowed office network", "technique": "Negative / abuse", "priority": "P2", "type": "API", "steps": ["Authenticate as a QA- reader from a network outside the allowlist"], "expected": "Login is refused", "tags": ["@module:billing"] },
+        { "title": "Upload with a manifest mismatch is rolled back", "technique": "Negative / abuse", "priority": "P1", "type": "API", "steps": ["Upload a QA- book whose manifest lists more records than were sent"], "expected": "Upload is not completed and no partial records are saved", "tags": ["@critical", "@module:billing"] },
+        { "title": "Supervisor correction needs a reason", "technique": "Negative / abuse", "priority": "P2", "type": "UI", "steps": ["Edit a reading during review without a reason"], "expected": "Edit is refused; with a reason, an edit record is stored separately from the original", "tags": ["@module:billing"] },
+        { "title": "Admin and phone status writes don't conflict", "technique": "State transition", "priority": "P2", "type": "API", "steps": ["Change a QA- book's status from admin while the phone sends a status update"], "expected": "One write wins by the conditional update; the book is never left in an invalid state", "tags": ["@module:billing"] }
+      ]
+    },
+    {
+      "title": "Seed: JMS process sequence",
+      "module": "BILLING",
+      "process": "JMS service job",
+      "summary": "Each JMS code defines an ordered process sequence. The sequence gate blocks creating or completing a later process while prerequisite work is open.",
+      "cases": [
+        { "title": "Later process blocked while a prerequisite is open", "technique": "State transition", "priority": "P1", "type": "API", "steps": ["Create a QA- JMS whose sequence requires an OP before the MCR", "Try to create the MCR before the OP is paid"], "expected": "Request is refused by the sequence gate", "tags": ["@critical", "@process:jms-service-job"] },
+        { "title": "Paid OP releases the next automatic process", "technique": "State transition", "priority": "P2", "type": "PROCESS", "steps": ["Pay the OP of a QA- JMS", "Wait for the paid-order sweep (every 2 minutes)"], "expected": "JMS records the payment and the next eligible automatic process starts", "tags": ["@process:jms-service-job"] },
+        { "title": "Voided JMS accepts no further work", "technique": "Negative / abuse", "priority": "P2", "type": "API", "steps": ["Void a QA- JMS", "Try to add a maintenance order to it"], "expected": "Request is refused", "tags": ["@module:billing"] },
+        { "title": "Completing a JMS updates the CRM ticket", "technique": "State transition", "priority": "P2", "type": "PROCESS", "steps": ["Complete every process of a QA- JMS created from a CRM ticket"], "expected": "Job is Completed, the customer is notified and the CRM ticket is updated", "tags": ["@process:jms-service-job"] }
+      ]
+    },
+    {
+      "title": "Seed: MCR change control",
+      "module": "BILLING",
+      "process": "MCR change control",
+      "summary": "MCR states Draft → Submitted → Returned/Validated → Approved → Posted, or Void. Approval does not change the customer record; posting re-runs readiness checks and applies the change, and a failed post leaves no partial update.",
+      "cases": [
+        { "title": "Approval does not change the customer record", "technique": "State transition", "priority": "P1", "type": "PROCESS", "steps": ["Take a QA- MCR to Approved", "Open the customer record"], "expected": "Record is unchanged until the MCR is posted", "tags": ["@critical", "@process:mcr-change-control"] },
+        { "title": "Post re-runs readiness checks", "technique": "Decision table", "priority": "P1", "type": "API", "steps": ["Approve a QA- MCR", "Make a readiness condition false (e.g. reverse the payment)", "Post the MCR"], "expected": "Post is refused, the MCR returns to an actionable state, and the customer record is unchanged", "tags": ["@critical", "@module:billing"] },
+        { "title": "Returned MCR can be resubmitted", "technique": "State transition", "priority": "P3", "type": "UI", "steps": ["Return a submitted QA- MCR", "Edit and resubmit it"], "expected": "MCR goes Returned → Submitted with history", "tags": ["@module:billing"] },
+        { "title": "Posting skipping approval is refused", "technique": "Negative / abuse", "priority": "P1", "type": "API", "steps": ["Call the post endpoint for a Validated QA- MCR"], "expected": "Request is rejected", "tags": ["@critical", "@module:billing"] },
+        { "title": "Voided MCR cannot be posted", "technique": "Negative / abuse", "priority": "P2", "type": "API", "steps": ["Void a QA- MCR", "Call the post endpoint"], "expected": "Request is rejected", "tags": ["@module:billing"] }
+      ]
+    },
+    {
+      "title": "Seed: NSC application lifecycle",
+      "module": "BILLING",
+      "process": "NSC new service connection",
+      "summary": "NSC statuses PreVerified, Submitted, ForRequirementsVerification, Investigation, WaiverPending, PaymentVerification, ContractSigning, InstallationPending, Completed, Cancelled, Disqualified, Archived, PendingReinvestigation. Every valid transition writes a status-history record. Files: PDF/JPG/JPEG/PNG/HEIC, 10 MB each, 60 MB per submission.",
+      "cases": [
+        { "title": "Happy path writes status history at every step", "technique": "State transition", "priority": "P1", "type": "PROCESS", "steps": ["Submit a QA- NSC application", "Take it through verification, investigation, payment, contract and installation"], "expected": "Reaches Completed; each transition has one status-history record", "tags": ["@critical", "@process:nsc-new-service-connection"] },
+        { "title": "Skipping a status is refused", "technique": "State transition", "priority": "P1", "type": "API", "steps": ["Move a QA- application from Investigation straight to InstallationPending"], "expected": "Transition is rejected and no history record is written", "tags": ["@critical", "@module:billing"] },
+        { "title": "Requirement file exactly 10 MB is accepted, 10 MB + 1 byte refused", "technique": "Boundary value analysis", "priority": "P2", "type": "API", "steps": ["Upload a 10 MB PDF", "Upload a 10 MB + 1 byte PDF"], "expected": "First is accepted, second refused with a size message", "tags": ["@module:billing"] },
+        { "title": "Submission total above 60 MB is refused", "technique": "Boundary value analysis", "priority": "P2", "type": "API", "steps": ["Upload requirement files totalling just over 60 MB"], "expected": "Submission is refused with a size message", "tags": ["@module:billing"] },
+        { "title": "Disallowed file type is refused", "technique": "Negative / abuse", "priority": "P2", "type": "API", "steps": ["Upload a .exe renamed to .pdf, and a .gif"], "expected": "Both are refused", "tags": ["@module:billing"] },
+        { "title": "Staff-only NSC actions are enforced on the server", "technique": "Role-based", "priority": "P1", "type": "API", "steps": ["As a customer-portal user, call a staff NSC endpoint (e.g. verify requirements) directly"], "expected": "Request is refused with 403, not just hidden in the UI", "tags": ["@critical", "@module:billing"] },
+        { "title": "Concurrent edits are detected", "technique": "Negative / abuse", "priority": "P2", "type": "API", "steps": ["Open the same QA- application as two users", "Save both"], "expected": "Second save is rejected as a version conflict", "tags": ["@module:billing"] },
+        { "title": "BCS reconciliation sets the account number", "technique": "State transition", "priority": "P2", "type": "PROCESS", "steps": ["Complete installation of a QA- application", "Wait for the BCS export and reconciliation"], "expected": "Application has the account number returned by BCS", "tags": ["@process:nsc-new-service-connection"] }
+      ]
+    },
+    {
+      "title": "Seed: Order of Payment",
+      "module": "BILLING",
+      "process": "Order of Payment",
+      "summary": "OP creation validates amount, type/COA, customer and any JMS prerequisite, generates a reference number and starts as Pending. The paid-order sweep runs every 2 minutes.",
+      "cases": [
+        { "title": "New OP gets a reference number and Pending status", "technique": "State transition", "priority": "P2", "type": "API", "steps": ["Create a valid QA- OP"], "expected": "OP has a unique reference number and status Pending", "tags": ["@module:billing"] },
+        { "title": "OP with zero or negative amount is refused", "technique": "Boundary value analysis", "priority": "P1", "type": "API", "steps": ["Create a QA- OP with amount 0.00", "Create one with amount -0.01", "Create one with amount 0.01"], "expected": "0.00 and -0.01 are refused; 0.01 is accepted", "tags": ["@critical", "@module:billing"] },
+        { "title": "OP with an inactive COA is refused", "technique": "Negative / abuse", "priority": "P2", "type": "API", "steps": ["Create a QA- OP using an inactive COA"], "expected": "Request is refused", "tags": ["@module:billing"] },
+        { "title": "Paid OP cannot be paid again", "technique": "Negative / abuse", "priority": "P1", "type": "API", "steps": ["Pay a QA- OP", "Try to pay it again"], "expected": "Second payment is refused", "tags": ["@critical", "@module:billing"] }
+      ]
+    },
+    {
+      "title": "Seed: Purchase request to PO",
+      "module": "P2P",
+      "process": "Procure-to-Pay",
+      "summary": "Purchase request approval chain by amount threshold, with a budget check before the PO is issued. Thresholds follow the procurement office's rules.",
+      "cases": [
+        { "title": "Approval chain by amount threshold", "technique": "Decision table", "priority": "P1", "type": "PROCESS", "steps": ["Create QA- PRs just below, at and just above each threshold"], "expected": "Each PR routes to the approvers the threshold table requires (thresholds: unknown)", "tags": ["@critical", "@module:p2p"] },
+        { "title": "PO blocked when budget is insufficient", "technique": "Negative / abuse", "priority": "P1", "type": "UI", "steps": ["Approve a QA- PR larger than the remaining budget", "Try to issue the PO"], "expected": "PO is not issued; message names the budget shortfall", "tags": ["@critical", "@module:p2p"] }
+      ]
+    },
+    {
+      "title": "Seed: Receiving and 3-way match",
+      "module": "P2P",
+      "process": "Procure-to-Pay",
+      "summary": "Partial receiving, over-receiving blocked, inspection and returns. Payment only after a PO × receipt × invoice match within tolerance and approval.",
+      "cases": [
+        { "title": "Partial receipt keeps the PO open", "technique": "Equivalence partitioning", "priority": "P2", "type": "UI", "steps": ["Receive part of a QA- PO"], "expected": "PO shows the remaining quantity and stays open", "tags": ["@module:p2p"] },
+        { "title": "Over-receiving is blocked", "technique": "Boundary value analysis", "priority": "P1", "type": "UI", "steps": ["Receive the ordered quantity + 1 on a QA- PO"], "expected": "Receipt is refused", "tags": ["@critical", "@module:p2p"] },
+        { "title": "Invoice outside tolerance blocks payment", "technique": "Decision table", "priority": "P1", "type": "PROCESS", "steps": ["Record a QA- invoice just outside the match tolerance", "Try to prepare the DV"], "expected": "DV is blocked until the mismatch is resolved (tolerance: unknown)", "tags": ["@critical", "@module:p2p"] }
+      ]
+    },
+    {
+      "title": "Seed: Inventory movements",
+      "module": "P2P",
+      "process": "Procure-to-Pay",
+      "summary": "Stock in/out, no negative stock, valuation checked against the inventory oracle, reorder alerts and issuance to job orders.",
+      "cases": [
+        { "title": "Issuing more than on hand is refused", "technique": "Boundary value analysis", "priority": "P1", "type": "UI", "steps": ["Issue on-hand quantity + 1 of a QA- item"], "expected": "Issuance is refused; stock never goes negative", "tags": ["@critical", "@module:p2p"] },
+        { "title": "Valuation after a sequence of movements", "technique": "Data-driven", "priority": "P1", "type": "API", "steps": ["Post a series of QA- receipts and issues"], "expected": "Quantity and valuation match the inventory oracle", "tags": ["@critical", "@module:p2p"] },
+        { "title": "Reorder alert at the reorder point", "technique": "Boundary value analysis", "priority": "P3", "type": "UI", "steps": ["Issue a QA- item down to exactly its reorder point"], "expected": "A reorder alert is raised; one unit above, no alert", "tags": ["@module:p2p"] }
+      ]
+    },
+    {
+      "title": "Seed: Postings and period close",
+      "module": "FINANCE",
+      "process": "Record-to-Report",
+      "summary": "Every posting balances to the centavo, subledgers equal their GL control accounts, closed periods reject postings, and reversals link to originals.",
+      "cases": [
+        { "title": "Unbalanced journal is refused", "technique": "Negative / abuse", "priority": "P1", "type": "API", "steps": ["Post a QA- journal whose debits differ from credits by 0.01"], "expected": "Posting is refused", "tags": ["@critical", "@module:finance"] },
+        { "title": "Posting into a closed period is refused", "technique": "State transition", "priority": "P1", "type": "UI", "steps": ["Close a period", "Post a QA- journal dated inside it"], "expected": "Posting is refused", "tags": ["@critical", "@module:finance"] },
+        { "title": "Subledgers equal GL control accounts", "technique": "Equivalence partitioning", "priority": "P1", "type": "RECON", "steps": ["Run the subledger = GL recon checks for AR, AP, inventory and payroll payable"], "expected": "All checks pass", "tags": ["@critical", "@module:finance"] },
+        { "title": "Reversing entry links to the original", "technique": "State transition", "priority": "P2", "type": "UI", "steps": ["Reverse a QA- journal"], "expected": "Reversal is linked to the original and nets it to zero", "tags": ["@module:finance"] }
+      ]
+    },
+    {
+      "title": "Seed: Financial reports",
+      "module": "FINANCE",
+      "process": "Record-to-Report",
+      "summary": "Trial balance and financial statements tie to the GL; exports match on-screen totals; inactive accounts are blocked from new entries.",
+      "cases": [
+        { "title": "Trial balance ties to the GL", "technique": "Equivalence partitioning", "priority": "P1", "type": "RECON", "steps": ["Generate the trial balance for a period"], "expected": "Totals equal the GL and debits = credits (recon check)", "tags": ["@critical", "@module:finance"] },
+        { "title": "PDF and XLSX exports match on-screen totals", "technique": "Equivalence partitioning", "priority": "P2", "type": "UI", "steps": ["Export a report to PDF and XLSX", "Compare totals with the screen"], "expected": "All three match; names with ñ render correctly", "tags": ["@module:finance"] },
+        { "title": "Inactive account blocked from new entries", "technique": "Negative / abuse", "priority": "P2", "type": "API", "steps": ["Post a QA- journal to an inactive account"], "expected": "Posting is refused", "tags": ["@module:finance"] }
+      ]
+    },
+    {
+      "title": "Seed: Attendance and leave",
+      "module": "HR",
+      "process": "Hire-to-Retire / Time-to-Pay",
+      "summary": "Attendance becomes payable days and hours; leave balances accrue and over-use is blocked.",
+      "cases": [
+        { "title": "Leave request equal to the balance is accepted", "technique": "Boundary value analysis", "priority": "P2", "type": "UI", "steps": ["File QA- leave for exactly the remaining balance"], "expected": "Request is accepted and the balance becomes 0", "tags": ["@module:hr"] },
+        { "title": "Leave request above the balance is refused", "technique": "Boundary value analysis", "priority": "P2", "type": "UI", "steps": ["File QA- leave for balance + 1 day"], "expected": "Request is refused", "tags": ["@module:hr"] },
+        { "title": "Attendance converts to payable days and hours", "technique": "Data-driven", "priority": "P2", "type": "API", "steps": ["Load a QA- attendance set with late, undertime and absence entries"], "expected": "Payable days and hours match the payroll oracle", "tags": ["@module:hr"] }
+      ]
+    },
+    {
+      "title": "Seed: Payroll",
+      "module": "HR",
+      "process": "Hire-to-Retire / Time-to-Pay",
+      "summary": "Gross-to-net checked against the payroll oracle with contribution and tax tables kept as data files; approval workflow; payslip privacy; balanced GL entries.",
+      "cases": [
+        { "title": "Gross-to-net matches the payroll oracle", "technique": "Data-driven", "priority": "P1", "type": "API", "steps": ["Run payroll for QA- employees across salary brackets"], "expected": "Gross, each deduction and net match the payroll oracle", "tags": ["@critical", "@module:hr"] },
+        { "title": "Employee sees only their own payslip", "technique": "Role-based", "priority": "P1", "type": "API", "steps": ["As QA- employee A, request employee B's payslip by ID"], "expected": "Request is refused with 403 or 404", "tags": ["@critical", "@module:hr"] },
+        { "title": "Payroll preparer cannot approve", "technique": "Role-based", "priority": "P1", "type": "UI", "steps": ["Prepare a QA- payroll", "Try to approve it as the same user"], "expected": "Approval is refused", "tags": ["@critical", "@module:hr"] },
+        { "title": "Payroll posts balanced GL entries", "technique": "Equivalence partitioning", "priority": "P1", "type": "PROCESS", "steps": ["Approve and post a QA- payroll"], "expected": "GL entries balance and match the ledger oracle", "tags": ["@critical", "@process:hire-to-retire-time-to-pay"] }
+      ]
+    },
+    {
+      "title": "Seed: Cross-cutting controls",
+      "module": null,
+      "process": null,
+      "summary": "RBAC matrix through UI and API, segregation of duties, audit trail, concurrency, and data edge cases (rounding, negative and very large amounts, Filipino names with ñ, date and period boundaries, session timeout).",
+      "cases": [
+        { "title": "Denied action is refused through the API, not just hidden", "technique": "Role-based", "priority": "P1", "type": "API", "steps": ["For each role, call every action it may not perform directly through the API"], "expected": "Each call is refused with 403", "tags": ["@critical", "@regression"] },
+        { "title": "Every financial change has an audit entry", "technique": "Equivalence partitioning", "priority": "P1", "type": "RECON", "steps": ["Make a QA- financial change", "Open the audit trail"], "expected": "Entry shows who, when, and before → after", "tags": ["@critical"] },
+        { "title": "Two users paying the same bill at once", "technique": "Negative / abuse", "priority": "P1", "type": "API", "steps": ["Submit payments for the same QA- bill from two sessions at the same time"], "expected": "Only one succeeds or both are applied correctly; balance matches the ledger oracle", "tags": ["@critical"] },
+        { "title": "Names with ñ and accents save and print correctly", "technique": "Data-driven", "priority": "P3", "type": "UI", "steps": ["Create a QA- customer named \"QA-Peña, José Niño\"", "View, search and print it"], "expected": "Name is stored, found and printed exactly", "tags": ["@regression"] },
+        { "title": "Very large and negative amounts are handled", "technique": "Boundary value analysis", "priority": "P2", "type": "API", "steps": ["Submit amounts at the field maximum, maximum + 0.01, and -0.01"], "expected": "Maximum is accepted; the others are refused with clear messages", "tags": ["@regression"] },
+        { "title": "Session timeout protects unsaved work", "technique": "Negative / abuse", "priority": "P3", "type": "UI", "steps": ["Leave a form idle past the session timeout", "Submit"], "expected": "User is asked to sign in again; no partial record is saved", "tags": ["@regression"] }
+      ]
+    }
+  ]
+}

@@ -75,6 +75,88 @@ const PROCESSES: { module: ModuleCode; name: string; description: string; steps:
       { name: "Post payroll to GL", module: "FINANCE", handoff: true },
     ],
   },
+  // DCWD BCA API workflows, from docs/erp/bca-api-process-flow.md.
+  {
+    module: "BILLING",
+    name: "Meter reading field-to-bill",
+    description: "Reader books from billing schedule to verified readings. Book states: To Do → For Download → Downloaded → In Progress → Complete → For Review → Verified.",
+    steps: [
+      { name: "Scheduler creates and assigns meter-reader books from the billing schedule" },
+      { name: "Reader authenticates on the allowed office network" },
+      { name: "Reader downloads the assigned book" },
+      { name: "Capture readings, remarks, photos and manifest on the phone" },
+      { name: "Upload completion: manifest compared with stored records in one transaction" },
+      { name: "Supervisor review; corrections stored as edit records with reasons" },
+      { name: "Verify book for billing use" },
+    ],
+  },
+  {
+    module: "BILLING",
+    name: "JMS service job",
+    description: "Configurable service/maintenance job with an ordered process sequence per JMS code.",
+    steps: [
+      { name: "Create JMS from a CRM ticket or direct request" },
+      { name: "Build the code-specific process sequence" },
+      { name: "Requirements gate" },
+      { name: "Dispatch maintenance order / field investigation" },
+      { name: "Payment or adjustment work (OP, BAM, DM/CM) as configured" },
+      { name: "MCR and/or automatic posting" },
+      { name: "Notify customer, update CRM ticket, complete job" },
+    ],
+  },
+  {
+    module: "BILLING",
+    name: "MCR change control",
+    description: "Controlled customer-record change. States: Draft → Submitted → Returned/Validated → Approved → Posted, or Void.",
+    steps: [
+      { name: "Create MCR draft" },
+      { name: "Submit" },
+      { name: "Validate or return to preparer" },
+      { name: "Approve (customer record unchanged)" },
+      { name: "Post: re-run readiness checks, then apply the change to the customer record" },
+      { name: "Advance JMS work, run follow-up or marginal billing, notify and update CRM ticket" },
+    ],
+  },
+  {
+    module: "BILLING",
+    name: "NSC new service connection",
+    description: "New-service-connection application from intake to BCS account number.",
+    steps: [
+      { name: "Customer portal or CSA walk-in intake" },
+      { name: "Duplicate and location checks; upload requirements" },
+      { name: "Requirements verification / endorsement" },
+      { name: "Field investigation (re-investigation, disqualification or waiver review)" },
+      { name: "Payment verification" },
+      { name: "Contract signing" },
+      { name: "Installation assignment, field details and completion" },
+      { name: "Queue BCS export" },
+      { name: "BCS reconciliation returns the account number" },
+    ],
+  },
+  {
+    module: "BILLING",
+    name: "Order of Payment",
+    description: "OP lifecycle: Pending → Paid, with the paid-order sweep releasing eligible JMS processes.",
+    steps: [
+      { name: "Create OP: validate amount, type/COA, customer and JMS prerequisite" },
+      { name: "Generate reference number; status Pending" },
+      { name: "Customer pays at office, teller or bank" },
+      { name: "Paid-order sweep (every 2 minutes) records payment in JMS" },
+      { name: "Release newly eligible automatic JMS process" },
+    ],
+  },
+  {
+    module: "BILLING",
+    name: "BAM / Debit-Credit memo",
+    description: "Billing adjustments with validation, approval and posting stages; balances change only at posting.",
+    steps: [
+      { name: "Prepare BAM, debit memo or credit memo" },
+      { name: "Validate" },
+      { name: "Approve (approver ≠ preparer)" },
+      { name: "Post: update customer balance and accounting" },
+      { name: "Appears in billing and daily reports", module: "FINANCE", handoff: true },
+    ],
+  },
 ];
 
 const RISKS: { module: ModuleCode; process?: string; title: string; characteristic: string; l: number; i: number; mitigation: string }[] = [

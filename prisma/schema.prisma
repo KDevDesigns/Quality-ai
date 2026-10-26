@@ -118,27 +118,29 @@ model Environment {
 }
 
 model Module {
-  id          String            @id @default(cuid())
-  code        ModuleCode        @unique
-  name        String
-  description String?
-  processes   BusinessProcess[]
-  risks       Risk[]
-  defects     Defect[]
+  id           String            @id @default(cuid())
+  code         ModuleCode        @unique
+  name         String
+  description  String?
+  processes    BusinessProcess[]
+  risks        Risk[]
+  defects      Defect[]
+  requirements Requirement[]
 }
 
 model BusinessProcess {
-  id          String     @id @default(cuid())
-  moduleId    String
-  module      Module     @relation(fields: [moduleId], references: [id])
-  name        String     @unique
-  description String?
-  steps       Json // ProcessStep[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  risks       Risk[]
-  testCases   TestCase[]
-  defects     Defect[]
+  id           String        @id @default(cuid())
+  moduleId     String
+  module       Module        @relation(fields: [moduleId], references: [id])
+  name         String        @unique
+  description  String?
+  steps        Json // ProcessStep[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  risks        Risk[]
+  testCases    TestCase[]
+  defects      Defect[]
+  requirements Requirement[]
 }
 
 model Risk {
@@ -160,13 +162,45 @@ model Risk {
 }
 
 model Requirement {
-  id        String     @id @default(cuid())
-  source    String
-  text      String
-  sensitive Boolean    @default(false)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  testCases TestCase[]
+  id             String           @id @default(cuid())
+  title          String           @default("")
+  source         String // "paste" | "upload" | "seed"
+  sourceFile     String?
+  text           String
+  sensitive      Boolean          @default(false)
+  moduleId       String?
+  module         Module?          @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  processId      String?
+  process        BusinessProcess? @relation(fields: [processId], references: [id], onDelete: SetNull)
+  openQuestions  Json             @default("[]") // string[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  testCases      TestCase[]
+  generationJobs GenerationJob[]
+}
+
+enum GenerationStatus {
+  QUEUED
+  RUNNING
+  DONE
+  ERROR
+}
+
+model GenerationJob {
+  id             String           @id @default(cuid())
+  requirementId  String
+  requirement    Requirement      @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  status         GenerationStatus @default(QUEUED)
+  caseCount      Int              @default(0)
+  redactionCount Int              @default(0)
+  tokensIn       Int              @default(0)
+  tokensOut      Int              @default(0)
+  costMicroUsd   Int              @default(0)
+  error          String?
+  createdAt      DateTime         @default(now())
+  finishedAt     DateTime?
+
+  @@index([requirementId, createdAt])
 }
 
 model TestCase {
@@ -185,6 +219,10 @@ model TestCase {
   tags          Json             @default("[]") // string[]
   status        TestCaseStatus   @default(DRAFT)
   aiGenerated   Boolean          @default(false)
+  openQuestions Json             @default("[]") // string[]
+  processStep   String?
+  sortOrder     Int              @default(0)
+  approvedAt    DateTime?
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
   scripts       TestScript[]

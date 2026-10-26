@@ -1,5 +1,30 @@
 # Changelog
 
+## Phase 3: Test design studio (2026-10-26)
+
+- **Requirements** at `/test-design`: paste, or upload `.md`, `.txt`, `.docx` (mammoth) or text-layer `.pdf` (unpdf). Limits are 5 MB and 60k characters. Uploaded text is shown for review before saving.
+  - A requirement can be linked to a module and a business process. The process steps go into the prompt.
+  - A **Sensitive** flag routes the text through redaction. "Preview what the cloud sees" shows the masked text on this machine only.
+- **AI drafts** (`testcase_generation`, `claude-sonnet-5-5`):
+  - The job is queued in `GenerationJob`, runs after the response through `after()`, and the page polls `/test-design/jobs/[id]`. A job cut off by a restart is marked failed after 10 minutes.
+  - The prompt (`lib/ai/prompts/testcase-generation.ts`) sends the glossary and process steps, and asks for ≥ 15 cases with technique labels, ±1 boundaries, negatives and state transitions.
+  - The model must write "unknown" plus an open question instead of inventing a rule, and must **never compute money**: amount expectations name the oracle or recon check.
+  - Output is validated per case (`lib/test-design/normalize.ts`), so one bad case is dropped instead of failing the run.
+  - Error messages never echo the requirement text or the SDK request body.
+- **Editable grid:** expand a row to edit it, or add a case by hand. Bulk actions: approve, back to draft, mark obsolete, delete drafts.
+  - Editing an approved case sends it back to draft. Automated cases are read-only.
+  - A coverage strip shows counts by technique and warns below 15 cases or when boundary or negative cases are missing.
+- **Traceability matrix** at `/test-design/traceability`: requirement → cases → latest result → defects, filterable by module. Uncovered requirements are flagged.
+- **Export:** XLSX (`write-excel-file`, chosen over exceljs, which pulled in 94 packages including a flagged `uuid`) and CSV with a UTF-8 BOM. CSV cells that start with `=`, `+`, `-` or `@` are escaped, so tags like `@critical` are never run as formulas.
+- **Seed catalog** in `data/seed-catalog.json`: 21 areas and 86 cases from PLAN §6.4 plus the BCA workflows (meter-reading books, JMS sequence gate, MCR, NSC, Order of Payment, BAM/DM/CM). The import is idempotent.
+- **Reference docs:** `docs/erp/bca-api-process-flow.md`, a new `docs/glossary.md` (sent with every generation prompt) and a `docs/roles.md` stub to fill in.
+- **Seed:** six new BILLING processes from the BCA document.
+- **Schema:**
+  - `Requirement` gets a title, module, process, source file and open questions.
+  - `TestCase` gets open questions, a process step, a sort order and an approval time.
+  - New `GenerationJob` table.
+- **Next 16 note:** with Cache Components on, route handlers always run on Node.js and a `runtime` export is rejected, so CLAUDE.md rule 5 is met without the export line.
+
 ## Phase 2: AI layer (2026-10-26)
 
 - **One router** in `lib/ai/` with entry point `runTask` (`lib/ai/index.ts`). ESLint blocks importing `ai`, `@ai-sdk/*`, the providers or the raw router from anywhere else.
