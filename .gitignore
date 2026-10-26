@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# QA AI artifacts
+/runs/
+/tests/generated/
+/test-results/
+/playwright-report/
+/prisma/*.db
+/prisma/*.db-journal
