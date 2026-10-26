@@ -301,16 +301,36 @@ model Review {
   createdAt       DateTime   @default(now())
 }
 
+enum AuditStatus {
+  OK
+  ERROR
+  BLOCKED
+}
+
+// Metadata only: prompt and response text are never stored here.
 model AuditLog {
-  id        String   @id @default(cuid())
-  at        DateTime @default(now())
-  task      String
-  provider  String
-  model     String
-  tokensIn  Int      @default(0)
-  tokensOut Int      @default(0)
-  redacted  Boolean  @default(false)
-  sensitive Boolean  @default(false)
+  id             String      @id @default(cuid())
+  at             DateTime    @default(now())
+  task           String
+  provider       String // "local" | "anthropic"
+  model          String
+  status         AuditStatus @default(OK)
+  tokensIn       Int         @default(0)
+  tokensOut      Int         @default(0)
+  costMicroUsd   Int         @default(0) // integer micro-dollars; 1_000_000 = $1
+  durationMs     Int         @default(0)
+  redacted       Boolean     @default(false)
+  redactionCount Int         @default(0)
+  sensitive      Boolean     @default(false)
+  error          String?
+  jobId          String?
 
   @@index([at])
+  @@index([provider, at])
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
 }

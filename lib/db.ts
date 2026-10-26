@@ -8,8 +8,13 @@ function createClient() {
   return new PrismaClient({ adapter: new PrismaBetterSqlite3({ url }) });
 }
 
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient; prismaCtor?: typeof PrismaClient };
 
-export const db = globalForPrisma.prisma ?? createClient();
+// After `prisma generate` hot-reloads the client class, a cached instance would lack new models, so rebuild it.
+export const db =
+  globalForPrisma.prisma && globalForPrisma.prismaCtor === PrismaClient ? globalForPrisma.prisma : createClient();
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = db;
+  globalForPrisma.prismaCtor = PrismaClient;
+}

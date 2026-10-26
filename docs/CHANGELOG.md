@@ -1,5 +1,31 @@
 # Changelog
 
+## Phase 2: AI layer (2026-10-26)
+
+- **One router** in `lib/ai/` with entry point `runTask` (`lib/ai/index.ts`). ESLint blocks importing `ai`, `@ai-sdk/*`, the providers or the raw router from anywhere else.
+- **Privacy per task:** `localOnly`, `redactThenCloud` or `public`.
+  - Sensitive input never reaches the cloud unredacted.
+  - Local-only tasks can't be rerouted, even from Settings.
+  - If Ollama is down, the call fails instead of falling back to the cloud.
+  - `OLLAMA_BASE_URL` must be a loopback address.
+- **Redaction** (`lib/ai/redact.ts`), deterministic, with 57 tests:
+  - email, PH mobile and landline numbers, TIN, SSS, PhilHealth, Pag-IBIG and GSIS numbers
+  - labeled account, meter and OR numbers
+  - peso amounts and long digit runs
+  - a names list matched in any letter case, with or without accents or ñ, and in "Surname, Given" order
+  - extra ID formats as regexes
+  - an optional second pass with the local model, which refuses the cloud call if Ollama is down
+- **Audit log:** every call (local and cloud, including `BLOCKED` and `ERROR`) records task, model, tokens, cost in integer micro-dollars, duration and redaction count. Prompt and response text are never stored.
+- **Budget:** a $10/month cloud cap by default, checked before every cloud call, plus a limit on output tokens per call. Prices live in `data/model-prices.json`.
+- **Settings page:**
+  - provider health with "Test" buttons
+  - models per task
+  - budget and spend meter
+  - redaction settings with an offline "Try redaction" preview
+  - audit-log viewer with filters
+- **AI SDK v7 note:** `generateObject` is deprecated, so structured output uses `generateText` with `output: Output.object({ schema })`, and `system` is now called `instructions`.
+- **Dev fix:** `lib/db.ts` rebuilds its cached Prisma client after `prisma generate`, so migrations no longer require restarting the dev server.
+
 ## Phase 1 — Foundation and domain model (2026-10-26)
 
 - Prisma 7 + SQLite (better-sqlite3 driver adapter) with the full PLAN §5 data model; first migration `init`.

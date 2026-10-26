@@ -1,0 +1,12 @@
+{
+  "_note": "USD per million tokens, Anthropic first-party API rates as of 2026-10. Update when Anthropic changes pricing.",
+  "claude-sonnet-5-5": { "inputPerMTok": "2.00", "outputPerMTok": "10.00" },
+  "claude-haiku-5-5": {
+    "inputPerMTok": "0.10",
+    "outputPerMTok": "0.50",
+    "longContextThreshold": 100000,
+    "longInputPerMTok": "0.50",
+    "longOutputPerMTok": "2.50"
+  },
+  "claude-opus-5-5": { "inputPerMTok": "4.00", "outputPerMTok": "20.00" }
+}

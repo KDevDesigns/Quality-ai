@@ -25,10 +25,10 @@ export const MAIN_NAV: NavItem[] = [
   { href: "/modules", label: "Modules", icon: BoxesIcon },
   { href: "/processes", label: "Processes", icon: WorkflowIcon },
   { href: "/risks", label: "Risk register", icon: ShieldAlertIcon },
+  { href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
 export const LATER_NAV: { label: string; icon: LucideIcon; phase: number }[] = [
-  { label: "Settings", icon: SettingsIcon, phase: 2 },
   { label: "Test design", icon: ClipboardListIcon, phase: 3 },
   { label: "Data & oracles", icon: DatabaseIcon, phase: 4 },
   { label: "Runs", icon: PlayIcon, phase: 5 },
