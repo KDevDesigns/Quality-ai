@@ -1,0 +1,316 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// SQLite has no scalar lists: list-shaped fields are Json and validated with zod in lib/schemas.
+
+enum ModuleCode {
+  BILLING
+  P2P
+  FINANCE
+  HR
+}
+
+enum Priority {
+  P1
+  P2
+  P3
+  P4
+}
+
+enum TestType {
+  UI
+  API
+  PROCESS
+  RECON
+  NFR
+}
+
+enum TestCaseStatus {
+  DRAFT
+  APPROVED
+  AUTOMATED
+  OBSOLETE
+}
+
+enum RunTrigger {
+  MANUAL
+  IMPACT
+  SCHEDULED
+}
+
+enum RunStatus {
+  QUEUED
+  RUNNING
+  PASSED
+  FAILED
+  CANCELLED
+  ERROR
+}
+
+enum ResultStatus {
+  PASS
+  FAIL
+  SKIP
+  FLAKY
+}
+
+enum ExplorationStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  STOPPED
+  ERROR
+}
+
+enum Severity {
+  S1
+  S2
+  S3
+  S4
+}
+
+enum DefectStatus {
+  DRAFT
+  CONFIRMED
+  FIXED
+  VERIFIED
+  CLOSED
+  REJECTED
+}
+
+enum ReviewKind {
+  DIFF
+  LOG
+  BUG
+}
+
+model Project {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  description  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  environments Environment[]
+}
+
+model Environment {
+  id           String        @id @default(cuid())
+  projectId    String
+  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name         String
+  baseUrls     Json // string[]
+  apiBaseUrl   String?
+  dbConnRef    String? // name of an env var in .env.local, never the connection string itself
+  isProduction Boolean       @default(false)
+  notes        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  testRuns     TestRun[]
+  explorations Exploration[]
+
+  @@unique([projectId, name])
+}
+
+model Module {
+  id          String            @id @default(cuid())
+  code        ModuleCode        @unique
+  name        String
+  description String?
+  processes   BusinessProcess[]
+  risks       Risk[]
+  defects     Defect[]
+}
+
+model BusinessProcess {
+  id          String     @id @default(cuid())
+  moduleId    String
+  module      Module     @relation(fields: [moduleId], references: [id])
+  name        String     @unique
+  description String?
+  steps       Json // ProcessStep[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  risks       Risk[]
+  testCases   TestCase[]
+  defects     Defect[]
+}
+
+model Risk {
+  id             String           @id @default(cuid())
+  moduleId       String
+  module         Module           @relation(fields: [moduleId], references: [id])
+  processId      String?
+  process        BusinessProcess? @relation(fields: [processId], references: [id], onDelete: SetNull)
+  title          String
+  characteristic String // ISO/IEC 25010:2023, validated in lib/schemas/risk.ts
+  likelihood     Int
+  impact         Int
+  score          Int // likelihood * impact, computed in lib/risk/score.ts
+  mitigation     String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([score])
+}
+
+model Requirement {
+  id        String     @id @default(cuid())
+  source    String
+  text      String
+  sensitive Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  testCases TestCase[]
+}
+
+model TestCase {
+  id            String           @id @default(cuid())
+  requirementId String?
+  requirement   Requirement?     @relation(fields: [requirementId], references: [id], onDelete: SetNull)
+  processId     String?
+  process       BusinessProcess? @relation(fields: [processId], references: [id], onDelete: SetNull)
+  title         String
+  technique     String
+  preconditions String?
+  steps         Json // string[]
+  expected      String
+  priority      Priority         @default(P3)
+  type          TestType
+  tags          Json             @default("[]") // string[]
+  status        TestCaseStatus   @default(DRAFT)
+  aiGenerated   Boolean          @default(false)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  scripts       TestScript[]
+  results       TestResult[]
+}
+
+model TestScript {
+  id         String    @id @default(cuid())
+  testCaseId String
+  testCase   TestCase  @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  path       String
+  reviewedBy String?
+  reviewedAt DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+model TestRun {
+  id           String        @id @default(cuid())
+  envId        String
+  env          Environment   @relation(fields: [envId], references: [id])
+  trigger      RunTrigger    @default(MANUAL)
+  selection    Json
+  status       RunStatus     @default(QUEUED)
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  summary      Json?
+  createdAt    DateTime      @default(now())
+  results      TestResult[]
+  reconResults ReconResult[]
+}
+
+model TestResult {
+  id         String       @id @default(cuid())
+  runId      String
+  run        TestRun      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  testCaseId String?
+  testCase   TestCase?    @relation(fields: [testCaseId], references: [id], onDelete: SetNull)
+  specTitle  String
+  status     ResultStatus
+  durationMs Int
+  error      String?
+  artifacts  Json?
+}
+
+model ReconCheck {
+  id          String        @id @default(cuid())
+  name        String        @unique
+  sql         String
+  expectation String
+  results     ReconResult[]
+}
+
+model ReconResult {
+  id      String     @id @default(cuid())
+  runId   String?
+  run     TestRun?   @relation(fields: [runId], references: [id], onDelete: Cascade)
+  checkId String
+  check   ReconCheck @relation(fields: [checkId], references: [id], onDelete: Cascade)
+  status  String
+  detail  Json?
+  at      DateTime   @default(now())
+}
+
+model Exploration {
+  id         String            @id @default(cuid())
+  envId      String
+  env        Environment       @relation(fields: [envId], references: [id])
+  goal       String
+  role       String
+  stepBudget Int               @default(40)
+  status     ExplorationStatus @default(QUEUED)
+  transcript Json              @default("[]")
+  createdAt  DateTime          @default(now())
+  findings   Finding[]
+}
+
+model Finding {
+  id            String      @id @default(cuid())
+  explorationId String
+  exploration   Exploration @relation(fields: [explorationId], references: [id], onDelete: Cascade)
+  title         String
+  description   String
+  severity      Severity?
+  reproSteps    Json?
+  screenshot    String?
+  defectId      String?
+  defect        Defect?     @relation(fields: [defectId], references: [id], onDelete: SetNull)
+  createdAt     DateTime    @default(now())
+}
+
+model Defect {
+  id                String           @id @default(cuid())
+  title             String
+  severity          Severity
+  moduleId          String?
+  module            Module?          @relation(fields: [moduleId], references: [id])
+  processId         String?
+  process           BusinessProcess? @relation(fields: [processId], references: [id], onDelete: SetNull)
+  repro             String
+  evidence          Json?
+  status            DefectStatus     @default(DRAFT)
+  linkedTestCaseIds Json             @default("[]") // string[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  findings          Finding[]
+}
+
+model Review {
+  id              String     @id @default(cuid())
+  kind            ReviewKind
+  input           String
+  output          Json?
+  impactedModules Json       @default("[]") // ModuleCode[]
+  createdAt       DateTime   @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  at        DateTime @default(now())
+  task      String
+  provider  String
+  model     String
+  tokensIn  Int      @default(0)
+  tokensOut Int      @default(0)
+  redacted  Boolean  @default(false)
+  sensitive Boolean  @default(false)
+
+  @@index([at])
+}

@@ -47,3 +47,4 @@ next-env.d.ts
 /playwright-report/
 /prisma/*.db
 /prisma/*.db-journal
+/lib/generated/

@@ -1,69 +1,114 @@
-import Image from "next/image";
+import Link from "next/link";
+import { connection } from "next/server";
+import { Suspense } from "react";
+import { ArrowRightIcon, FolderKanbanIcon, ServerIcon, ShieldAlertIcon, WorkflowIcon } from "lucide-react";
+import { LoadingBlock, PageHeader } from "@/components/page-header";
+import { StatusPill } from "@/components/status-pill";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { db } from "@/lib/db";
+import { riskBand } from "@/lib/risk/score";
+import { RiskScoreBadge } from "./risks/risk-score-badge";
 
-export default function Home() {
+export default function DashboardPage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <>
+      <PageHeader
+        title="Quality overview"
+        description="Process coverage, run results and the release gate arrive in later phases."
+      />
+      <Suspense fallback={<LoadingBlock />}>
+        <Overview />
+      </Suspense>
+    </>
+  );
+}
+
+async function Overview() {
+  await connection();
+  const [projects, environments, processes, riskCount, criticalCount, topRisks] = await Promise.all([
+    db.project.count(),
+    db.environment.findMany({ orderBy: [{ isProduction: "asc" }, { name: "asc" }], select: { id: true, name: true, isProduction: true } }),
+    db.businessProcess.count(),
+    db.risk.count(),
+    db.risk.count({ where: { score: { gte: 15 } } }),
+    db.risk.findMany({
+      orderBy: [{ score: "desc" }, { title: "asc" }],
+      take: 5,
+      include: { module: { select: { code: true } } },
+    }),
+  ]);
+  const stats = [
+    { label: "Projects", value: projects, href: "/projects", icon: FolderKanbanIcon, note: null },
+    { label: "Environments", value: environments.length, href: "/environments", icon: ServerIcon, note: null },
+    { label: "Business processes", value: processes, href: "/processes", icon: WorkflowIcon, note: null },
+    { label: "Risks", value: riskCount, href: "/risks", icon: ShieldAlertIcon, note: criticalCount ? `${criticalCount} critical` : null },
+  ];
+
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map(({ label, value, href, icon: Icon, note }) => (
+          <Link
+            key={label}
+            href={href}
+            className="group flex items-center gap-4 rounded-xl border border-line bg-card p-5 transition-[border-color,box-shadow] duration-200 hover:border-acc-b hover:shadow-[0_10px_24px_rgba(40,46,140,0.08)]"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-[11px] bg-acc-t text-acc" aria-hidden>
+              <Icon className="size-[22px]" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[13px] text-muted-foreground">{label}</span>
+              <span className="mt-0.5 flex items-baseline gap-2">
+                <span className="text-[28px] leading-none font-semibold tracking-tight tabular-nums">{value}</span>
+                {note ? <span className="text-[12.5px] font-semibold text-bad">{note}</span> : null}
+              </span>
+            </span>
+            <ArrowRightIcon className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-acc" aria-hidden />
+          </Link>
+        ))}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Top risks</CardTitle>
+            <CardDescription>Highest likelihood × impact first</CardDescription>
+            <CardAction>
+              <Link href="/risks" className="text-sm font-medium text-acc hover:underline">View register</Link>
+            </CardAction>
+          </CardHeader>
+          {topRisks.length === 0 ? (
+            <CardContent><p className="text-sm text-muted-foreground">No risks recorded.</p></CardContent>
+          ) : (
+            <ul>
+              {topRisks.map((r) => (
+                <li key={r.id} className="flex items-center gap-3 border-t border-line2 px-5 py-3 text-[14.5px] first:border-t-0">
+                  <RiskScoreBadge score={r.score} band={riskBand(r.score)} />
+                  <span className="min-w-0 flex-1 truncate font-medium">{r.title}</span>
+                  <Badge variant="outline">{r.module.code}</Badge>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Environments</CardTitle>
+            <CardDescription>Production is never a test target</CardDescription>
+          </CardHeader>
+          <ul>
+            {environments.map((e) => (
+              <li key={e.id} className="flex items-center justify-between gap-2 border-t border-line2 px-5 py-3 text-[14.5px] first:border-t-0">
+                <span className="truncate font-medium">{e.name}</span>
+                {e.isProduction ? <StatusPill tone="bad">Production</StatusPill> : <StatusPill tone="ok">Test target</StatusPill>}
+              </li>
+            ))}
+            {environments.length === 0 ? <li className="px-5 py-4 text-sm text-muted-foreground">None yet.</li> : null}
+          </ul>
+        </Card>
+      </div>
+    </>
   );
 }
