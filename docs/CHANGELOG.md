@@ -1,5 +1,53 @@
 # Changelog
 
+## Phase 3.5a: QA Hub foundation (2026-10-28)
+
+The app's focus moves to a QA ticket hub for the 5 QA testers and the developers, on the office LAN. The AI workbench
+is hidden behind an admin toggle while it waits for a major revision; none of it was deleted.
+
+- **Accounts:**
+  - Admin / QA tester / Developer roles, created by an admin. There is no sign-up.
+  - New accounts get a 12-character temporary password and must change it at first sign-in.
+  - Passwords are hashed with Node's built-in scrypt, so no native modules are needed.
+  - Sessions are DB rows keyed by the SHA-256 of a random token in an httpOnly `qa_session` cookie. They last 14 days and slide while in use.
+  - Failed logins are rate-limited (5 per email per 15 minutes) and get one generic error message.
+  - `?next=` is limited to same-site paths.
+- **Access checks:**
+  - `lib/auth/session.ts` (`requireUser`, `requireAction`, `getCurrentUser`) runs in every page, Server Action and route handler.
+  - `proxy.ts` only redirects visitors with no cookie and keeps the cookie fresh.
+  - All permissions live in one matrix in `lib/auth/permissions.ts`.
+- **Admin → Users:**
+  - Create users, edit name, email and role, turn an account off (signs it out everywhere), and reset passwords.
+  - Admins can't turn off their own account, and the last active admin can't be removed.
+- **Admin → Workspace:** the AI workbench toggle, off by default.
+  - When on, a separate "AI workbench" menu group appears for admins only.
+  - Its pages moved to `app/(main)/(ai)/` behind `requireAiWorkbench()`. Their actions and routes check it too, and return 404 otherwise.
+- **Team & modules** (`/team`): the who's-who directory.
+  - It is an admin-editable module → sub-module tree (`ErpArea`, kept to two levels) with a lead, developers and QA per area (`AreaMember`).
+  - Anyone can view it and filter by person. The dashboard flags developers and QA who aren't in any module.
+  - The seed loads 4 placeholder modules from `data/erp-areas.json`, to be replaced with the real ERP module list.
+- **Navigation:**
+  - The sidebar now has three groups: Tickets (Dashboard, Tickets and Inbox are marked "Next", Team), Admin, and AI workbench.
+  - The app is renamed QA Hub. The topbar shows the signed-in user and a sign-out button.
+- **LAN operations** (`docs/OPERATIONS.md`):
+  - New scripts: `npm run serve` (port 3000 on all interfaces), `npm run lan:dev` (with `LAN_ORIGINS`), `npm run user:create` and `npm run backup`.
+  - `npm run backup` writes a `VACUUM INTO` snapshot, keeps the last 14 and mirrors `UPLOAD_DIR`.
+  - SQLite now runs in WAL mode with a 5-second busy timeout.
+- **Real ERP modules:**
+  - `data/erp-areas.json` now holds the 11 DCWD ERP modules from the portal, with sub-modules for Human Resource (7) and Billing and Collection (2).
+  - `npm run areas:import` re-syncs the file. It matches by code, so renames keep their members. `--prune` removes only areas that nobody is assigned to.
+- **Show/hide password** button on every password field (`components/password-input.tsx`).
+- **DCWD Careers design**, copied from the Careers prototype:
+  - **Sign-in page** (split screen):
+    - A brand pane with the DCWD seal (`public/dcwd-seal.png`), rings, a ripple and drifting waves. The motion turns off under reduced-motion settings.
+    - The form has leading icons, 48 px fields and an eye toggle, with a footer bar below.
+    - On phones the brand pane collapses to a small seal header.
+  - **Sidebar:**
+    - The seal with "DCWD / QA HUB", a centered profile block (initials avatar with an accent ring, name, role) that opens My account, and 40 px menu items.
+    - The topbar now holds a labeled Sign out button.
+- `proxy.ts` no longer intercepts `.png`, `.svg` and `.ico` files from `public/`, so the seal loads before sign-in.
+- **Rules:** CLAUDE.md rule 6 now means "office LAN, behind login". New rules 12–14 cover ticket data never going to an LLM, uploads outside the repo, and the AI workbench gate.
+
 ## Phase 3: Test design studio (2026-10-26)
 
 - **Requirements** at `/test-design`: paste, or upload `.md`, `.txt`, `.docx` (mammoth) or text-layer `.pdf` (unpdf). Limits are 5 MB and 60k characters. Uploaded text is shown for review before saving.

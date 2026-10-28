@@ -372,3 +372,66 @@ model Setting {
   value     Json
   updatedAt DateTime @updatedAt
 }
+
+// ── QA Hub: accounts and the who's-who directory (Phase 3.5a) ──
+
+enum UserRole {
+  ADMIN
+  QA
+  DEV
+}
+
+model User {
+  id                 String       @id @default(cuid())
+  name               String
+  email              String       @unique // stored lower-case
+  passwordHash       String
+  role               UserRole
+  active             Boolean      @default(true)
+  mustChangePassword Boolean      @default(true)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  sessions           Session[]
+  areas              AreaMember[]
+}
+
+model Session {
+  id        String   @id // SHA-256 of the cookie token; the raw token is never stored
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// The ERP's real module → sub-module tree used by tickets and the team directory.
+/// Separate from `Module`, whose four fixed codes belong to the AI workbench.
+model ErpArea {
+  id         String       @id @default(cuid())
+  parentId   String?
+  parent     ErpArea?     @relation("AreaTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children   ErpArea[]    @relation("AreaTree")
+  name       String
+  code       String?      @unique
+  moduleCode ModuleCode?
+  sortOrder  Int          @default(0)
+  active     Boolean      @default(true)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  members    AreaMember[]
+
+  @@unique([parentId, name])
+}
+
+model AreaMember {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  areaId    String
+  area      ErpArea  @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  isLead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@id([userId, areaId])
+  @@index([areaId])
+}

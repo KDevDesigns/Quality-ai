@@ -4,15 +4,20 @@
   "private": true,
   "scripts": {
     "dev": "next dev -H 127.0.0.1",
+    "lan:dev": "next dev -H 0.0.0.0",
     "build": "next build",
     "start": "next start -H 127.0.0.1",
+    "serve": "next start -H 0.0.0.0 -p 3000",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "user:create": "tsx scripts/create-user.ts",
+    "backup": "tsx scripts/backup.ts",
+    "areas:import": "tsx scripts/import-areas.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.88",

@@ -197,3 +197,47 @@
     @apply font-sans;
   }
 }
+
+/* Sign-in brand pane, from the DCWD Careers design (careers-static.css / careers-motion.css). */
+.auth-brand .rg {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  border: 1px solid #c9d2f4;
+  transform: translate(-50%, -50%);
+}
+.auth-brand .rip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 236px;
+  height: 236px;
+  margin: -118px 0 0 -118px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(110, 124, 222, 0.55);
+  opacity: 0;
+  animation: auth-ripple 7.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+.auth-brand .rip:nth-child(2) { animation-delay: 1.8s; }
+.auth-brand .rip:nth-child(3) { animation-delay: 3.6s; }
+.auth-brand .rip:nth-child(4) { animation-delay: 5.4s; }
+.auth-brand .seal { animation: auth-float 6.4s ease-in-out infinite; }
+.auth-brand .wave { position: absolute; left: 0; bottom: 0; width: 1600px; max-width: none; height: 220px; }
+.auth-brand .w1 { animation: auth-drift 22s linear infinite; }
+.auth-brand .w2 { animation: auth-drift 15s linear infinite reverse; }
+.auth-brand .w3 { animation: auth-drift 10s linear infinite; }
+.auth-enter > * { animation: auth-rise 560ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.auth-enter > *:nth-child(2) { animation-delay: 60ms; }
+.auth-enter > *:nth-child(3) { animation-delay: 110ms; }
+.auth-enter > *:nth-child(4) { animation-delay: 160ms; }
+.auth-enter > *:nth-child(5) { animation-delay: 210ms; }
+.auth-enter > *:nth-child(n + 6) { animation-delay: 260ms; }
+@keyframes auth-ripple { 0% { transform: scale(0.72); opacity: 0; } 8% { opacity: 0.85; } 100% { transform: scale(2.6); opacity: 0; } }
+@keyframes auth-float { 0%, 100% { transform: translate3d(0, 0, 0); } 50% { transform: translate3d(0, -8px, 0); } }
+@keyframes auth-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-800px, 0, 0); } }
+@keyframes auth-rise { from { opacity: 0; transform: translate3d(0, 14px, 0); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .auth-brand .rip { display: none; }
+  .auth-brand .seal, .auth-brand .w1, .auth-brand .w2, .auth-brand .w3, .auth-enter > * { animation: none; }
+}

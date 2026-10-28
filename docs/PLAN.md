@@ -51,7 +51,7 @@ Sources are listed in §14. Several are vendor blogs, so treat them as direction
 4. **Human approval** before the app saves AI-generated test code, healer patches or bug reports as final.
 5. **Read-only DB access** for verification queries (a dedicated read-only DB user on staging).
 6. Use `decimal.js` for all money math in oracles. No floating point. Round to centavos per the ERP's documented rule.
-7. Secrets go in `.env.local` only. The app binds to `127.0.0.1`.
+7. Secrets go in `.env.local` only. The app runs on the office LAN behind login (Phase 3.5), never the internet.
 
 ---
 
@@ -267,6 +267,28 @@ Install Prisma, zod, vitest, shadcn/ui and decimal.js. Create the schema above a
 Requirement input (paste, or upload .md/.docx/.pdf) with a sensitive toggle → AI drafts test cases (`TestCaseDraft[]`) with technique, priority, process link and open questions → editable grid → approve. **Traceability matrix** (requirement → cases → latest result → defects). Import the §6.4 seed catalog. Export to XLSX/CSV.
 **Done when:** one billing requirement produces at least 15 labeled cases including boundaries and negatives, the traceability matrix renders, and the export opens in Excel.
 
+### Phase 3.5 — QA Ticket Hub ★ current focus
+QA and developers stop using Messenger for bugs. Runs on the office LAN behind login. The AI workbench (Phases 1–3 and
+later) is hidden behind an admin toggle and paused for a major revision.
+- **3.5a — Foundation:**
+  - Local accounts (Admin / QA / Developer) with scrypt password hashing and DB sessions, using a hashed token in an httpOnly cookie.
+  - Forced password change at first sign-in, a login rate limit, and Admin → Users.
+  - An admin-editable **module → sub-module directory** (`ErpArea`) with leads, developers and QA (`AreaMember`).
+  - The nav regrouped into Tickets / Admin / AI workbench.
+  - LAN run scripts, SQLite WAL mode, and a backup script. See `docs/OPERATIONS.md`.
+- **3.5b — Tickets:**
+  - Tickets (bug / suggestion / improvement) with status workflow `NEW → IN_PROGRESS → FIXED → VERIFIED → CLOSED` (plus `REOPENED`, `NEED_INFO`, `REJECTED`, `DUPLICATE`, `WONT_FIX`).
+  - QA picks the developer.
+  - A built-in screenshot markup tool (box, arrow, pen, text, blur).
+  - Videos up to 3 min / 150 MB in `UPLOAD_DIR`, served through an auth-checked route with Range support.
+  - A conversation thread with attachments and a timeline of every change, an inbox with unread badges, a ticket dashboard, and CSV/XLSX export.
+
+This replaces the planned Phase 9 Defects *screen*. The `Defect` model stays for the traceability code and is merged
+into tickets in Phase 9.
+**Done when:** a QA tester on one LAN machine files a ticket with a marked-up screenshot and a video for a developer on
+another, they talk it through in the thread, the developer marks it fixed, QA verifies and closes it, and the timeline
+shows every step.
+
 ### Phase 4 — Test data and oracles
 `lib/oracles/*` with unit tests from the signed-off examples. Fixture builders that create referentially intact test records on staging through the ERP API or UI (customer + meter + reading; supplier + item + PR; employee + attendance). Read-only DB connector and `lib/recon` checks (balanced journals, subledger = GL, OR gaps, duplicate bills, negative stock). A Data page that lists the checks and runs them on demand.
 **Done when:** the tariff and payroll oracles match the hand-worked examples exactly, and the recon checks run against staging and show pass/fail with details.
@@ -293,7 +315,7 @@ Claude tool loop (AI SDK tools): `navigate`, `click`, `fill`, `select`, `snapsho
 **Done when:** "Explore the payment posting screen as a cashier" finishes within budget and produces at least one reproducible finding (or a clean report), and no denylisted action is attempted without permission.
 
 ### Phase 9 — Defects, controls suite, quality gate, reports
-- Defect workflow (draft → confirmed → fixed → verified), linked to tests. "Verify fix" re-runs the linked tests.
+- Link tickets (Phase 3.5) to tests and merge the old `Defect` model into them. "Verify fix" re-runs the linked tests.
 - **Controls suite** (`@controls`): RBAC matrix, segregation of duties, approval enforcement, audit-trail completeness, OR integrity, tariff table = approved schedule.
 - **Quality gate** (configurable): e.g. 0 open S1/S2 defects, 100% of `@critical` passing, all recon checks passing, process coverage ≥ 90%, flaky rate < 5%.
 - **Evidence pack** export (PDF/XLSX): scope, runs, results, defects, controls results, sign-off page. Useful for internal audit and COA reviews.

@@ -1,6 +1,9 @@
 import "dotenv/config";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient, type ModuleCode } from "../lib/generated/prisma/client";
+import { importAreas } from "../lib/areas/import";
 import { MODULE_LABELS } from "../lib/schemas/common";
 import { processInput } from "../lib/schemas/process";
 import { riskInput } from "../lib/schemas/risk";
@@ -225,8 +228,17 @@ async function main() {
     created++;
   }
 
-  const counts = await Promise.all([db.project.count(), db.environment.count(), db.module.count(), db.businessProcess.count(), db.risk.count()]);
-  console.log(`Seeded. projects=${counts[0]} environments=${counts[1]} modules=${counts[2]} processes=${counts[3]} risks=${counts[4]} (new risks: ${created})`);
+  // The ERP module directory is loaded once; after that admins own it in Team & modules.
+  let areasLoaded = false;
+  if ((await db.erpArea.count()) === 0) {
+    await importAreas(db, JSON.parse(readFileSync(path.join(process.cwd(), "data", "erp-areas.json"), "utf8")));
+    areasLoaded = true;
+  }
+
+  const counts = await Promise.all([db.project.count(), db.environment.count(), db.module.count(), db.businessProcess.count(), db.risk.count(), db.erpArea.count()]);
+  console.log(
+    `Seeded. projects=${counts[0]} environments=${counts[1]} modules=${counts[2]} processes=${counts[3]} risks=${counts[4]} (new risks: ${created}) erpAreas=${counts[5]}${areasLoaded ? " (loaded from data/erp-areas.json)" : ""}`,
+  );
 }
 
 main()

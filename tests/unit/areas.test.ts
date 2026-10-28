@@ -1,0 +1,96 @@
+import { describe, expect, it } from "vitest";
+import { areaPath, buildTree, placementError, type AreaNode } from "@/lib/areas/tree";
+import { areaInput, areaMembersInput } from "@/lib/schemas/area";
+import { readWorkspaceSettings } from "@/lib/schemas/workspace";
+import { passwordChangeInput, userInput } from "@/lib/schemas/user";
+
+const areas: AreaNode[] = [
+  { id: "bca", parentId: null, name: "Billing & Collection", sortOrder: 0 },
+  { id: "fin", parentId: null, name: "Finance", sortOrder: 10 },
+  { id: "mr", parentId: "bca", name: "Meter Reading", sortOrder: 20 },
+  { id: "col", parentId: "bca", name: "Collection", sortOrder: 10 },
+  { id: "nsc", parentId: "bca", name: "NSC", sortOrder: 10 },
+];
+
+describe("area tree", () => {
+  it("groups sub-modules under modules in sort order, then by name", () => {
+    const tree = buildTree(areas);
+    expect(tree.map((m) => m.id)).toEqual(["bca", "fin"]);
+    expect(tree[0].children.map((c) => c.id)).toEqual(["col", "nsc", "mr"]);
+    expect(tree[1].children).toEqual([]);
+  });
+
+  it("formats the path", () => {
+    expect(areaPath({ name: "Meter Reading", parent: { name: "Billing & Collection" } })).toBe("Billing & Collection › Meter Reading");
+    expect(areaPath({ name: "Finance", parent: null })).toBe("Finance");
+  });
+});
+
+describe("placementError", () => {
+  it("allows a new module and a new sub-module", () => {
+    expect(placementError(areas, { parentId: null, name: "HR & Payroll" })).toBeNull();
+    expect(placementError(areas, { parentId: "bca", name: "Billing Run" })).toBeNull();
+    expect(placementError(areas, { id: "mr", parentId: "bca", name: "Meter Reading" })).toBeNull();
+    expect(placementError(areas, { id: "mr", parentId: "fin", name: "Meter Reading" })).toBeNull();
+  });
+
+  it("keeps the tree two levels deep", () => {
+    expect(placementError(areas, { parentId: "mr", name: "Too deep" })).toMatch(/can't have sub-modules/);
+    expect(placementError(areas, { id: "bca", parentId: "fin", name: "Billing & Collection" })).toMatch(/has sub-modules/);
+  });
+
+  it("rejects cycles and missing parents", () => {
+    expect(placementError(areas, { id: "fin", parentId: "fin", name: "Finance" })).toMatch(/inside itself/);
+    expect(placementError(areas, { parentId: "gone", name: "X" })).toMatch(/no longer exists/);
+  });
+
+  it("rejects duplicate names among siblings, ignoring case and spaces", () => {
+    expect(placementError(areas, { parentId: null, name: " finance " })).toMatch(/module with that name/);
+    expect(placementError(areas, { parentId: "bca", name: "meter reading" })).toMatch(/sub-module with that name/);
+    expect(placementError(areas, { parentId: "fin", name: "Meter Reading" })).toBeNull();
+  });
+});
+
+describe("area schemas", () => {
+  const base = { name: "Meter Reading", code: "", parentId: "", moduleCode: "", sortOrder: "5", active: true };
+
+  it("normalizes empty optional fields to null and upper-cases codes", () => {
+    expect(areaInput.parse(base)).toEqual({ name: "Meter Reading", code: null, parentId: null, moduleCode: null, sortOrder: 5, active: true });
+    expect(areaInput.parse({ ...base, code: "bca-mr", parentId: "bca", moduleCode: "BILLING" })).toMatchObject({ code: "BCA-MR", parentId: "bca", moduleCode: "BILLING" });
+  });
+
+  it.each(["X", "has space", "-LEAD", "TOO-LONG-CODE-123456789"])("rejects code %j", (code) => {
+    expect(areaInput.safeParse({ ...base, code }).success).toBe(false);
+  });
+
+  it("requires the lead to be a member", () => {
+    expect(areaMembersInput.safeParse({ areaId: "a", members: ["u1", "u2"], lead: "u2" }).success).toBe(true);
+    expect(areaMembersInput.safeParse({ areaId: "a", members: ["u1"], lead: "" }).success).toBe(true);
+    expect(areaMembersInput.safeParse({ areaId: "a", members: ["u1"], lead: "u3" }).success).toBe(false);
+  });
+});
+
+describe("user schemas", () => {
+  it("lower-cases emails and validates roles", () => {
+    expect(userInput.parse({ name: " Ana ", email: " Ana@X.PH ", role: "QA" })).toEqual({ name: "Ana", email: "ana@x.ph", role: "QA" });
+    expect(userInput.safeParse({ name: "Ana", email: "not-an-email", role: "QA" }).success).toBe(false);
+    expect(userInput.safeParse({ name: "Ana", email: "a@x.ph", role: "OWNER" }).success).toBe(false);
+  });
+
+  it("checks new passwords", () => {
+    const ok = { current: "old-password", next: "new-password-1", confirm: "new-password-1" };
+    expect(passwordChangeInput.safeParse(ok).success).toBe(true);
+    expect(passwordChangeInput.safeParse({ ...ok, next: "short", confirm: "short" }).success).toBe(false);
+    expect(passwordChangeInput.safeParse({ ...ok, confirm: "different-1" }).success).toBe(false);
+    expect(passwordChangeInput.safeParse({ ...ok, next: "old-password", confirm: "old-password" }).success).toBe(false);
+  });
+});
+
+describe("workspace settings", () => {
+  it("keeps the AI workbench off by default and survives bad stored JSON", () => {
+    expect(readWorkspaceSettings(undefined)).toEqual({ aiWorkbench: false });
+    expect(readWorkspaceSettings({ aiWorkbench: true })).toEqual({ aiWorkbench: true });
+    expect(readWorkspaceSettings({ aiWorkbench: "yes" })).toEqual({ aiWorkbench: false });
+    expect(readWorkspaceSettings("garbage")).toEqual({ aiWorkbench: false });
+  });
+});

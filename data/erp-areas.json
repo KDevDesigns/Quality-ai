@@ -1,0 +1,37 @@
+{
+  "_note": "The DCWD ERP module list from dev-myportal.davao-water.gov.ph/apps/ (2026-10-28). Sub-modules are listed only where the portal shows them; add the rest in Team & modules. Load or re-sync with `npm run areas:import`.",
+  "modules": [
+    { "name": "User Roles Management", "code": "URM", "children": [] },
+    {
+      "name": "Human Resource",
+      "code": "HR",
+      "moduleCode": "HR",
+      "children": [
+        { "name": "Attendance", "code": "HR-ATT" },
+        { "name": "Employees", "code": "HR-EMP" },
+        { "name": "Leave", "code": "HR-LV" },
+        { "name": "Overtime", "code": "HR-OT" },
+        { "name": "Payroll", "code": "HR-PAY" },
+        { "name": "Performance", "code": "HR-PERF" },
+        { "name": "Recruitment, Selection and Placement", "code": "HR-RSP" }
+      ]
+    },
+    { "name": "Procurement", "code": "PROC", "moduleCode": "P2P", "children": [] },
+    {
+      "name": "Billing and Collection",
+      "code": "BCS",
+      "moduleCode": "BILLING",
+      "children": [
+        { "name": "Billing and Collection", "code": "BCS-BC" },
+        { "name": "Collection", "code": "BCS-COL" }
+      ]
+    },
+    { "name": "Document Tracking System", "code": "DTS", "children": [] },
+    { "name": "Text Blast Management", "code": "TBM", "children": [] },
+    { "name": "Geographical Information System", "code": "GIS", "children": [] },
+    { "name": "Performance Improvement Program", "code": "PIP", "children": [] },
+    { "name": "Financial Management System", "code": "FMS", "moduleCode": "FINANCE", "children": [] },
+    { "name": "Freedom of Information", "code": "FOI", "children": [] },
+    { "name": "Project Monitoring System", "code": "PRMS", "children": [] }
+  ]
+}
