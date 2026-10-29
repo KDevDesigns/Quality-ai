@@ -53,11 +53,21 @@ describe("session tokens", () => {
 describe("permissions", () => {
   const expected: Record<Action, Role[]> = {
     "team.view": ["ADMIN", "QA", "DEV"],
+    "tickets.view": ["ADMIN", "QA", "DEV"],
+    "tickets.viewAll": ["ADMIN"],
+    "tickets.create": ["ADMIN", "QA"],
+    "tickets.delete": ["ADMIN", "QA"],
+    "tickets.comment": ["ADMIN", "QA", "DEV"],
+    "tickets.assign": ["ADMIN", "QA"],
+    "tickets.resolve": ["ADMIN", "DEV"],
+    "tickets.verify": ["ADMIN", "QA"],
     "areas.manage": ["ADMIN"],
     "users.manage": ["ADMIN"],
     "projects.manage": ["ADMIN"],
     "workspace.manage": ["ADMIN"],
     "aiWorkbench.use": ["ADMIN"],
+    "dar.use": ["QA"],
+    "dar.template": ["ADMIN"],
   };
 
   it("covers every action in the matrix", () => {

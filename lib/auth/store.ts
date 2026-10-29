@@ -27,6 +27,46 @@ export function authStore(db: PrismaClient, now: () => Date = () => new Date()) 
       return toSessionUser(user);
     },
 
+    /**
+     * A self sign-up: no password yet, turned off and pending until an admin approves it and hands over a temporary
+     * password. Returns "exists" without changing anything when the email is taken; the caller shows the same
+     * message either way.
+     */
+    async signUp(input: { name: string; email: string; role: Role }): Promise<"created" | "exists"> {
+      if (input.role === "ADMIN") throw new Error("Admins can't sign themselves up.");
+      try {
+        await db.user.create({
+          data: {
+            name: input.name,
+            email: normalizeEmail(input.email),
+            role: input.role,
+            // A random secret nobody knows, so the account can't be signed into before approval.
+            passwordHash: await hashPassword(newToken()),
+            active: false,
+            pending: true,
+            mustChangePassword: true,
+          },
+        });
+        return "created";
+      } catch (e) {
+        if ((e as { code?: unknown } | null)?.code === "P2002") return "exists";
+        throw e;
+      }
+    },
+
+    /** Turns a pending sign-up on with a temporary password they must change at first sign-in. False if already handled. */
+    async approveSignUp(userId: string, tempPassword: string): Promise<boolean> {
+      const passwordHash = await hashPassword(tempPassword);
+      const r = await db.user.updateMany({ where: { id: userId, pending: true }, data: { pending: false, active: true, passwordHash, mustChangePassword: true } });
+      return r.count === 1;
+    },
+
+    /** Deletes a pending sign-up. It never signed in, so nothing refers to it. */
+    async rejectSignUp(userId: string): Promise<boolean> {
+      const r = await db.user.deleteMany({ where: { id: userId, pending: true } });
+      return r.count === 1;
+    },
+
     /** Creates a session and returns the raw token for the cookie. Only its hash is stored. */
     async createSession(userId: string): Promise<{ token: string; expiresAt: Date }> {
       const token = newToken();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { areaPath, buildTree, placementError, type AreaNode } from "@/lib/areas/tree";
+import { areaPath, buildTree, nextSortOrder, placementError, type AreaNode } from "@/lib/areas/tree";
 import { areaInput, areaMembersInput } from "@/lib/schemas/area";
 import { readWorkspaceSettings } from "@/lib/schemas/workspace";
 import { passwordChangeInput, userInput } from "@/lib/schemas/user";
@@ -56,6 +56,8 @@ describe("area schemas", () => {
 
   it("normalizes empty optional fields to null and upper-cases codes", () => {
     expect(areaInput.parse(base)).toEqual({ name: "Meter Reading", code: null, parentId: null, moduleCode: null, sortOrder: 5, active: true });
+    // Sub-modules have no sort order field; the action places them after their siblings.
+    expect(areaInput.parse({ ...base, sortOrder: undefined }).sortOrder).toBeUndefined();
     expect(areaInput.parse({ ...base, code: "bca-mr", parentId: "bca", moduleCode: "BILLING" })).toMatchObject({ code: "BCA-MR", parentId: "bca", moduleCode: "BILLING" });
   });
 
@@ -70,11 +72,24 @@ describe("area schemas", () => {
   });
 });
 
+describe("nextSortOrder", () => {
+  const areas = [
+    { id: "bca", parentId: null, name: "Billing & Collection", sortOrder: 0 },
+    { id: "mr", parentId: "bca", name: "Meter Reading", sortOrder: 20 },
+    { id: "col", parentId: "bca", name: "Collection", sortOrder: 10 },
+  ];
+  it("places a new sub-module after its siblings", () => {
+    expect(nextSortOrder(areas, "bca")).toBe(30);
+    expect(nextSortOrder(areas, "fin")).toBe(0);
+    expect(nextSortOrder([{ id: "x", parentId: "p", name: "X", sortOrder: 995 }], "p")).toBe(999);
+  });
+});
+
 describe("user schemas", () => {
   it("lower-cases emails and validates roles", () => {
-    expect(userInput.parse({ name: " Ana ", email: " Ana@X.PH ", role: "QA" })).toEqual({ name: "Ana", email: "ana@x.ph", role: "QA" });
+    expect(userInput.parse({ name: " Ana ", email: " Ana@Davao-Water.GOV.PH ", role: "QA" })).toEqual({ name: "Ana", email: "ana@davao-water.gov.ph", role: "QA" });
     expect(userInput.safeParse({ name: "Ana", email: "not-an-email", role: "QA" }).success).toBe(false);
-    expect(userInput.safeParse({ name: "Ana", email: "a@x.ph", role: "OWNER" }).success).toBe(false);
+    expect(userInput.safeParse({ name: "Ana", email: "a@davao-water.gov.ph", role: "OWNER" }).success).toBe(false);
   });
 
   it("checks new passwords", () => {

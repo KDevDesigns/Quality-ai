@@ -41,6 +41,10 @@ export async function updateUser(_prev: UserFormState, fd: FormData): Promise<Us
   if (id === me.id && !parsed.data.active) return { ok: false, message: "You can't turn off your own account." };
   if (await auth.wouldRemoveLastAdmin(id, parsed.data)) return { ok: false, message: "Keep at least one active admin, or nobody can manage users." };
 
+  // A pending sign-up has no usable password yet, so it is turned on only through Approve, which creates one.
+  const target = await db.user.findUnique({ where: { id }, select: { pending: true } });
+  if (target?.pending && parsed.data.active) return { ok: false, message: "Use Approve in the list above. It creates their temporary password." };
+
   try {
     await db.user.update({ where: { id }, data: parsed.data });
   } catch (e) {
@@ -49,6 +53,25 @@ export async function updateUser(_prev: UserFormState, fd: FormData): Promise<Us
   if (!parsed.data.active) await auth.deleteUserSessions(id);
   revalidatePath("/admin/users");
   revalidatePath("/team");
+  return { ok: true };
+}
+
+/** Approves a sign-up and returns its one-time temporary password for the admin to hand over. */
+export async function approveSignUp(id: string): Promise<UserFormState> {
+  await requireAction("users.manage");
+  const user = await db.user.findUnique({ where: { id }, select: { email: true } });
+  const tempPassword = generateTempPassword();
+  if (!user || !(await auth.approveSignUp(id, tempPassword))) return { ok: false, message: "This request was already handled. Refresh the page." };
+  // No revalidatePath here: refreshing now would remove the request's row, and the dialog showing the password with it.
+  // The dialog refreshes the page when the admin closes it.
+  return { ok: true, tempPassword, email: user.email };
+}
+
+export async function rejectSignUp(id: string): Promise<FormState> {
+  await requireAction("users.manage");
+  if (!(await auth.rejectSignUp(id))) return { ok: false, message: "This request was already handled. Refresh the page." };
+  revalidatePath("/admin/users");
+  revalidatePath("/");
   return { ok: true };
 }
 

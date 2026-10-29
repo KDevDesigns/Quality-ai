@@ -79,7 +79,9 @@
 }
 
 :root {
-  --acc: #4f56d3;
+  /* The accent everything is tinted from. Users pick another one in the account menu (lib/theme.ts, data-accent). */
+  --acc-base: #4f56d3;
+  --acc: var(--acc-base);
   --brand: #2233b8;
   --sf: #ffffff;
   --sf2: #fafafb;
@@ -145,9 +147,17 @@
   --sidebar-ring: var(--acc);
 }
 
+/* Theme colours (data-accent on <html>). Keep in sync with ACCENTS in lib/theme.ts. */
+[data-accent="blue"] { --acc-base: #1d64d8; }
+[data-accent="teal"] { --acc-base: #0f7c7e; }
+[data-accent="green"] { --acc-base: #18794e; }
+[data-accent="violet"] { --acc-base: #7445c9; }
+[data-accent="rose"] { --acc-base: #c0365a; }
+
 .dark {
-  --acc: color-mix(in srgb, #4f56d3 70%, white);
-  --brand: color-mix(in srgb, #4f56d3 60%, white);
+  /* A lighter accent reads better on dark surfaces; the dark button text (--primary-foreground) keeps contrast. */
+  --acc: color-mix(in srgb, var(--acc-base) 70%, white);
+  --brand: color-mix(in srgb, var(--acc-base) 60%, white);
   --sf: #171a22;
   --sf2: #1c2029;
   --sf3: #232733;
@@ -175,6 +185,8 @@
   --background: #0f1218;
   --primary-foreground: #0f1218;
   --destructive: #f2867c;
+  --sidebar-foreground: var(--tx2);
+  --sidebar-primary-foreground: #0f1218;
   color-scheme: dark;
 }
 
@@ -237,7 +249,10 @@
 @keyframes auth-float { 0%, 100% { transform: translate3d(0, 0, 0); } 50% { transform: translate3d(0, -8px, 0); } }
 @keyframes auth-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-800px, 0, 0); } }
 @keyframes auth-rise { from { opacity: 0; transform: translate3d(0, 14px, 0); } to { opacity: 1; transform: none; } }
+/* The active Sign in / Sign up pill pops in when you switch tabs. */
+.auth-tab-on { animation: auth-tab-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+@keyframes auth-tab-pop { from { transform: scale(0.94); } to { transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   .auth-brand .rip { display: none; }
-  .auth-brand .seal, .auth-brand .w1, .auth-brand .w2, .auth-brand .w3, .auth-enter > * { animation: none; }
+  .auth-brand .seal, .auth-brand .w1, .auth-brand .w2, .auth-brand .w3, .auth-enter > *, .auth-tab-on { animation: none; }
 }

@@ -388,11 +388,21 @@ model User {
   passwordHash       String
   role               UserRole
   active             Boolean      @default(true)
+  /// Signed up on the sign-in page and waiting for an admin. Pending accounts are also inactive, so they can't sign in.
+  pending            Boolean      @default(false)
   mustChangePassword Boolean      @default(true)
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
   sessions           Session[]
   areas              AreaMember[]
+  reported           Ticket[]        @relation("TicketReporter")
+  assigned           Ticket[]        @relation("TicketAssignee")
+  comments           TicketComment[]
+  ticketEvents       TicketEvent[]
+  attachments        Attachment[]
+  pendingUploads     PendingUpload[]
+  darProfile         DarProfile?
+  darReports         DarReport[]
 }
 
 model Session {
@@ -420,6 +430,7 @@ model ErpArea {
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
   members    AreaMember[]
+  tickets    Ticket[]
 
   @@unique([parentId, name])
 }
@@ -434,4 +445,160 @@ model AreaMember {
 
   @@id([userId, areaId])
   @@index([areaId])
+}
+
+// ── QA Hub: tickets (Phase 3.5b) ──
+// Ticket text and attachments show customer data, so they never go to an LLM (CLAUDE.md rule 12).
+
+enum TicketType {
+  BUG
+  SUGGESTION
+  IMPROVEMENT
+}
+
+enum TicketStatus {
+  NEW
+  IN_PROGRESS
+  NEED_INFO
+  FIXED
+  VERIFIED
+  CLOSED
+  REOPENED
+  REJECTED
+  DUPLICATE
+  WONT_FIX
+}
+
+enum AttachmentKind {
+  IMAGE
+  VIDEO
+}
+
+model Ticket {
+  id             String          @id @default(cuid())
+  number         Int             @unique // shown as #12; max + 1 when created
+  type           TicketType
+  title          String
+  description    String
+  status         TicketStatus    @default(NEW)
+  severity       Severity? // bugs only
+  priority       Priority        @default(P3)
+  foundIn        String? // ERP build or environment, free text
+  areaId         String?
+  area           ErpArea?        @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  reporterId     String
+  reporter       User            @relation("TicketReporter", fields: [reporterId], references: [id])
+  assigneeId     String?
+  assignee       User?           @relation("TicketAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  duplicateOfId  String?
+  duplicateOf    Ticket?         @relation("TicketDuplicate", fields: [duplicateOfId], references: [id], onDelete: SetNull)
+  duplicates     Ticket[]        @relation("TicketDuplicate")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  lastActivityAt DateTime        @default(now())
+  closedAt       DateTime?
+  comments       TicketComment[]
+  events         TicketEvent[]
+  attachments    Attachment[]
+
+  @@index([status, lastActivityAt])
+  @@index([assigneeId, status])
+  @@index([areaId])
+  @@index([reporterId])
+}
+
+model TicketComment {
+  id          String       @id @default(cuid())
+  ticketId    String
+  ticket      Ticket       @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User         @relation(fields: [authorId], references: [id])
+  body        String
+  createdAt   DateTime     @default(now())
+  attachments Attachment[]
+
+  @@index([ticketId, createdAt])
+}
+
+/// The timeline. `kind` is CREATED | STATUS | ASSIGNEE | FIELD; `from`/`to` hold the old and new values.
+model TicketEvent {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  actorId   String
+  actor     User     @relation(fields: [actorId], references: [id])
+  kind      String
+  field     String?
+  from      String?
+  to        String?
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([ticketId, createdAt])
+}
+
+/// The file lives in UPLOAD_DIR under `storedName` (generated). `originalName` is for display only.
+model Attachment {
+  id           String         @id @default(cuid())
+  ticketId     String
+  ticket       Ticket         @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  commentId    String?
+  comment      TicketComment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  uploaderId   String
+  uploader     User           @relation(fields: [uploaderId], references: [id])
+  kind         AttachmentKind
+  storedName   String         @unique
+  originalName String
+  mime         String
+  size         Int
+  durationSec  Int? // videos, when the file says how long it is
+  createdAt    DateTime       @default(now())
+
+  @@index([ticketId])
+}
+
+/// A video streamed to UPLOAD_DIR before its ticket or reply is sent. The form claims it by id; unclaimed ones are
+/// swept after a day.
+model PendingUpload {
+  id           String   @id @default(cuid())
+  uploaderId   String
+  uploader     User     @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  storedName   String   @unique
+  originalName String
+  mime         String
+  size         Int
+  durationSec  Int?
+  createdAt    DateTime @default(now())
+
+  @@index([uploaderId])
+  @@index([createdAt])
+}
+
+// ── QA Hub: Daily Accomplishment Report (DAR) ──
+
+/// A QA tester's own DAR details. Empty fields fall back to the admin's template (Setting "dar.template").
+model DarProfile {
+  userId           String   @id
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName         String? // the formal name on the report; accounts only hold a nickname
+  position         String?
+  coreFunctions    Json? // [{ duty, mfo, autofill }]
+  supportFunctions Json?
+  updatedAt        DateTime @updatedAt
+}
+
+/// One tester's DAR for one half-month period. Only what the tester typed is stored; the header comes from the
+/// template and profile when the file is made.
+model DarReport {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  periodStart   String // "2026-10-16", a date in Manila
+  periodEnd     String
+  cells         Json // { core: string[][], support: string[][] }, one string per day per function row
+  dateSubmitted String? // "2026-10-31"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, periodStart])
 }

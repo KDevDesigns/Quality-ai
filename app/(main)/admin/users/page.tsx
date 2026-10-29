@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { UsersIcon } from "lucide-react";
+import { UserPlusIcon, UsersIcon } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { LoadingBlock, PageHeader } from "@/components/page-header";
 import { StatusPill } from "@/components/status-pill";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ROLE_LABELS, type Role } from "@/lib/auth/permissions";
 import { requireAction } from "@/lib/auth/session";
 import { db } from "@/lib/db";
+import { formatDateTime, timeAgo } from "@/lib/format";
+import { ApprovalHost, PendingActions } from "./pending-actions";
 import { ResetPasswordButton, UserDialog } from "./user-dialog";
 
 export const metadata: Metadata = { title: "Users" };
@@ -27,7 +29,13 @@ export default function UsersPage() {
 async function UsersBody() {
   await connection();
   const me = await requireAction("users.manage");
+  const requests = await db.user.findMany({
+    where: { pending: true },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true, email: true, role: true, createdAt: true },
+  });
   const users = await db.user.findMany({
+    where: { pending: false },
     orderBy: [{ active: "desc" }, { role: "asc" }, { name: "asc" }],
     select: {
       id: true,
@@ -41,12 +49,36 @@ async function UsersBody() {
   });
 
   return (
-    <>
+    <ApprovalHost>
       <PageHeader
         title="Users"
-        description="Everyone who can sign in. New accounts get a one-time temporary password that must be changed at first sign-in."
+        description="Everyone who can sign in. People can request an account on the sign-in page; accounts you add here get a one-time temporary password."
         actions={<UserDialog />}
       />
+      {requests.length ? (
+        <Card className="border-warn-b">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserPlusIcon className="size-4 text-warn-ink" aria-hidden /> Waiting for approval
+              <span className="rounded-full bg-warn-t px-2 text-[12.5px] font-semibold text-warn-ink">{requests.length}</span>
+            </CardTitle>
+            <CardDescription>They signed up on the sign-in page. Check that each one is really on the team before approving: approved users can see every ticket.</CardDescription>
+          </CardHeader>
+          <Table>
+            <TableBody>
+              {requests.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell className="font-semibold">{r.name}</TableCell>
+                  <TableCell className="font-mono text-[13px]">{r.email}</TableCell>
+                  <TableCell><Badge variant="outline">{ROLE_LABELS[r.role as Role]}</Badge></TableCell>
+                  <TableCell className="text-[13px] text-muted-foreground" title={formatDateTime(r.createdAt)}>{timeAgo(r.createdAt)}</TableCell>
+                  <TableCell><PendingActions id={r.id} name={r.name} /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      ) : null}
       {users.length === 0 ? (
         <EmptyState icon={UsersIcon} title="No users yet" />
       ) : (
@@ -54,7 +86,7 @@ async function UsersBody() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
+                <TableHead>Nickname</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Modules</TableHead>
@@ -99,6 +131,6 @@ async function UsersBody() {
           </Table>
         </Card>
       )}
-    </>
+    </ApprovalHost>
   );
 }

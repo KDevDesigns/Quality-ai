@@ -1,0 +1,371 @@
+import type { Prisma, PrismaClient } from "@/lib/generated/prisma/client";
+import { areaPath } from "@/lib/areas/tree";
+import { can } from "@/lib/auth/permissions";
+import type { TicketCreate, TicketEdit, TicketFilters, TransitionInput } from "@/lib/schemas/ticket";
+import type { SavedFile } from "@/lib/uploads/files";
+import {
+  canAssign,
+  canDeleteTicket,
+  canEditTicket,
+  DONE_STATUSES,
+  isDone,
+  OPEN_STATUSES,
+  PRIORITY_LABELS,
+  SEVERITY_LABELS,
+  ticketScope,
+  transitionError,
+  TYPE_LABELS,
+  type Actor,
+  type SeverityValue,
+  type TicketStatus,
+} from "./workflow";
+
+// Prisma glue for tickets. Every change writes its timeline events and bumps lastActivityAt in the same transaction.
+// Takes the client as a parameter so tests can run it against a throwaway SQLite file.
+
+/** A refusal the user can act on. Server Actions show its message as is. */
+export class TicketError extends Error {}
+
+export const PAGE_SIZE = 50;
+
+/** Videos uploaded but never sent with a ticket or reply are removed after this long. */
+export const PENDING_TTL_MS = 24 * 60 * 60 * 1000;
+
+/** Setting row holding the last ticket number handed out. */
+const NUMBER_KEY = "tickets.lastNumber";
+
+const isUniqueClash = (e: unknown) => (e as { code?: unknown } | null)?.code === "P2002";
+
+type Tx = Prisma.TransactionClient;
+
+/** The Prisma filter for the tickets `actor` may see (see ticketScope). */
+export function scopeWhere(actor: Actor): Prisma.TicketWhereInput {
+  const s = ticketScope(actor);
+  return s === "all" ? {} : s;
+}
+
+export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()) {
+  /** A ticket the actor may see. Someone else's ticket gets the same answer as a missing one. */
+  async function load(id: string, actor: Actor) {
+    const t = await db.ticket.findFirst({ where: { id, ...scopeWhere(actor) } });
+    if (!t) throw new TicketError("This ticket no longer exists. Refresh the page.");
+    return t;
+  }
+
+  /** The assignee must be an active developer or admin. Returns their name for the timeline. */
+  async function assigneeName(assigneeId: string | null): Promise<string | null> {
+    if (!assigneeId) return null;
+    const u = await db.user.findUnique({ where: { id: assigneeId }, select: { name: true, role: true, active: true } });
+    if (!u || !u.active || u.role === "QA") throw new TicketError("Pick an active developer or admin to assign.");
+    return u.name;
+  }
+
+  async function areaLabel(areaId: string | null): Promise<string | null> {
+    if (!areaId) return null;
+    const a = await db.erpArea.findUnique({ where: { id: areaId }, select: { name: true, parent: { select: { name: true } } } });
+    if (!a) throw new TicketError("That module no longer exists. Refresh the page.");
+    return areaPath(a);
+  }
+
+  function attachmentRows(actor: Actor, ticketId: string, files: SavedFile[], commentId?: string) {
+    return files.map((f) => ({ ...f, ticketId, commentId: commentId ?? null, uploaderId: actor.id }));
+  }
+
+  /**
+   * Turns the actor's own pending video uploads into attachments of this ticket (or reply), inside the caller's
+   * transaction. Someone else's upload, or one already swept, is refused.
+   */
+  async function claimVideos(tx: Tx, actor: Actor, ticketId: string, videoIds: string[], commentId?: string) {
+    if (!videoIds.length) return;
+    const ids = [...new Set(videoIds)];
+    const rows = await tx.pendingUpload.findMany({ where: { id: { in: ids }, uploaderId: actor.id } });
+    if (rows.length !== ids.length) throw new TicketError("That video upload has expired. Remove it and add it again.");
+    await tx.attachment.createMany({
+      data: rows.map((r) => ({
+        ticketId,
+        commentId: commentId ?? null,
+        uploaderId: actor.id,
+        kind: "VIDEO" as const,
+        storedName: r.storedName,
+        originalName: r.originalName,
+        mime: r.mime,
+        size: r.size,
+        durationSec: r.durationSec,
+      })),
+    });
+    await tx.pendingUpload.deleteMany({ where: { id: { in: ids } } });
+  }
+
+  async function touch(tx: Tx, id: string, at: Date, data: Prisma.TicketUncheckedUpdateInput = {}) {
+    await tx.ticket.update({ where: { id }, data: { ...data, lastActivityAt: at } });
+  }
+
+  return {
+    async create(actor: Actor, input: TicketCreate, files: SavedFile[] = [], videoIds: string[] = []): Promise<{ id: string; number: number }> {
+      if (!can(actor, "tickets.create")) throw new TicketError("You can't file tickets.");
+      if (input.assigneeId && !canAssign(actor)) throw new TicketError("Only QA testers and admins pick the developer.");
+      const assignee = await assigneeName(input.assigneeId);
+      await areaLabel(input.areaId);
+
+      // Numbers are never reused, even after a delete: the last one handed out is kept in Setting. Two people saving
+      // at the same moment can clash on the unique index, so retry.
+      for (let attempt = 0; ; attempt++) {
+        try {
+          return await db.$transaction(async (tx) => {
+            const at = now();
+            const [last, seq] = await Promise.all([
+              tx.ticket.aggregate({ _max: { number: true } }),
+              tx.setting.findUnique({ where: { key: NUMBER_KEY } }),
+            ]);
+            const number = Math.max(last._max.number ?? 0, typeof seq?.value === "number" ? seq.value : 0) + 1;
+            await tx.setting.upsert({ where: { key: NUMBER_KEY }, update: { value: number }, create: { key: NUMBER_KEY, value: number } });
+            const t = await tx.ticket.create({
+              data: {
+                number,
+                type: input.type,
+                title: input.title,
+                description: input.description,
+                areaId: input.areaId,
+                severity: input.severity,
+                priority: input.priority,
+                foundIn: input.foundIn,
+                reporterId: actor.id,
+                assigneeId: input.assigneeId,
+                createdAt: at,
+                lastActivityAt: at,
+              },
+            });
+            if (files.length) await tx.attachment.createMany({ data: attachmentRows(actor, t.id, files) });
+            await claimVideos(tx, actor, t.id, videoIds);
+            await tx.ticketEvent.create({ data: { ticketId: t.id, actorId: actor.id, kind: "CREATED", createdAt: at } });
+            if (assignee) await tx.ticketEvent.create({ data: { ticketId: t.id, actorId: actor.id, kind: "ASSIGNEE", to: assignee, createdAt: at } });
+            return { id: t.id, number: t.number };
+          });
+        } catch (e) {
+          if (isUniqueClash(e) && attempt < 3) continue;
+          throw e;
+        }
+      }
+    },
+
+    /** Saves changed fields and writes one FIELD event per change. Returns how many fields changed. */
+    async update(actor: Actor, id: string, input: TicketEdit): Promise<number> {
+      const t = await load(id, actor);
+      if (!canEditTicket(t, actor)) throw new TicketError("Only the person who filed this ticket, or an admin, can edit it.");
+
+      const sev = (s: string | null) => (s ? SEVERITY_LABELS[s as SeverityValue] : null);
+      const changes: { field: string; from?: string | null; to?: string | null }[] = [];
+      if (input.type !== t.type) changes.push({ field: "type", from: TYPE_LABELS[t.type], to: TYPE_LABELS[input.type] });
+      if (input.title !== t.title) changes.push({ field: "title", from: t.title, to: input.title });
+      if (input.description !== t.description) changes.push({ field: "description" });
+      if (input.areaId !== t.areaId) changes.push({ field: "module", from: await areaLabel(t.areaId).catch(() => null), to: await areaLabel(input.areaId) });
+      if (input.severity !== t.severity) changes.push({ field: "severity", from: sev(t.severity), to: sev(input.severity) });
+      if (input.priority !== t.priority) changes.push({ field: "priority", from: PRIORITY_LABELS[t.priority], to: PRIORITY_LABELS[input.priority] });
+      if (input.foundIn !== t.foundIn) changes.push({ field: "found in", from: t.foundIn, to: input.foundIn });
+      if (!changes.length) return 0;
+
+      await db.$transaction(async (tx) => {
+        const at = now();
+        await touch(tx, id, at, input);
+        await tx.ticketEvent.createMany({ data: changes.map((c) => ({ ticketId: id, actorId: actor.id, kind: "FIELD", ...c, createdAt: at })) });
+      });
+      return changes.length;
+    },
+
+    async assign(actor: Actor, id: string, assigneeId: string | null): Promise<void> {
+      if (!canAssign(actor)) throw new TicketError("Only QA testers and admins assign tickets.");
+      const t = await load(id, actor);
+      if (t.assigneeId === assigneeId) return;
+      const [from, to] = await Promise.all([
+        t.assigneeId ? db.user.findUnique({ where: { id: t.assigneeId }, select: { name: true } }).then((u) => u?.name ?? null) : null,
+        assigneeName(assigneeId),
+      ]);
+      await db.$transaction(async (tx) => {
+        const at = now();
+        await touch(tx, id, at, { assigneeId });
+        await tx.ticketEvent.create({ data: { ticketId: id, actorId: actor.id, kind: "ASSIGNEE", from, to, createdAt: at } });
+      });
+    },
+
+    async transition(actor: Actor, id: string, input: TransitionInput): Promise<void> {
+      const t = await load(id, actor);
+      const problem = transitionError(t, actor, input);
+      if (problem) throw new TicketError(problem);
+
+      let duplicateOfId: string | null | undefined;
+      let note = input.note;
+      if (input.to === "DUPLICATE") {
+        const dup = await db.ticket.findUnique({ where: { number: input.duplicateOf! }, select: { id: true, number: true } });
+        if (!dup) throw new TicketError(`There is no ticket #${input.duplicateOf}.`);
+        if (dup.id === id) throw new TicketError("A ticket can't be a duplicate of itself.");
+        duplicateOfId = dup.id;
+        note = note ? `Duplicate of #${dup.number}. ${note}` : `Duplicate of #${dup.number}.`;
+      } else if (input.to === "REOPENED") {
+        duplicateOfId = null;
+      }
+
+      await db.$transaction(async (tx) => {
+        const at = now();
+        // Only move it if nobody else changed the status since this page was loaded.
+        const moved = await tx.ticket.updateMany({
+          where: { id, status: t.status },
+          data: { status: input.to, closedAt: isDone(input.to) ? at : null, lastActivityAt: at, ...(duplicateOfId !== undefined ? { duplicateOfId } : {}) },
+        });
+        if (moved.count === 0) throw new TicketError("Someone else just changed this ticket. Refresh the page and try again.");
+        await tx.ticketEvent.create({ data: { ticketId: id, actorId: actor.id, kind: "STATUS", from: t.status, to: input.to, note, createdAt: at } });
+      });
+    },
+
+    async comment(actor: Actor, id: string, body: string, files: SavedFile[] = [], videoIds: string[] = []): Promise<string> {
+      if (!can(actor, "tickets.comment")) throw new TicketError("You can't comment on tickets.");
+      if (!body.trim() && files.length === 0 && videoIds.length === 0) throw new TicketError("Write a message or attach an image or video.");
+      await load(id, actor);
+      return db.$transaction(async (tx) => {
+        const at = now();
+        const c = await tx.ticketComment.create({ data: { ticketId: id, authorId: actor.id, body: body.trim(), createdAt: at } });
+        if (files.length) await tx.attachment.createMany({ data: attachmentRows(actor, id, files, c.id) });
+        await claimVideos(tx, actor, id, videoIds, c.id);
+        await touch(tx, id, at);
+        return c.id;
+      });
+    },
+
+    /** Videos streamed to disk ahead of the form that will attach them (see claimVideos). */
+    pending: {
+      async create(actor: Actor, f: SavedFile): Promise<string> {
+        if (!can(actor, "tickets.comment")) throw new TicketError("You can't add videos to tickets.");
+        const row = await db.pendingUpload.create({
+          data: { uploaderId: actor.id, storedName: f.storedName, originalName: f.originalName, mime: f.mime, size: f.size, durationSec: f.durationSec ?? null, createdAt: now() },
+        });
+        return row.id;
+      },
+
+      /** Removes the actor's own pending upload. Returns its file to delete from disk, or null. */
+      async remove(actor: Actor, id: string): Promise<{ storedName: string } | null> {
+        const row = await db.pendingUpload.findFirst({ where: { id, uploaderId: actor.id }, select: { storedName: true } });
+        if (!row) return null;
+        await db.pendingUpload.delete({ where: { id } });
+        return row;
+      },
+
+      /** Drops uploads nobody sent within PENDING_TTL_MS. Returns their files to delete from disk. */
+      async sweep(): Promise<{ storedName: string }[]> {
+        const where = { createdAt: { lt: new Date(now().getTime() - PENDING_TTL_MS) } };
+        const stale = await db.pendingUpload.findMany({ where, select: { storedName: true } });
+        if (stale.length) await db.pendingUpload.deleteMany({ where: { storedName: { in: stale.map((s) => s.storedName) } } });
+        return stale;
+      },
+    },
+
+    /** The tickets `actor` may see, narrowed by the list filters. */
+    async list(f: TicketFilters, actor: Actor) {
+      const filters: Prisma.TicketWhereInput = {};
+      if (f.status) filters.status = f.status;
+      else if (f.group !== "all") filters.status = { in: [...(f.group === "open" ? OPEN_STATUSES : DONE_STATUSES)] as TicketStatus[] };
+      if (f.type) filters.type = f.type;
+      if (f.area) {
+        const subs = await db.erpArea.findMany({ where: { parentId: f.area }, select: { id: true } });
+        filters.areaId = { in: [f.area, ...subs.map((s) => s.id)] };
+      }
+      if (f.assignee === "none") filters.assigneeId = null;
+      else if (f.assignee) filters.assigneeId = f.assignee === "me" ? actor.id : f.assignee;
+      if (f.reporter) filters.reporterId = f.reporter === "me" ? actor.id : f.reporter;
+      if (f.q) {
+        const num = /^#?(\d{1,9})$/.exec(f.q);
+        filters.OR = [{ title: { contains: f.q } }, { description: { contains: f.q } }, ...(num ? [{ number: Number(num[1]) }] : [])];
+      }
+      // AND, so a filter can only narrow the person's scope, never widen it.
+      const where: Prisma.TicketWhereInput = { AND: [scopeWhere(actor), filters] };
+
+      const [total, rows] = await Promise.all([
+        db.ticket.count({ where }),
+        db.ticket.findMany({
+          where,
+          orderBy: { lastActivityAt: "desc" },
+          skip: (f.page - 1) * PAGE_SIZE,
+          take: PAGE_SIZE,
+          select: {
+            id: true,
+            number: true,
+            type: true,
+            title: true,
+            status: true,
+            severity: true,
+            priority: true,
+            createdAt: true,
+            lastActivityAt: true,
+            area: { select: { name: true, parent: { select: { name: true } } } },
+            assignee: { select: { id: true, name: true } },
+            reporter: { select: { id: true, name: true } },
+            _count: { select: { comments: true } },
+          },
+        }),
+      ]);
+      return { total, rows };
+    },
+
+    /** Permanently deletes a ticket with its thread, log and attachment rows. Returns the files to remove from disk. */
+    async delete(actor: Actor, id: string, typedTitle: string): Promise<{ number: number; files: { storedName: string }[] }> {
+      const t = await load(id, actor);
+      if (!canDeleteTicket(t, actor)) throw new TicketError("Only the QA tester who filed this ticket, or an admin, can delete it.");
+      if (typedTitle.trim() !== t.title) throw new TicketError("The title you typed doesn't match. Type it exactly as shown.");
+      const files = await db.attachment.findMany({ where: { ticketId: id }, select: { storedName: true } });
+      await db.ticket.delete({ where: { id } }); // comments, events and attachment rows cascade
+      return { number: t.number, files };
+    },
+
+    /** The numbers on each person's dashboard, within what they may see. */
+    async counts(actor: Actor) {
+      const mine = scopeWhere(actor);
+      const open = { in: [...OPEN_STATUSES] as TicketStatus[] };
+      const [open_, needInfo, toStart, fixed, done] = await Promise.all([
+        db.ticket.count({ where: { ...mine, status: open } }),
+        db.ticket.count({ where: { ...mine, status: "NEED_INFO" } }),
+        db.ticket.count({ where: { ...mine, status: { in: ["NEW", "REOPENED"] } } }),
+        db.ticket.count({ where: { ...mine, status: "FIXED" } }),
+        db.ticket.count({ where: { ...mine, status: { in: [...DONE_STATUSES] as TicketStatus[] } } }),
+      ]);
+      return { open: open_, needInfo, toStart, fixed, done };
+    },
+
+    /** The most recently active tickets `actor` may see. */
+    async recent(actor: Actor, take = 6) {
+      return db.ticket.findMany({
+        where: scopeWhere(actor),
+        orderBy: { lastActivityAt: "desc" },
+        take,
+        select: { id: true, number: true, title: true, status: true, type: true, lastActivityAt: true, assignee: { select: { name: true } }, reporter: { select: { name: true } } },
+      });
+    },
+
+    /** An attachment `actor` may open: it belongs to a ticket they can see. */
+    async attachmentFor(actor: Actor, attachmentId: string) {
+      return db.attachment.findFirst({ where: { id: attachmentId, ticket: scopeWhere(actor) }, select: { storedName: true, mime: true, originalName: true } });
+    },
+
+    /** A ticket by number, or null when it doesn't exist or `actor` may not see it. */
+    async get(number: number, actor: Actor) {
+      const person = { select: { id: true, name: true, role: true } } as const;
+      const file = {
+        select: { id: true, kind: true, originalName: true, mime: true, size: true, durationSec: true, createdAt: true, uploader: { select: { name: true } } },
+        orderBy: { createdAt: "asc" },
+      } as const;
+      return db.ticket.findFirst({
+        where: { number, ...scopeWhere(actor) },
+        include: {
+          area: { select: { id: true, name: true, parent: { select: { name: true } } } },
+          reporter: person,
+          assignee: person,
+          duplicateOf: { select: { number: true, title: true } },
+          attachments: { ...file, where: { commentId: null } },
+          comments: { orderBy: { createdAt: "asc" }, include: { author: person, attachments: file } },
+          events: { orderBy: { createdAt: "asc" }, include: { actor: person } },
+        },
+      });
+    },
+  };
+}
+
+export type TicketStore = ReturnType<typeof ticketStore>;
+export type TicketDetail = NonNullable<Awaited<ReturnType<TicketStore["get"]>>>;
+export type TicketListRow = Awaited<ReturnType<TicketStore["list"]>>["rows"][number];

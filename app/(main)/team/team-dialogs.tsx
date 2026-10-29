@@ -69,9 +69,12 @@ function AreaForm({ modules, area, parentId, onDone }: { modules: { id: string; 
         <Field label="Short code" htmlFor="code" error={err.code} hint="Optional, e.g. BCA-MR.">
           <Input id="code" name="code" defaultValue={area?.code ?? ""} maxLength={20} className="font-mono uppercase" />
         </Field>
-        <Field label="Sort order" htmlFor="sortOrder" error={err.sortOrder} hint="Lower comes first.">
-          <Input id="sortOrder" name="sortOrder" type="number" min={0} max={999} defaultValue={area?.sortOrder ?? 0} />
-        </Field>
+        {/* Sub-modules are listed in the order they're added; only top-level modules take a sort order. */}
+        {!isSub ? (
+          <Field label="Sort order" htmlFor="sortOrder" error={err.sortOrder} hint="Lower comes first.">
+            <Input id="sortOrder" name="sortOrder" type="number" min={0} max={999} defaultValue={area?.sortOrder ?? 0} />
+          </Field>
+        ) : null}
       </div>
       <Field label="Inside module" htmlFor="parentId" error={err.parentId} hint="Leave empty for a top-level module.">
         <select id="parentId" name="parentId" defaultValue={parent ?? ""} onChange={(e) => setIsSub(e.target.value !== "")} className={nativeSelectClass}>

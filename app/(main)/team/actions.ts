@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { placementError } from "@/lib/areas/tree";
+import { nextSortOrder, placementError } from "@/lib/areas/tree";
 import { requireAction } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { fromDbError, fromZodError, text, type FormState } from "@/lib/form";
@@ -20,7 +20,7 @@ export async function saveArea(_prev: FormState, fd: FormData): Promise<FormStat
     code: text(fd, "code"),
     parentId: text(fd, "parentId"),
     moduleCode: text(fd, "moduleCode"),
-    sortOrder: text(fd, "sortOrder") || 0,
+    sortOrder: text(fd, "sortOrder") || undefined,
     active: fd.get("active") === "on",
   });
   if (!parsed.success) return fromZodError(parsed.error);
@@ -30,9 +30,13 @@ export async function saveArea(_prev: FormState, fd: FormData): Promise<FormStat
   const problem = placementError(areas, { id, parentId: parsed.data.parentId, name: parsed.data.name });
   if (problem) return { ok: false, message: problem };
 
+  // No sort order in the form (sub-modules): a new one goes after its siblings, an edited one keeps its place.
+  const data = { ...parsed.data };
+  if (data.sortOrder === undefined && !id) data.sortOrder = nextSortOrder(areas, data.parentId, id);
+
   try {
-    if (id) await db.erpArea.update({ where: { id }, data: parsed.data });
-    else await db.erpArea.create({ data: parsed.data });
+    if (id) await db.erpArea.update({ where: { id }, data });
+    else await db.erpArea.create({ data: { ...data, sortOrder: data.sortOrder ?? 0 } });
   } catch (e) {
     return duplicateCode(e) ?? fromDbError(e);
   }

@@ -75,7 +75,7 @@ async function Processes() {
                           <span
                             className={
                               "absolute top-0 left-0 flex size-6 items-center justify-center rounded-full font-mono text-[11.5px] font-semibold " +
-                              (s.handoff ? "bg-acc text-white" : "bg-acc-t text-acc-ink")
+                              (s.handoff ? "bg-acc text-primary-foreground" : "bg-acc-t text-acc-ink")
                             }
                             aria-hidden
                           >

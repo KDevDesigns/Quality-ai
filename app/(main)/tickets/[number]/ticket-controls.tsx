@@ -1,0 +1,229 @@
+"use client";
+
+import { useActionState, useState } from "react";
+import { PencilIcon, SendIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
+import { Field, FormMessage } from "@/components/form-field";
+import { FormDialog } from "@/components/form-dialog";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { initialFormState, type FormState } from "@/lib/form";
+import { STATUS_LABELS, type TicketStatus, type Transition } from "@/lib/tickets/workflow";
+import { addComment, assignTicket, deleteTicket, moveTicket } from "../actions";
+import { ImagePicker, useImageAttachments } from "../image-picker";
+import { useVideoUpload, VideoPicker } from "../video-picker";
+import { AssigneeSelect, submitKeepingInput, TicketForm, type AreaOption, type AssigneeOption, type TicketValues } from "../ticket-form";
+
+type Ref = { id: string; number: number };
+
+/** Moves that carry the ticket forward. The first of these is shown as the main button; side exits stay outlined. */
+const FORWARD: readonly TicketStatus[] = ["IN_PROGRESS", "FIXED", "VERIFIED"];
+const isMain = (m: Transition) => FORWARD.includes(m.to) || (m.to === "CLOSED" && m.label === "Close");
+
+/** The status buttons. Each opens a short dialog for the note. */
+export function StatusMoves({ ticket, status, moves }: { ticket: Ref; status: TicketStatus; moves: Transition[] }) {
+  if (!moves.length) return null;
+  const main = moves.find(isMain);
+  return (
+    <div className="flex flex-wrap gap-2">
+      {moves.map((m) => (
+        <FormDialog
+          key={m.to}
+          title={m.label}
+          description={`${STATUS_LABELS[status]} → ${STATUS_LABELS[m.to]}`}
+          trigger={
+            <Button variant={m === main ? "default" : "outline"} size="sm">
+              {m.label}
+            </Button>
+          }
+        >
+          {(close) => <MoveForm ticket={ticket} move={m} onDone={close} />}
+        </FormDialog>
+      ))}
+    </div>
+  );
+}
+
+const NOTE_HINTS: Partial<Record<TicketStatus, string>> = {
+  NEED_INFO: "What do you need from QA? They'll see this in the thread.",
+  FIXED: "Optional: what changed and in which build, so QA knows what to retest.",
+  REOPENED: "What is still wrong? Add a screenshot in a comment if it helps.",
+  REJECTED: "Why this isn't a bug, e.g. it works as the business rule says.",
+  WONT_FIX: "Why it won't be fixed.",
+  CLOSED: "Optional.",
+};
+
+function MoveForm({ ticket, move, onDone }: { ticket: Ref; move: Transition; onDone: () => void }) {
+  const [state, action, pending] = useActionState(async (prev: FormState, fd: FormData) => {
+    const r = await moveTicket(prev, fd);
+    if (r.ok) onDone();
+    return r;
+  }, initialFormState);
+  const err = state.fieldErrors ?? {};
+  return (
+    <form onSubmit={submitKeepingInput(action)} className="grid gap-4">
+      <input type="hidden" name="id" value={ticket.id} />
+      <input type="hidden" name="number" value={ticket.number} />
+      <input type="hidden" name="to" value={move.to} />
+      {move.needsDuplicate ? (
+        <Field label="Duplicate of ticket #" htmlFor="duplicateOf" error={err.duplicateOf} required>
+          <Input id="duplicateOf" name="duplicateOf" inputMode="numeric" required placeholder="e.g. 12" className="w-32 font-mono" />
+        </Field>
+      ) : null}
+      <Field label="Note" htmlFor="note" error={err.note} required={move.needsNote} hint={NOTE_HINTS[move.to] ?? "Optional."}>
+        <Textarea id="note" name="note" rows={3} maxLength={5000} required={move.needsNote} autoFocus />
+      </Field>
+      <FormMessage state={state} />
+      <div className="flex justify-end">
+        <Button type="submit" disabled={pending}>{pending ? "Saving…" : move.label}</Button>
+      </div>
+    </form>
+  );
+}
+
+export function AssignControl({ ticket, areas, people, areaId, assigneeId }: { ticket: Ref; areas: AreaOption[]; people: AssigneeOption[]; areaId: string; assigneeId: string }) {
+  const [dirty, setDirty] = useState(false);
+  const [state, action, pending] = useActionState(async (prev: FormState, fd: FormData) => {
+    const r = await assignTicket(prev, fd);
+    if (r.ok) setDirty(false);
+    return r;
+  }, initialFormState);
+  return (
+    <form onSubmit={submitKeepingInput(action)} onChange={() => setDirty(true)} className="grid gap-2">
+      <input type="hidden" name="id" value={ticket.id} />
+      <input type="hidden" name="number" value={ticket.number} />
+      <AssigneeSelect areas={areas} people={people} areaId={areaId} defaultValue={assigneeId} id="assign" />
+      {dirty ? (
+        <Button type="submit" size="sm" disabled={pending} className="justify-self-start">
+          {pending ? "Saving…" : "Save developer"}
+        </Button>
+      ) : null}
+      <FormMessage state={state} />
+    </form>
+  );
+}
+
+export function CommentForm({ ticket }: { ticket: Ref }) {
+  const images = useImageAttachments();
+  const video = useVideoUpload();
+  const [body, setBody] = useState("");
+  const [state, action, pending] = useActionState(async (prev: FormState, fd: FormData) => {
+    const r = await addComment(prev, fd);
+    if (r.ok) {
+      setBody("");
+      images.clear();
+      video.clear();
+    }
+    return r;
+  }, initialFormState);
+
+  return (
+    <form onSubmit={submitKeepingInput(action)} className="grid gap-3">
+      <input type="hidden" name="id" value={ticket.id} />
+      <input type="hidden" name="number" value={ticket.number} />
+      <label htmlFor="body" className="sr-only">Your message</label>
+      <Textarea
+        id="body"
+        name="body"
+        rows={3}
+        maxLength={20000}
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        onPaste={images.onPaste}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) e.currentTarget.form?.requestSubmit();
+        }}
+        placeholder="Write a reply… (Ctrl+Enter to send)"
+      />
+      <ImagePicker state={images} id="comment-images" compact />
+      <VideoPicker state={video} id="comment-video" compact />
+      <FormMessage state={state} />
+      <div className="flex justify-end">
+        <Button type="submit" disabled={pending || video.busy || (!body.trim() && images.files.length === 0 && video.upload.status !== "done")}>
+          <SendIcon /> {video.busy ? "Uploading video…" : pending ? (images.files.length ? "Uploading…" : "Sending…") : "Send"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+/**
+ * Permanent delete, the way GitHub deletes a repository: a red danger box spelling out what goes, and the button
+ * stays disabled until the exact ticket title is typed.
+ */
+export function DeleteTicketDialog({ ticket, replies, files }: { ticket: { id: string; number: number; title: string }; replies: number; files: number }) {
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState("");
+  const [state, action, pending] = useActionState(deleteTicket, initialFormState);
+  const matches = typed.trim() === ticket.title;
+  const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setTyped("");
+      }}
+    >
+      <DialogTrigger
+        render={
+          <Button variant="outline" size="sm" className="border-bad-b text-bad hover:border-bad hover:bg-bad-t hover:text-bad">
+            <Trash2Icon /> Delete
+          </Button>
+        }
+      />
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-bad">
+            <TriangleAlertIcon className="size-5" aria-hidden /> Delete ticket #{ticket.number}?
+          </DialogTitle>
+          <DialogDescription>This can&apos;t be undone.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={submitKeepingInput(action)} className="grid gap-4">
+          <input type="hidden" name="id" value={ticket.id} />
+          <div className="rounded-[10px] border border-bad-b bg-bad-t px-4 py-3 text-[13.5px] leading-relaxed text-bad">
+            <p className="font-semibold">This permanently deletes, for everyone:</p>
+            <ul className="mt-1 list-disc pl-5">
+              <li>the ticket and its description</li>
+              <li>the conversation ({plural(replies, "reply", "replies")})</li>
+              <li>the activity log</li>
+              <li>{plural(files, "attached file")} (screenshots and videos) from the server</li>
+            </ul>
+          </div>
+          <div className="grid gap-2">
+            <label htmlFor="confirm-title" className="text-sm">
+              To confirm, type the ticket&apos;s title exactly:
+              <span className="mt-1.5 block rounded-md bg-surface3 px-2.5 py-1.5 font-mono text-[13px] font-semibold break-words select-all">{ticket.title}</span>
+            </label>
+            <Input id="confirm-title" name="confirm" value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" spellCheck={false} autoFocus aria-invalid={!!state.message} />
+          </div>
+          <FormMessage state={state} />
+          <div className="flex justify-end gap-2">
+            <DialogClose render={<Button type="button" variant="outline" />}>Cancel</DialogClose>
+            <Button type="submit" variant="destructive" disabled={!matches || pending}>
+              <Trash2Icon /> {pending ? "Deleting…" : "Delete this ticket"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function EditTicketDialog({ ticket, areas, people }: { ticket: TicketValues; areas: AreaOption[]; people: AssigneeOption[] }) {
+  return (
+    <FormDialog
+      wide
+      title={`Edit #${ticket.number}`}
+      trigger={
+        <Button variant="outline" size="sm">
+          <PencilIcon /> Edit
+        </Button>
+      }
+    >
+      {(close) => <TicketForm areas={areas} people={people} canAssign={false} ticket={ticket} onDone={close} />}
+    </FormDialog>
+  );
+}

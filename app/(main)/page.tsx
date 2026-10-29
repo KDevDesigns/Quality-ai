@@ -1,13 +1,29 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { ArrowRightIcon, BoxesIcon, CodeIcon, FlaskConicalIcon, TicketIcon, UserXIcon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  BoxesIcon,
+  CodeIcon,
+  FlaskConicalIcon,
+  MessageCircleQuestionIcon,
+  RotateCcwIcon,
+  TicketIcon,
+  UserCheckIcon,
+  UserXIcon,
+  type LucideIcon,
+} from "lucide-react";
 import { InlineAlert } from "@/components/inline-alert";
 import { LoadingBlock, PageHeader } from "@/components/page-header";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { can, ROLE_LABELS, type Role } from "@/lib/auth/permissions";
 import { requireUser } from "@/lib/auth/session";
 import { db } from "@/lib/db";
+import { timeAgo } from "@/lib/format";
+import { ticketStore } from "@/lib/tickets/store";
+import { TicketStatusPill } from "./tickets/ticket-bits";
+
+const tickets = ticketStore(db);
 
 export default function DashboardPage() {
   return (
@@ -23,7 +39,10 @@ export default function DashboardPage() {
 async function Overview() {
   await connection();
   const me = await requireUser();
-  const [qa, devs, modules, subModules, unassigned, myAreas] = await Promise.all([
+  // Ticket numbers cover only what this person sees: their own tickets (QA), their assignments (DEV), or all (admin).
+  const [counts, recent, qa, devs, modules, subModules, unassigned, myAreas] = await Promise.all([
+    tickets.counts(me),
+    tickets.recent(me),
     db.user.count({ where: { active: true, role: "QA" } }),
     db.user.count({ where: { active: true, role: "DEV" } }),
     db.erpArea.count({ where: { parentId: null, active: true } }),
@@ -35,40 +54,28 @@ async function Overview() {
     }),
   ]);
 
-  const stats = [
+  const ticketStats = TICKET_STATS[me.role](counts);
+  const teamStats = [
     { label: "QA testers", value: qa, href: "/team", icon: FlaskConicalIcon },
     { label: "Developers", value: devs, href: "/team", icon: CodeIcon },
     { label: "Modules", value: modules, href: "/team", icon: BoxesIcon, note: `${subModules} sub-modules` },
   ];
 
+  const signUps = can(me, "users.manage") ? await db.user.count({ where: { pending: true } }) : 0;
+
   return (
     <>
-      <InlineAlert tone="info" role="status">
-        <span className="font-semibold">Tickets are coming next.</span> Filing bugs with marked-up screenshots and videos, the conversation thread and your
-        inbox arrive in the next step. For now, make sure the module directory is complete so every ticket has an owner.
-      </InlineAlert>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {stats.map(({ label, value, href, icon: Icon, note }) => (
-          <Link
-            key={label}
-            href={href}
-            className="group flex items-center gap-4 rounded-xl border border-line bg-card p-5 transition-[border-color,box-shadow] duration-200 hover:border-acc-b hover:shadow-[0_10px_24px_rgba(40,46,140,0.08)]"
-          >
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-[11px] bg-acc-t text-acc" aria-hidden>
-              <Icon className="size-[22px]" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[13px] text-muted-foreground">{label}</span>
-              <span className="mt-0.5 flex items-baseline gap-2">
-                <span className="text-[28px] leading-none font-semibold tracking-tight tabular-nums">{value}</span>
-                {note ? <span className="text-[12.5px] text-muted-foreground">{note}</span> : null}
-              </span>
-            </span>
-            <ArrowRightIcon className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-acc" aria-hidden />
-          </Link>
-        ))}
-      </div>
+      {signUps ? (
+        <InlineAlert tone="warn" role="status">
+          <span className="font-semibold">
+            {signUps} sign-up{signUps === 1 ? " is" : "s are"} waiting for approval.
+          </span>{" "}
+          <Link href="/admin/users" className="font-medium underline underline-offset-2">Review in Admin → Users</Link>
+        </InlineAlert>
+      ) : null}
+      <StatRow stats={ticketStats} />
+      <RecentTickets rows={recent} role={me.role} />
+      <StatRow stats={teamStats} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -119,15 +126,95 @@ async function Overview() {
           )}
         </Card>
       </div>
-
-      <Card className="border-dashed">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TicketIcon className="size-4 text-acc" aria-hidden /> Tickets
-          </CardTitle>
-          <CardDescription>Open tickets by status and module, each developer’s load and tickets waiting for retest will show here.</CardDescription>
-        </CardHeader>
-      </Card>
     </>
+  );
+}
+
+type Stat = { label: string; value: number; href: string; icon: LucideIcon; note?: string };
+type Counts = Awaited<ReturnType<typeof tickets.counts>>;
+
+/** What each person needs to act on first. */
+const TICKET_STATS: Record<Role, (c: Counts) => Stat[]> = {
+  ADMIN: (c) => [
+    { label: "Open tickets", value: c.open, href: "/tickets", icon: TicketIcon, note: "all testers" },
+    { label: "Needs info", value: c.needInfo, href: "/tickets?status=NEED_INFO", icon: MessageCircleQuestionIcon },
+    { label: "Waiting for retest", value: c.fixed, href: "/tickets?status=FIXED", icon: RotateCcwIcon, note: "fixed, not yet verified" },
+  ],
+  QA: (c) => [
+    { label: "My open tickets", value: c.open, href: "/tickets", icon: TicketIcon },
+    { label: "Developer needs info", value: c.needInfo, href: "/tickets?status=NEED_INFO", icon: MessageCircleQuestionIcon, note: "answer these" },
+    { label: "Ready for my retest", value: c.fixed, href: "/tickets?status=FIXED", icon: RotateCcwIcon, note: "fixed, verify them" },
+  ],
+  DEV: (c) => [
+    { label: "Assigned to me", value: c.open, href: "/tickets", icon: UserCheckIcon, note: "open" },
+    { label: "Not started", value: c.toStart, href: "/tickets", icon: TicketIcon, note: "new or reopened" },
+    { label: "Waiting for QA retest", value: c.fixed, href: "/tickets?status=FIXED", icon: RotateCcwIcon },
+  ],
+};
+
+function RecentTickets({ rows, role }: { rows: Awaited<ReturnType<typeof tickets.recent>>; role: Role }) {
+  const now = new Date();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{role === "ADMIN" ? "Recent activity" : role === "DEV" ? "My assigned tickets" : "My tickets"}</CardTitle>
+        <CardDescription>
+          {role === "ADMIN" ? "The latest tickets with activity, from every tester" : role === "DEV" ? "Assigned to you, most recent activity first" : "Tickets you filed, most recent activity first"}
+        </CardDescription>
+        <CardAction>
+          <Link href="/tickets?group=all" className="text-sm font-medium text-acc hover:underline">View all</Link>
+        </CardAction>
+      </CardHeader>
+      {rows.length === 0 ? (
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            {role === "DEV" ? "Nothing is assigned to you yet." : "No tickets yet."}{" "}
+            {role !== "DEV" ? <Link href="/tickets/new" className="font-medium text-acc hover:underline">File a ticket</Link> : null}
+          </p>
+        </CardContent>
+      ) : (
+        <ul>
+          {rows.map((t) => (
+            <li key={t.id} className="relative flex items-center gap-3 border-t border-line2 px-5 py-3 text-[14px] first:border-t-0 hover:bg-surface2">
+              <span className="w-10 shrink-0 font-mono text-[13px] text-muted-foreground">#{t.number}</span>
+              <Link href={`/tickets/${t.number}`} className="min-w-0 flex-1 truncate font-medium after:absolute after:inset-0 hover:text-acc">
+                {t.title}
+              </Link>
+              <span className="hidden shrink-0 text-[12.5px] text-muted-foreground sm:inline">
+                {role === "DEV" ? `from ${t.reporter.name}` : (t.assignee?.name ?? "Not assigned")}
+              </span>
+              <TicketStatusPill status={t.status} />
+              <span className="hidden w-20 shrink-0 text-right text-[12.5px] text-muted-foreground md:inline">{timeAgo(t.lastActivityAt, now)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+function StatRow({ stats }: { stats: Stat[] }) {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {stats.map(({ label, value, href, icon: Icon, note }) => (
+        <Link
+          key={label}
+          href={href}
+          className="group flex items-center gap-4 rounded-xl border border-line bg-card p-5 transition-[border-color,box-shadow] duration-200 hover:border-acc-b hover:shadow-[0_10px_24px_rgba(40,46,140,0.08)]"
+        >
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-[11px] bg-acc-t text-acc" aria-hidden>
+            <Icon className="size-[22px]" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[13px] text-muted-foreground">{label}</span>
+            <span className="mt-0.5 flex items-baseline gap-2">
+              <span className="text-[28px] leading-none font-semibold tracking-tight tabular-nums">{value}</span>
+              {note ? <span className="text-[12.5px] text-muted-foreground">{note}</span> : null}
+            </span>
+          </span>
+          <ArrowRightIcon className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-acc" aria-hidden />
+        </Link>
+      ))}
+    </div>
   );
 }

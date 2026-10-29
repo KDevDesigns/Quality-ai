@@ -1,18 +1,26 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { LogOutIcon, ShieldCheckIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ShieldCheckIcon } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { logout } from "@/app/login/actions";
 import type { SidebarUser } from "./app-sidebar";
-import { currentNav } from "./nav";
+import { currentNav, isActive } from "./nav";
+import { ThemeToggle } from "./theme-toggle";
+import { UserMenu } from "./user-menu";
 
 const GROUP_LABEL = { tickets: "Tickets", admin: "Admin", ai: "AI workbench" } as const;
 
 export function AppTopbar({ user }: { user: SidebarUser | null }) {
-  const pathname = usePathname();
-  const { item, group } = currentNav(pathname);
+  return <TopbarView pathname={usePathname()} user={user} />;
+}
+
+/** The layout's Suspense fallback; like AppSidebarShell, it must not read the path while the shell is prerendered. */
+export function AppTopbarShell() {
+  return <TopbarView pathname={null} user={null} />;
+}
+
+function TopbarView({ pathname, user }: { pathname: string | null; user: SidebarUser | null }) {
+  const { item, group } = pathname === null ? { item: null, group: null } : currentNav(pathname);
 
   return (
     <header className="sticky top-0 z-10 flex h-[72px] shrink-0 items-center justify-between gap-3 border-b border-line2 bg-background/95 px-4 backdrop-blur md:px-9">
@@ -25,7 +33,7 @@ export function AppTopbar({ user }: { user: SidebarUser | null }) {
               <span className="hidden sm:inline" aria-hidden>/</span>
             </>
           ) : null}
-          <b className="truncate font-semibold text-foreground" aria-current="page">{item.label}</b>
+          {item ? <b className="truncate font-semibold text-foreground" aria-current="page">{item.label}</b> : null}
         </nav>
       </div>
       <div className="flex items-center gap-3">
@@ -35,13 +43,8 @@ export function AppTopbar({ user }: { user: SidebarUser | null }) {
             Staging only · never production
           </span>
         ) : null}
-        {user ? (
-          <form action={logout}>
-            <Button type="submit" variant="outline" className="h-[38px] rounded-[9px] px-3.5">
-              <LogOutIcon /> Sign out
-            </Button>
-          </form>
-        ) : null}
+        <ThemeToggle />
+        {user ? <UserMenu user={user} active={pathname !== null && isActive(pathname, "/account")} /> : null}
       </div>
     </header>
   );

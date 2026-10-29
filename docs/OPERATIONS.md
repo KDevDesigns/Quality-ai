@@ -13,9 +13,13 @@ address. These steps are for whoever runs that machine.
    UPLOAD_DIR=D:\qa-hub\uploads      # ticket screenshots and videos; put it on the 1 TB HDD
    BACKUP_DIR=E:\qa-hub-backups      # ideally a different disk or a network share
    ```
+   `UPLOAD_DIR` is required for tickets. Without it, filing a ticket with images shows an error. The folder is created
+   on the first upload. Never point it inside the repo or `public/`.
+   Videos can be up to 150 MB each, so keep an eye on free space on that drive. A video that was uploaded but never
+   sent with a ticket or reply is deleted after 24 hours.
 4. Create the first admin. This prints a one-time temporary password:
    ```
-   npm run user:create -- --admin --name "Your Name" --email you@davao-water.gov.ph
+   npm run user:create -- --admin --name "Your nickname" --email you@davao-water.gov.ph
    ```
    Sign in, choose your own password, then add everyone else under **Admin → Users**.
 
@@ -84,10 +88,36 @@ To restore:
 
 ## 5. Accounts
 
+- **Office emails only:** every account must use an `@davao-water.gov.ph` address.
+- **Can't remember an account's email?** Admin → Users lists every account with its email, role and status.
+  Passwords are never stored in readable form, so nobody can look one up: use the key icon to reset it.
+- **Sign-up requests:** people can request an account from the sign-in page as a QA tester or developer.
+  - Requests wait in **Admin → Users → Waiting for approval**, and the dashboard shows how many are waiting.
+  - Approve only people you know are on the team, because approved users can see every ticket.
+  - **Approve** shows a one-time temporary password. Give it to the person in person or by office chat, together
+    with their email. They choose their own password at first sign-in. If you lose it, use the key icon (Reset password).
+  - Reject deletes the request.
+  - During the pilot, the firewall rule (section 3a) still limits who can even reach the sign-up page.
+
 - **Forgotten password:** an admin opens Admin → Users → the key icon to reset it. The user gets a new temporary password and is signed out everywhere.
 - **Someone leaves:** edit the user and untick *Account is active*. They are signed out at once, and their tickets and comments stay.
 - **Failed sign-ins:** after 5 failed sign-ins in 15 minutes, that email is locked out for the rest of the window.
 - **Lock-out protection:** at least one active admin must always remain. The app refuses changes that would remove the last one.
+
+## 5a. Daily Accomplishment Reports (My DAR)
+
+- **Set up once (admin):**
+  - **Admin → DAR template:** department, unit, default position, the Confirmed by and Noted by signatories, and the core and support duties with their MFOs.
+  - Tick **Fill this row's days from my ticket work** on the rows that should get the day entries.
+- **Module Codes:** set them in **Team & modules** (e.g. `BCA`, `CRM`, `HR-RSP`, `HR201`). The DAR writes a day as
+  "QA - BCA / CRM" from those codes. A sub-module with no code uses its module's code, then its name.
+- **Each QA tester:**
+  - Opens **My DAR** and adds their full name once under **My details**, since the account only holds a nickname.
+  - Picks the period (1–15 or 16 to the end of the month) and checks the days.
+  - A day with no ticket work is **REST DAY**. They type over it for work done outside QA Hub, such as HR201 or encoding.
+  - Then saves and downloads **Excel** or **PDF**.
+- **Privacy:** each tester sees only their own DARs. Admins and developers can't open them.
+- **PDF:** made with Playwright's Chromium on this machine. If it says PDF isn't available, run `npx playwright install chromium` once. Excel always works.
 
 ## 6. Known limits and next steps
 
@@ -96,5 +126,7 @@ To restore:
   port 3000. Once that's in place, set `COOKIE_SECURE=1` in `.env.local`.
 - **One machine:** if the laptop is off or asleep, nobody can reach QA Hub. Turn off sleep while plugged in, or move it
   to an always-on PC later. Moving it means copying the repo, `.env.local`, `prisma\dev.db` and `UPLOAD_DIR`.
-- **In-browser screen recording** needs HTTPS. Until then, QA records with **Snipping Tool (Win+Shift+R)** and uploads the MP4.
+- **In-browser screen recording** needs HTTPS. Until then, QA records with **Snipping Tool (Win+Shift+R)** or Xbox Game Bar
+  (Win+Alt+R) and uploads the MP4 with **Add video** (MP4 or WebM, up to 3 min / 150 MB). iPhone `.mov` files are refused;
+  share them as MP4 ("Most Compatible") instead.
 - **Ticket data is sensitive** (customer names, account numbers, amounts) and is never sent to any AI model.

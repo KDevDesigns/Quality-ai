@@ -25,7 +25,7 @@ async function WorkspaceBody() {
   return (
     <>
       <PageHeader title="Workspace" description="Settings that apply to everyone who uses QA Hub." />
-      <Card className="max-w-2xl">
+      <Card>
         <CardHeader>
           <CardTitle>AI workbench</CardTitle>
           <CardDescription>

@@ -26,9 +26,11 @@ async function AccountBody() {
   if (!user) redirect("/login");
 
   return (
-    <div className="grid max-w-xl gap-5">
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start">
       {user.mustChangePassword ? (
-        <InlineAlert tone="warn" role="status">You signed in with a temporary password. Choose your own password to continue.</InlineAlert>
+        <InlineAlert tone="warn" role="status" className="lg:col-span-2">
+          You signed in with a temporary password. Choose your own password to continue.
+        </InlineAlert>
       ) : null}
       <Card>
         <CardHeader>

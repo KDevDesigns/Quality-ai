@@ -17,7 +17,8 @@ export const areaInput = z.object({
   moduleCode: z
     .union([z.enum(MODULE_CODES), z.literal("")])
     .transform((v) => (v ? v : null)),
-  sortOrder: z.coerce.number().int().min(0).max(999).default(0),
+  /** Only top-level modules show this field. A sub-module leaves it out and is placed after its siblings. */
+  sortOrder: z.coerce.number().int().min(0).max(999).optional(),
   active: z.boolean(),
 });
 

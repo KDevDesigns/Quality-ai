@@ -3,15 +3,39 @@ import { ROLES } from "@/lib/auth/permissions";
 
 export const PASSWORD_MIN = 10;
 
-const email = z.string().trim().toLowerCase().max(200).pipe(z.email("Enter a valid email address"));
+/** Only DCWD office addresses can have accounts, whether they sign up or an admin adds them. */
+export const EMAIL_DOMAIN = "davao-water.gov.ph";
+
+const email = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(200)
+  .pipe(z.email("Enter a valid email address"))
+  // Compares the whole part after the last "@", so "x@davao-water.gov.ph.example.com" and "x@sub.davao-water.gov.ph" are refused.
+  .refine((v) => v.slice(v.lastIndexOf("@") + 1) === EMAIL_DOMAIN, `Use your @${EMAIL_DOMAIN} email address`);
 
 export const loginInput = z.object({
   email: z.string().trim().min(1, "Enter your email").max(200),
   password: z.string().min(1, "Enter your password").max(200),
 });
 
+/** Roles people can pick for themselves on the sign-up form. Admins are only made by another admin. */
+export const SIGNUP_ROLES = ["QA", "DEV"] as const;
+
+/** A nickname, shown wherever the app shows a person (tickets, replies, the team directory). Same rule everywhere. */
+export const NICKNAME_MAX = 40;
+const nickname = z.string().trim().min(2, "Enter a nickname of at least 2 characters").max(NICKNAME_MAX, `Keep it to ${NICKNAME_MAX} characters`);
+
+/** No password: the admin who approves the request hands over a temporary one. */
+export const signupInput = z.object({
+  role: z.enum(SIGNUP_ROLES, "Choose QA tester or Developer"),
+  name: nickname,
+  email,
+});
+
 export const userInput = z.object({
-  name: z.string().trim().min(1, "Name is required").max(100),
+  name: nickname,
   email,
   role: z.enum(ROLES, "Pick a role"),
 });
@@ -30,3 +54,4 @@ export const passwordChangeInput = z
   .refine((v) => v.next !== v.current, { message: "Choose a password different from the current one", path: ["next"] });
 
 export type UserInput = z.infer<typeof userInput>;
+export type SignupInput = z.infer<typeof signupInput>;

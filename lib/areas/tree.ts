@@ -25,6 +25,12 @@ export function placementError(areas: AreaNode[], input: { id?: string; parentId
   return null;
 }
 
+/** The sort order that places a new area after its siblings (steps of 10, so admins can slot one in between). */
+export function nextSortOrder(areas: AreaNode[], parentId: string | null, excludeId?: string): number {
+  const siblings = areas.filter((a) => a.parentId === parentId && a.id !== excludeId);
+  return siblings.length ? Math.min(999, Math.max(...siblings.map((a) => a.sortOrder)) + 10) : 0;
+}
+
 /** "Billing & Collection › Meter Reading", or just the module name. */
 export function areaPath(area: { name: string; parent?: { name: string } | null }): string {
   return area.parent ? `${area.parent.name} › ${area.name}` : area.name;

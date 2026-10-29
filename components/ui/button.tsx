@@ -16,7 +16,7 @@ const buttonVariants = cva(
         ghost:
           "text-ink2 hover:bg-surface3 hover:text-foreground aria-expanded:bg-surface3 aria-expanded:text-foreground",
         destructive:
-          "bg-destructive text-white hover:bg-[color-mix(in_srgb,var(--destructive)_86%,black)] focus-visible:border-destructive/40 focus-visible:ring-destructive/20",
+          "bg-destructive text-white dark:text-background hover:bg-[color-mix(in_srgb,var(--destructive)_86%,black)] focus-visible:border-destructive/40 focus-visible:ring-destructive/20",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

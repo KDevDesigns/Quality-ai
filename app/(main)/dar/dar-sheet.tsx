@@ -1,0 +1,240 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import type { DarCells } from "@/lib/dar/autofill";
+import { longDate, periodLabel } from "@/lib/dar/period";
+import type { DarReportData } from "@/lib/dar/store";
+import type { DarFunction } from "@/lib/dar/template";
+import { cn } from "@/lib/utils";
+
+// The DAR on screen, drawn like the DCWD paper form (same layout as lib/dar/html.ts, which makes the PDF and the
+// printout): a white sheet in every theme, with the day cells and the date submitted editable in place.
+// The sheet keeps its paper proportions and is zoomed to fill the width of the page.
+
+const PAPER_W = 1320;
+// The DCWD workbook's own fills and colours (DAR_COLORS in lib/dar/html.ts).
+const ORANGE = "bg-[#ffcc99]";
+const CORE_HEAD = "bg-[#fbd4b4]";
+const CELL = "border border-black px-1 py-0.5";
+const FONT = { fontFamily: 'Calibri, Carlito, "Segoe UI", Arial, sans-serif' };
+
+export function DarSheet({
+  report,
+  cells,
+  dateSubmitted,
+  daysAttended,
+  onCell,
+  onDateSubmitted,
+}: {
+  report: DarReportData;
+  cells: DarCells;
+  dateSubmitted: string;
+  daysAttended: number;
+  onCell: (section: keyof DarCells, row: number, day: number, value: string) => void;
+  onDateSubmitted: (date: string) => void;
+}) {
+  const wrap = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState(1);
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el) return;
+    // Fill the width: shrink on small screens, grow on wide ones.
+    const fit = () => setZoom(Math.max(0.6, Math.min(2, (el.clientWidth - 2) / PAPER_W)));
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const h = report.header;
+  const n = report.days.length;
+  const info: [string, string][] = [
+    ["Name of PBE", h.name],
+    ["Position Title", h.position],
+    ["Department", h.department],
+    ["Unit", h.unit],
+    ["Immediate Supervisor", h.supervisor],
+    ["Period Covered", periodLabel(report.period)],
+  ];
+
+  const dayHeads = report.days.map((d) => (
+    <th key={d.date} className={cn(CELL, ORANGE, "text-center text-[10px] leading-tight font-bold")}>
+      {d.month}
+      <br />
+      {d.day}
+      <br />
+      {d.dow}
+    </th>
+  ));
+
+  return (
+    <div ref={wrap} className="overflow-x-auto rounded-[12px] border border-line bg-surface2 p-0">
+      <div
+        className="mx-auto bg-white px-8 pt-6 pb-10 text-[12px] text-black shadow-sm"
+        style={{ ...FONT, width: PAPER_W, zoom }}
+        aria-label="Daily Accomplishment Report"
+      >
+        {/* Agency banner */}
+        <div className="flex items-center justify-center gap-3 border-b-[1.5px] border-black pb-1.5">
+          {/* eslint-disable-next-line @next/next/no-img-element -- a small static seal from public/ */}
+          <img src="/dcwd-seal.png" alt="" className="size-12" />
+          <div className="text-center leading-tight">
+            <div className="text-[10px] font-bold">Republic of the Philippines</div>
+            <div className="text-[12.5px] font-bold">DAVAO CITY WATER DISTRICT</div>
+            <div className="text-[10px] font-bold text-[#808000]">Km 2.5 MacArthur Highway, Matina, Davao City</div>
+          </div>
+        </div>
+        <h2 className="mt-2 mb-3 text-center text-[16px] font-bold" style={{ fontFamily: '"Book Antiqua", Palatino, "Palatino Linotype", serif' }}>
+          Project-Based Employee Daily Accomplishment Report
+        </h2>
+
+        {/* Header block */}
+        <div className="flex items-start justify-between gap-6">
+          <div>
+            <table className="border-collapse text-[11.5px]">
+              <tbody>
+                {info.map(([k, v]) => (
+                  <tr key={k}>
+                    <td className={cn(CELL, ORANGE, "w-40 px-2 font-bold")}>{k}</td>
+                    <td className="w-4 border-y border-black text-center">:</td>
+                    <td className={cn(CELL, "w-[440px] px-2")}>{v}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="mt-2.5 text-[11px] font-bold">SPECIFIC DUTIES AND RESPONSIBILITIES:</div>
+            <div className="ml-44 text-[10.5px] italic">Please indicate the actual accomplishment</div>
+          </div>
+          <div className="grid grid-cols-[auto_auto] items-center gap-x-6 gap-y-1 text-[12px]">
+            <label htmlFor="dateSubmitted" className="text-right">
+              Date Submitted :
+            </label>
+            <span className="relative text-right font-bold underline">
+              {longDate(dateSubmitted)}
+              {/* The visible text is the form's date format; the native picker sits on top of it, invisible. */}
+              <input
+                id="dateSubmitted"
+                type="date"
+                value={dateSubmitted}
+                required
+                onChange={(e) => e.target.value && onDateSubmitted(e.target.value)}
+                className="absolute inset-0 cursor-pointer opacity-0"
+                title="Change the date submitted"
+              />
+            </span>
+            <span className="text-right">Actual No. of Days Attended :</span>
+            <span className="text-right font-bold underline tabular-nums">{daysAttended} Days</span>
+          </div>
+        </div>
+
+        {/* Days grid */}
+        <table className="mt-1 w-full table-fixed border-collapse">
+          <colgroup>
+            <col style={{ width: 22 }} />
+            <col style={{ width: 230 }} />
+            <col style={{ width: 210 }} />
+            {report.days.map((d) => (
+              <col key={d.date} />
+            ))}
+          </colgroup>
+          <thead>
+            <tr>
+              <th colSpan={3} className={CELL} />
+              <th colSpan={n} className={cn(CELL, "text-center text-[10px] font-bold")}>
+                DAYS
+              </th>
+            </tr>
+            <tr>
+              <th colSpan={3} className={CELL} />
+              {report.days.map((d, i) => (
+                <th key={d.date} className={cn(CELL, "text-center text-[10px] font-bold")}>
+                  {i + 1}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <SectionHead title="A.) CORE FUNCTIONS" dayHeads={dayHeads} fill={CORE_HEAD} />
+            <FunctionRows section="core" label="A.) Core functions" fns={h.core} rows={cells.core} onCell={onCell} />
+            <SectionHead title="B.) SUPPORT FUNCTION" dayHeads={dayHeads} />
+            <FunctionRows section="support" label="B.) Support functions" fns={h.support} rows={cells.support} onCell={onCell} />
+          </tbody>
+        </table>
+
+        {/* Signatories */}
+        <div className="mt-8 grid grid-cols-[1.1fr_1.6fr_3fr] text-[12px]">
+          {[
+            ["Prepared by:", h.name, h.position],
+            ["Confirmed by:", h.confirmedBy.name, h.confirmedBy.title],
+            ["Noted by:", h.notedBy.name, h.notedBy.title],
+          ].map(([label, name, title]) => (
+            <div key={label}>
+              <div className="mb-7 font-bold">{label}</div>
+              <div className="font-bold">{name}</div>
+              <div>{title}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function focusCell(e: React.MouseEvent<HTMLTableCellElement>) {
+  const area = e.currentTarget.querySelector("textarea");
+  if (area && e.target !== area) {
+    e.preventDefault();
+    area.focus();
+    area.setSelectionRange(area.value.length, area.value.length);
+  }
+}
+
+function SectionHead({ title, dayHeads, fill = ORANGE }: { title: string; dayHeads: React.ReactNode; fill?: string }) {
+  return (
+    <tr>
+      <th colSpan={2} className={cn(CELL, fill, "py-2 text-center text-[10.5px] font-bold")}>
+        {title}
+      </th>
+      <th className={cn(CELL, ORANGE, "text-center text-[10.5px] font-bold")}>MAJOR FINAL OUTPUT (MFOs)</th>
+      {dayHeads}
+    </tr>
+  );
+}
+
+function FunctionRows({
+  section,
+  label,
+  fns,
+  rows,
+  onCell,
+}: {
+  section: keyof DarCells;
+  label: string;
+  fns: DarFunction[];
+  rows: string[][];
+  onCell: (section: keyof DarCells, row: number, day: number, value: string) => void;
+}) {
+  return fns.map((f, i) => (
+    <tr key={i}>
+      <td className={cn(CELL, "text-center text-[11px]")}>{i + 1}</td>
+      <td className={cn(CELL, "px-1.5 py-1 text-[11px] leading-snug whitespace-pre-line")}>
+        {f.duty}
+        {f.autofill ? <span className="mt-1 block text-[10px] font-medium text-[#3f4fd6] print:hidden">↻ from my ticket work</span> : null}
+      </td>
+      <td className={cn(CELL, "px-1.5 py-1 text-[11px] leading-snug whitespace-pre-line")}>{f.mfo}</td>
+      {(rows[i] ?? []).map((v, j) => (
+        // A click anywhere in the cell edits it, as in a spreadsheet.
+        <td key={j} className={cn(CELL, "cursor-text p-0 align-middle hover:bg-[#fff7f0]")} onMouseDown={(e) => focusCell(e)}>
+          <textarea
+            aria-label={`${label} row ${i + 1}, day ${j + 1}`}
+            value={v}
+            rows={1}
+            maxLength={200}
+            onChange={(e) => onCell(section, i, j, e.target.value)}
+            className="block min-h-8 w-full resize-none bg-transparent px-0.5 py-1 text-center text-[10.5px] leading-tight text-black outline-none [field-sizing:content] focus:bg-[#fff3e8] focus:ring-2 focus:ring-[#f4a46a] focus:ring-inset"
+          />
+        </td>
+      ))}
+    </tr>
+  ));
+}

@@ -1,0 +1,92 @@
+// The progress tracker on each ticket: where it is on the main path New → In progress → Fixed → Verified → Closed,
+// when each step was reached, and whose move it is now. Side states (Needs info, Reopened, Rejected…) are shown on
+// the step they belong to. Pure function, unit-tested.
+
+import { isDone, STATUS_LABELS, type TicketStatus } from "./workflow";
+
+const PATH = ["NEW", "IN_PROGRESS", "FIXED", "VERIFIED", "CLOSED"] as const;
+type PathStatus = (typeof PATH)[number];
+
+const STEP_LABELS: Record<PathStatus, string> = { NEW: "Filed", IN_PROGRESS: "In progress", FIXED: "Fixed", VERIFIED: "Verified", CLOSED: "Closed" };
+
+/** Which step of the main path each status sits on. */
+const STEP_OF: Record<TicketStatus, number> = {
+  NEW: 0,
+  IN_PROGRESS: 1,
+  NEED_INFO: 1,
+  REOPENED: 1,
+  FIXED: 2,
+  VERIFIED: 3,
+  CLOSED: 4,
+  REJECTED: 4,
+  DUPLICATE: 4,
+  WONT_FIX: 4,
+};
+
+export type FlowStepState = "done" | "current" | "upcoming" | "skipped";
+export type FlowTone = "acc" | "warn" | "bad" | "ok" | "neutral";
+export type FlowStep = { key: string; label: string; state: FlowStepState; tone: FlowTone; at: Date | null };
+export type Flow = {
+  steps: FlowStep[];
+  /** Whose move it is, or null once the ticket is finished. */
+  next: { who: string | null; side: "developer" | "qa"; action: string } | null;
+};
+
+export type FlowInput = {
+  status: TicketStatus;
+  createdAt: Date;
+  closedAt: Date | null;
+  events: { kind: string; from: string | null; to: string | null; createdAt: Date }[];
+  reporter: { name: string };
+  assignee: { name: string } | null;
+};
+
+export function ticketFlow(t: FlowInput): Flow {
+  const statusEvents = t.events.filter((e) => e.kind === "STATUS");
+  /** When the ticket last entered `status`. */
+  const reached = (status: string): Date | null => {
+    if (status === "NEW") return t.createdAt;
+    const last = statusEvents.filter((e) => e.to === status).at(-1);
+    return last?.createdAt ?? null;
+  };
+
+  const current = STEP_OF[t.status];
+  const endedEarly = isDone(t.status) && t.status !== "CLOSED";
+  // A ticket rejected or closed as a duplicate skips the steps between where it was and the end.
+  const lastReal = endedEarly ? STEP_OF[(statusEvents.at(-1)?.from as TicketStatus) ?? "NEW"] ?? 0 : current;
+
+  const steps: FlowStep[] = PATH.map((key, i): FlowStep => {
+    const base = { key, label: STEP_LABELS[key], tone: "acc" as FlowTone };
+    if (endedEarly) {
+      if (i === PATH.length - 1) return { ...base, key: t.status, label: STATUS_LABELS[t.status], state: "done", tone: "neutral", at: t.closedAt ?? reached(t.status) };
+      if (i <= lastReal) return { ...base, state: "done", at: reached(key) };
+      return { ...base, state: "skipped", at: null };
+    }
+    if (t.status === "CLOSED") return { ...base, state: "done", tone: i === PATH.length - 1 ? "ok" : "acc", at: reached(key) };
+    if (i < current) return { ...base, state: "done", at: reached(key) };
+    if (i > current) return { ...base, state: "upcoming", at: null };
+    // The current step, which may be a side state of it.
+    if (t.status === "NEED_INFO") return { ...base, label: STATUS_LABELS.NEED_INFO, state: "current", tone: "warn", at: reached("NEED_INFO") };
+    if (t.status === "REOPENED") return { ...base, label: STATUS_LABELS.REOPENED, state: "current", tone: "bad", at: reached("REOPENED") };
+    return { ...base, state: "current", tone: t.status === "FIXED" || t.status === "VERIFIED" ? "ok" : "acc", at: reached(key) };
+  });
+
+  const dev = t.assignee?.name ?? null;
+  const qa = t.reporter.name;
+  const next: Flow["next"] =
+    t.status === "NEW" || t.status === "REOPENED"
+      ? dev
+        ? { who: dev, side: "developer", action: "start work" }
+        : { who: qa, side: "qa", action: "pick a developer" }
+      : t.status === "IN_PROGRESS"
+        ? { who: dev, side: "developer", action: "fix it and mark it fixed" }
+        : t.status === "NEED_INFO"
+          ? { who: qa, side: "qa", action: "answer the developer's question" }
+          : t.status === "FIXED"
+            ? { who: qa, side: "qa", action: "retest the fix" }
+            : t.status === "VERIFIED"
+              ? { who: qa, side: "qa", action: "close the ticket" }
+              : null;
+
+  return { steps, next };
+}

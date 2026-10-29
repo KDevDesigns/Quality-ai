@@ -1,5 +1,174 @@
 # Changelog
 
+## DAR on long bond paper, in the form's own colours (2026-10-29)
+
+- **8.5 × 13 in (long bond), landscape, one page:** Print, the PDF and the Excel download all use the office's long bond paper.
+  - The Excel file is set to Folio 8.5 × 13 in (Excel paper size 14), landscape, "fit to 1 page wide by 1 tall" (`longBondOnOnePage` in `lib/dar/excel.ts`). I checked it in Excel, which reports 1 page.
+  - Its duty and MFO rows are sized to their text, so nothing is clipped.
+- **Even 0.5 in margins, no browser headers:** the page margin is 0 and the HTML pads 0.5 in on every side, so the browser has no room to print its date, title, URL and page number in the corners. Only the sheet shrinks to fit, never the margins.
+- **Colours kept when printing:** `print-color-adjust: exact`, so the fills print even with the browser's "Background graphics" off.
+- **Exact colours** from the DCWD DAR workbook's styles (`DAR_COLORS` in `lib/dar/html.ts`):
+  - **#FFCC99:** header labels, the MFO header, the day headers and "B.) SUPPORT FUNCTION".
+  - **#FBD4B4:** "A.) CORE FUNCTIONS".
+  - **#808000 (olive):** the address line.
+  - The title is in **Book Antiqua**, bold.
+  - The same colours are used on screen, in print, in the PDF and in Excel.
+
+## My DAR looks like the paper form, and prints (2026-10-29)
+
+- **My DAR is now the form itself:** a white sheet laid out like the DCWD *Project-Based Employee Daily Accomplishment Report*.
+  - It has the seal and agency banner, the orange-labelled header table, the date submitted and days attended, and the DAYS grid with core and support functions and MFOs. The signatories are at the bottom.
+  - **Editing:** click any day cell to type in it. Click the date submitted to pick another date.
+  - The DAR page uses the full width of the screen (other pages keep the 1320px cap). The sheet keeps its paper proportions and zooms to fill it, shrinking on small screens and growing on wide ones. The separate preview is gone, since the page is the preview.
+- **Print** button: prints the sheet as it is now, saved or not, scaled to one landscape Legal page. It uses the same layout as the PDF (`lib/dar/html.ts`, `PRINT_PAGE`).
+
+## My DAR: Daily Accomplishment Report generator (2026-10-29)
+
+- **My DAR** (QA testers only) builds the DCWD *Project-Based Employee Daily Accomplishment Report* for a half-month period (1–15, or 16 to the end of the month).
+  - **Days filled from ticket work:** each day lists the modules of the tickets the tester filed, replied on or moved that day, by their **Code** from Team & modules, e.g. "QA - BCA / CRM".
+  - A day with nothing is **REST DAY**, and every cell can be edited.
+  - Days attended are counted live.
+  - Drafts are saved per period. **Refill from tickets** redoes the auto-filled rows and keeps the others.
+  - **Download Excel or PDF** in the form's layout: seal, header table, the days grid, core and support functions with MFOs, and the three signatories.
+  - The PDF is printed from the same HTML as the on-screen preview and scaled to one landscape Legal page.
+  - **My details:** the tester's full name for the form (accounts only hold a nickname), their position, and optionally their own duties and MFOs.
+  - **Private:** a DAR is visible only to the tester who made it (`dar.use`, QA only). The export route returns only the caller's own report.
+- **Admin → DAR template** (`dar.template`): department, unit, default position, signatories, and the core and support duties and MFOs. Admins choose which rows are filled from ticket work.
+- **Code:**
+  - `lib/dar/`: `period`, `autofill`, `template`, `store`, `html`, `excel` (`write-excel-file`, with the seal) and `pdf` (Playwright's Chromium).
+  - Models `DarProfile` and `DarReport` (migration `dar_reports`).
+  - No AI is involved (rule 12).
+
+## Ticket progress tracker, full-width forms (2026-10-29)
+
+- **Progress tracker** at the top of every ticket, the same for QA and the developer: Filed → In progress → Fixed → Verified → Closed.
+  - Done steps get a tick and the current one a ring, and each shows when it was reached.
+  - **Needs info** and **Reopened** appear on the In progress step. **Rejected**, **Duplicate** and **Won't fix** end the flow early, and the steps they skipped are struck through.
+  - A "Waiting on …" line names whose move it is and what to do, e.g. "Waiting on Ana (QA) to retest the fix."
+  - The logic is `ticketFlow` in `lib/tickets/flow.ts`, with unit tests.
+- **Forms use the full width:**
+  - **New ticket:** on wide screens, the main fields sit on the left and a Details panel (module, severity, priority, developer, File ticket) on the right. The edit dialog keeps one column.
+  - **My account:** the profile and Change password sit side by side.
+  - **Admin → Workspace:** the card fills the width.
+
+## Phase 3.5b, slice 2: videos on tickets (2026-10-29)
+
+- **Add video** on the new-ticket form and in the reply box: one MP4 or WebM per post, up to **3 min and 150 MB**.
+  - The video uploads as soon as it's picked or dropped, with a progress bar and Cancel. The form then sends only its id, so a big video never goes through a Server Action.
+  - Send and File ticket wait until the upload is done, and the browser asks before you leave mid-upload.
+  - The browser checks the type, size and length first, so a too-long or too-big file is refused before it uploads.
+- **Upload route** `POST /uploads/video` (`app/(main)/uploads/video/route.ts`):
+  - It checks the session itself; `proxy.ts` skips this path so the proxy doesn't buffer or cut off 150 MB.
+  - The body streams straight to `UPLOAD_DIR` as a `.part` file and never sits in memory.
+  - The type comes from the first bytes (`sniffVideo`): MP4 or WebM. QuickTime `.mov`, Matroska and anything else are refused.
+  - The size is counted as it arrives. The length is read from the MP4 `mvhd` box or the WebM `Duration`, without decoding (`lib/uploads/video-meta.ts`).
+  - A refused, failed or cancelled upload leaves no file behind.
+  - Uploads wait in `PendingUpload` until a ticket or reply claims them, and only the uploader can claim one. Unclaimed ones are removed after 24 h.
+- **Playback with Range requests:** `/files/[id]` answers `Range` with `206` / `416` and `Accept-Ranges: bytes` (`lib/uploads/range.ts`), so a developer can scrub a recording without downloading all of it.
+  - Videos play inline in the description and the thread, with name, length and size.
+- **Activity log:** names videos too, e.g. "Attached 1 screenshot and a video" or "Posted a video". The delete dialog counts screenshots and videos.
+- **Data:** a new `PendingUpload` model and `Attachment.durationSec` (migration `ticket_videos`).
+
+## Tickets per person, delete, activity log (2026-10-29)
+
+- **Each person sees their own tickets:**
+  - QA testers see the tickets they filed, and developers the tickets assigned to them. Admins see everything (`tickets.viewAll`).
+  - The rule is `ticketScope` in `lib/tickets/workflow.ts`. It applies to the list, the ticket page, the dashboard, attachment downloads (`/files/[id]`) and every change.
+  - Anyone else's ticket looks like it doesn't exist. List filters can narrow a person's scope but never widen it.
+  - Reassigning a ticket takes it off the previous developer's list.
+- **Only QA testers (their own tickets) and admins** can file, edit and delete tickets. Developers have no "New ticket" button, and `/tickets/new` is not found for them.
+  - Verify, close and reopen now belong to the QA tester who filed the ticket, since other testers can't see it.
+- **Delete, permanently:** a red Delete button on the ticket, for the filing QA tester or an admin.
+  - The dialog lists what will be removed: the ticket, its replies, its log and its screenshots.
+  - The red "Delete this ticket" button stays disabled until the exact title is typed, as on GitHub. The server checks the title too.
+  - Screenshot files are removed from `UPLOAD_DIR`.
+  - Ticket numbers are never reused after a delete (`tickets.lastNumber` in `Setting`).
+- **Activity log** on every ticket (`lib/tickets/log.ts`): every movement with its exact date and time, newest first.
+  - It covers filing, status moves (with notes), assignments, edited fields, replies and attachments.
+  - It is built from existing data, so older tickets have a full log too.
+- **Dashboard per person:**
+  - **QA:** My open tickets, Developer needs info, and Ready for my retest.
+  - **Developers:** Assigned to me, Not started, and Waiting for QA retest.
+  - **Admins:** the totals.
+  - Each dashboard also lists that person's most recent tickets.
+- **Ticket list:** titled "My tickets" or "All tickets", with views for each role. The Developer filter is hidden for developers.
+- **Sub-modules:** the add/edit form no longer has a Sort order field. New sub-modules go after their siblings, and top-level modules keep the field.
+- **Dark mode:** red (destructive) buttons use dark text, so they stay readable.
+
+## Light/dark mode and theme colours (2026-10-29)
+
+- **Mode:**
+  - A sun/moon button in the topbar switches between light and dark.
+  - The account menu has **Appearance → Mode**: Light, Dark, or System (follows Windows; the default).
+  - Built on `next-themes` with the existing dark tokens. The choice is remembered per browser.
+- **Theme colour:** six accents in the account menu: DCWD indigo (default), Ocean blue, Teal, Green, Violet and Rose.
+  - Everything accent-coloured follows the choice: buttons, the active sidebar item, tabs and links.
+  - It is one CSS value (`--acc-base`, set by `data-accent` on `<html>`).
+  - A tiny script in `<head>` applies the saved colour before the page paints, so there's no flash.
+  - Every accent keeps white button text at WCAG AA contrast in light mode (checked by `tests/unit/theme.test.ts`). Dark mode lightens it and uses dark button text.
+- **Dark-mode fixes:** inactive sidebar links were nearly invisible, and white text on accent-coloured surfaces now uses the theme's button-text colour.
+- **Sidebar:** removed the "Office network only / Ticket data never goes to an AI model" footer.
+
+## Sign-up with admin approval, and the account menu in the topbar (2026-10-29)
+
+- **Sign in / Sign up switch** at the top of both screens (`app/login/auth-tabs.tsx`), after the CRM portal's AuthTabs: a segmented control whose tabs are links, with the active pill popping in (off under reduced motion).
+- **Create an account** (`/login?mode=signup`):
+  - Choose QA tester or Developer, then enter a nickname (2–40 characters; shown on tickets and replies) and email. There is **no password field**.
+  - When an admin approves, QA Hub creates a one-time **temporary password** (shown once, like Reset password). The person must choose their own at first sign-in.
+  - Until then the account has a random password nobody knows, so it can't be signed into.
+  - Nobody can sign up as an admin.
+  - Only `@davao-water.gov.ph` addresses are accepted, here and when an admin adds or edits a user (`EMAIL_DOMAIN` in `lib/schemas/user.ts`). Subdomains and look-alikes such as `…gov.ph.example.com` are refused.
+  - The account is saved turned off and **pending** (`User.pending`) until an admin approves it.
+  - The form answers "Request sent" whether or not the email already has an account, so it can't be used to look people up. An existing account is never changed.
+  - Sign-ups are limited to 20 per hour across the office.
+- **Admin → Users** has a "Waiting for approval" list with Approve and Reject.
+  - Reject deletes the request, and the person can sign up again.
+  - Approve is the only way to turn a request on, because it creates the password.
+- **Nickname everywhere:**
+  - Admin → Users' New user / Edit user dialog and the users table say **Nickname** (2–40 characters), matching sign-up.
+  - Both forms use the same rule (`NICKNAME_MAX` in `lib/schemas/user.ts`).
+- **Temporary password box** (Approve, New user and Reset password):
+  - The password starts hidden. **Show/Hide** toggles it, and **Copy** works either way, with a fallback for plain-HTTP LAN browsers.
+  - Closing before copying or showing it, by Done, X, Esc or a click outside, asks first: "You haven't copied the password yet", with **Close anyway** or **Go back**. The shared guard is `components/close-guard.tsx`.
+  - The Approve dialog lives at page level (`ApprovalHost`), so it stays open when the approved request leaves the list.
+  - The dashboard tells admins how many requests are waiting.
+- **Account menu:**
+  - The large profile block is gone from the sidebar.
+  - The signed-in person now shows at the right of the topbar (initials avatar, name, role). Clicking it opens **My account** and **Sign out**.
+- **Migration:** `user_signup` adds `User.pending`.
+
+## Phase 3.5b, slice 1: Tickets (2026-10-29)
+
+QA and developers can now file and work tickets in QA Hub instead of Messenger.
+
+- **Tickets** (`/tickets`):
+  - Each ticket is a bug, suggestion or improvement, numbered #1, #2…
+  - Fields: title, description, module or sub-module, severity (bugs only, S1–S4), priority (P1–P4), "found in" and the assigned developer.
+  - Anyone signed in can see and comment on every ticket. Developers can file suggestions too.
+- **Workflow** (`lib/tickets/workflow.ts`):
+  - The assigned developer moves a ticket to In progress, Needs info, Fixed, Rejected, Duplicate or Won't fix.
+  - Any QA tester can verify, close or reopen. The reporter can resume a ticket after adding info, or withdraw a new one.
+  - Admins can do both sides.
+  - Needs info, Rejected, Won't fix, Reopen and Withdraw require a note. Duplicate requires the other ticket's number.
+  - A move is refused if someone else changed the status in the meantime.
+- **Picking the developer:** QA and admins pick the developer. People who work on the chosen module are listed first, with the lead marked.
+- **Ticket page** (`/tickets/[number]`):
+  - Status buttons with a note dialog, and a details panel with the developer picker.
+  - One conversation that mixes comments with a timeline of every change (status, developer, edited fields).
+  - The reporter or an admin can edit the ticket.
+- **Images:**
+  - Paste a screenshot (Ctrl+V), pick files or drop them: up to 6 images of 10 MB each, on new tickets and on replies.
+  - The type is checked from the file's bytes (PNG, JPEG, WebP or GIF).
+  - Files are stored in `UPLOAD_DIR/YYYY/MM/<random>.<ext>` and served only through the signed-in route `/files/[id]`, with `nosniff` and a sandbox CSP.
+- **List:** quick views (Open, Assigned to me, Reported by me, Waiting for retest, Done, All), filters by type, module (including its sub-modules) and developer, and a search on text or `#number`. 50 tickets per page.
+- **Dashboard:** counts for open tickets, tickets assigned to me and tickets waiting for retest. These replace the "coming next" banner.
+- **Config:** `serverActions.bodySizeLimit` and `proxyClientMaxBodySize` are raised to 64 MB. Without the second, `proxy.ts` would cut uploads off at 10 MB without an error.
+- **Build fix:** `npm run build` had been failing on `/test-design/[id]` since 3.5a.
+  - The layout's Suspense fallbacks read `usePathname()`, which the prerendered shell of a `[param]` route can't know.
+  - The fallbacks are now `AppSidebarShell` and `AppTopbarShell`, which don't read the path.
+- **Migration:** `qa_hub_tickets` adds the `Ticket`, `TicketComment`, `TicketEvent` and `Attachment` tables.
+- **Tests:** workflow, ticket store (numbering, timeline, filters, the full loop), uploads (magic bytes, limits, path traversal), ticket schemas and formatting.
+
 ## Phase 3.5a: QA Hub foundation (2026-10-28)
 
 The app's focus moves to a QA ticket hub for the 5 QA testers and the developers, on the office LAN. The AI workbench

@@ -276,12 +276,15 @@ later) is hidden behind an admin toggle and paused for a major revision.
   - An admin-editable **module → sub-module directory** (`ErpArea`) with leads, developers and QA (`AreaMember`).
   - The nav regrouped into Tickets / Admin / AI workbench.
   - LAN run scripts, SQLite WAL mode, and a backup script. See `docs/OPERATIONS.md`.
-- **3.5b — Tickets:**
-  - Tickets (bug / suggestion / improvement) with status workflow `NEW → IN_PROGRESS → FIXED → VERIFIED → CLOSED` (plus `REOPENED`, `NEED_INFO`, `REJECTED`, `DUPLICATE`, `WONT_FIX`).
-  - QA picks the developer.
-  - A built-in screenshot markup tool (box, arrow, pen, text, blur).
-  - Videos up to 3 min / 150 MB in `UPLOAD_DIR`, served through an auth-checked route with Range support.
-  - A conversation thread with attachments and a timeline of every change, an inbox with unread badges, a ticket dashboard, and CSV/XLSX export.
+- **3.5b — Tickets**, built in slices:
+  1. ✅ Tickets (bug / suggestion / improvement) with status workflow `NEW → IN_PROGRESS → FIXED → VERIFIED → CLOSED`
+     (plus `REOPENED`, `NEED_INFO`, `REJECTED`, `DUPLICATE`, `WONT_FIX`). QA picks the developer. A conversation
+     thread with image attachments (paste, pick or drop) and a timeline of every change.
+  2. ✅ Videos up to 3 min / 150 MB in `UPLOAD_DIR`, served through an auth-checked route with Range support.
+  3. A built-in screenshot markup tool (box, arrow, pen, text, blur).
+  4. An inbox with unread badges, a ticket dashboard, and CSV/XLSX export.
+  - Extra, done: ✅ **My DAR**, the QA testers' half-month Daily Accomplishment Report, filled from ticket work and
+    downloaded as Excel or PDF (admin template under Admin → DAR template).
 
 This replaces the planned Phase 9 Defects *screen*. The `Defect` model stays for the traceability code and is merged
 into tickets in Phase 9.

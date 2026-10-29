@@ -17,6 +17,9 @@ export const auth = authStore(db);
 /** 5 failed logins per email per 15 minutes. */
 export const loginLimiter = createRateLimiter({ max: 5, windowMs: 15 * 60 * 1000 });
 
+/** 20 sign-up requests per hour across the whole office, so a script can't flood the approval list. */
+export const signupLimiter = createRateLimiter({ max: 20, windowMs: 60 * 60 * 1000 });
+
 /** The signed-in user, or null. Read once per request. */
 export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   // Session checks compare against the clock, so tell Cache Components this render is request-time.

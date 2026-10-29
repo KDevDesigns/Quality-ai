@@ -1,0 +1,116 @@
+"use client";
+
+import Link from "next/link";
+import { useTransition } from "react";
+import { Menu } from "@base-ui/react/menu";
+import { useTheme } from "next-themes";
+import { CheckIcon, ChevronDownIcon, LogOutIcon, MonitorIcon, MoonIcon, SunIcon, UserRoundCogIcon } from "lucide-react";
+import { logout } from "@/app/login/actions";
+import { setAccent, useAccent } from "@/components/theme";
+import { ROLE_LABELS } from "@/lib/auth/permissions";
+import { initials } from "@/lib/format";
+import { ACCENTS, isAccent } from "@/lib/theme";
+import { cn } from "@/lib/utils";
+import type { SidebarUser } from "./app-sidebar";
+
+const item =
+  "flex h-10 cursor-default items-center gap-2.5 rounded-md px-3 text-[14.5px] outline-hidden select-none data-highlighted:bg-acc-t2 data-highlighted:text-acc-ink [&_svg]:size-4 [&_svg]:text-ink2 data-highlighted:[&_svg]:text-acc";
+
+/** The signed-in person in the topbar: initials avatar, name and role. Opens My account and Sign out. */
+export function UserMenu({ user, active }: { user: SidebarUser; active: boolean }) {
+  const [signingOut, startTransition] = useTransition();
+  return (
+    <Menu.Root>
+      <Menu.Trigger
+        aria-label={`Account menu for ${user.name}`}
+        className={cn(
+          "flex h-[46px] items-center gap-2.5 rounded-full py-1 pr-2.5 pl-1 transition-colors hover:bg-acc-t2 focus-visible:ring-3 focus-visible:ring-acc/30 focus-visible:outline-none data-popup-open:bg-acc-t2",
+          active && "bg-acc-t2",
+        )}
+      >
+        <span
+          className="flex size-[38px] shrink-0 items-center justify-center rounded-full border-2 border-card bg-acc-t text-[14px] font-semibold text-acc-ink shadow-[0_0_0_2px_var(--acc-b)]"
+          aria-hidden
+        >
+          {initials(user.name)}
+        </span>
+        <span className="hidden min-w-0 flex-col text-left leading-tight md:flex">
+          <span className="max-w-44 truncate text-[14px] font-semibold text-foreground">{user.name}</span>
+          <span className="text-[12px] text-muted-foreground">{ROLE_LABELS[user.role]}</span>
+        </span>
+        <ChevronDownIcon className="size-4 text-muted-foreground" aria-hidden />
+      </Menu.Trigger>
+      <Menu.Portal>
+        <Menu.Positioner side="bottom" align="end" sideOffset={8} className="isolate z-50">
+          <Menu.Popup className="w-72 origin-(--transform-origin) rounded-xl bg-popover p-1.5 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
+            <div className="px-3 pt-2 pb-2.5">
+              <div className="truncate text-[14.5px] font-semibold">{user.name}</div>
+              <div className="text-[12.5px] text-muted-foreground">{ROLE_LABELS[user.role]}</div>
+            </div>
+            <Menu.Separator className="-mx-1.5 my-1 h-px bg-line2" />
+            <Appearance />
+            <Menu.Separator className="-mx-1.5 my-1 h-px bg-line2" />
+            <Menu.Item className={item} render={<Link href="/account" />}>
+              <UserRoundCogIcon /> My account
+            </Menu.Item>
+            <Menu.Item className={item} disabled={signingOut} onClick={() => startTransition(() => logout())}>
+              <LogOutIcon /> {signingOut ? "Signing out…" : "Sign out"}
+            </Menu.Item>
+          </Menu.Popup>
+        </Menu.Positioner>
+      </Menu.Portal>
+    </Menu.Root>
+  );
+}
+
+const MODES = [
+  { value: "light", label: "Light", icon: SunIcon },
+  { value: "dark", label: "Dark", icon: MoonIcon },
+  { value: "system", label: "System", icon: MonitorIcon },
+] as const;
+
+/** Light / dark / follow Windows, and the theme colour. Both are remembered in this browser only. */
+function Appearance() {
+  const { theme, setTheme } = useTheme();
+  const accent = useAccent();
+  return (
+    <div className="grid gap-2.5 px-3 pt-1.5 pb-2.5">
+      <Menu.Group className="grid gap-1.5">
+        <Menu.GroupLabel className="text-[11.5px] font-semibold tracking-[0.06em] text-muted-foreground uppercase">Mode</Menu.GroupLabel>
+        <Menu.RadioGroup value={theme ?? "system"} onValueChange={(v) => setTheme(v)} className="grid grid-cols-3 gap-1 rounded-lg bg-surface3 p-1">
+          {MODES.map(({ value, label, icon: Icon }) => (
+            <Menu.RadioItem
+              key={value}
+              value={value}
+              closeOnClick={false}
+              className="flex h-8 cursor-default items-center justify-center gap-1.5 rounded-md text-[13px] text-muted-foreground outline-hidden select-none data-checked:bg-card data-checked:font-semibold data-checked:text-foreground data-checked:shadow-[0_1px_3px_rgba(20,20,40,0.12)] data-highlighted:text-foreground data-highlighted:ring-2 data-highlighted:ring-acc/40"
+            >
+              <Icon className="size-3.5" aria-hidden /> {label}
+            </Menu.RadioItem>
+          ))}
+        </Menu.RadioGroup>
+      </Menu.Group>
+      <Menu.Group className="grid gap-1.5">
+        <Menu.GroupLabel className="text-[11.5px] font-semibold tracking-[0.06em] text-muted-foreground uppercase">Theme colour</Menu.GroupLabel>
+        <Menu.RadioGroup value={accent} onValueChange={(v) => isAccent(v) && setAccent(v)} className="flex gap-2">
+          {ACCENTS.map((a) => (
+            <Menu.RadioItem
+              key={a.key}
+              value={a.key}
+              closeOnClick={false}
+              label={a.label}
+              aria-label={a.label}
+              title={a.label}
+              className="flex size-7 cursor-default items-center justify-center rounded-full outline-hidden ring-offset-2 ring-offset-popover data-checked:ring-2 data-checked:ring-foreground/70 data-highlighted:ring-2 data-highlighted:ring-acc/50"
+              style={{ backgroundColor: a.color }}
+            >
+              <Menu.RadioItemIndicator>
+                <CheckIcon className="size-3.5 text-white" strokeWidth={3} aria-hidden />
+              </Menu.RadioItemIndicator>
+            </Menu.RadioItem>
+          ))}
+        </Menu.RadioGroup>
+      </Menu.Group>
+    </div>
+  );
+}

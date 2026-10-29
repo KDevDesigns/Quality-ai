@@ -108,7 +108,7 @@ async function RiskRegister({ searchParams }: { searchParams: Promise<SearchPara
                 )}
               >
                 {t.label}
-                <b className={cn("inline-flex h-6 min-w-[30px] items-center justify-center rounded-md px-1.5 font-mono text-[12.5px] font-bold", on ? "bg-acc text-white" : "bg-surface3 text-ink2")}>
+                <b className={cn("inline-flex h-6 min-w-[30px] items-center justify-center rounded-md px-1.5 font-mono text-[12.5px] font-bold", on ? "bg-acc text-primary-foreground" : "bg-surface3 text-ink2")}>
                   {t.count}
                 </b>
               </Link>

@@ -2,10 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { safeNext } from "@/lib/auth/safe-next";
-import { auth, loginLimiter, signIn, signOut } from "@/lib/auth/session";
+import { auth, loginLimiter, signIn, signOut, signupLimiter } from "@/lib/auth/session";
 import { normalizeEmail } from "@/lib/auth/store";
 import { fromZodError, text, type FormState } from "@/lib/form";
-import { loginInput } from "@/lib/schemas/user";
+import { loginInput, signupInput } from "@/lib/schemas/user";
 
 export async function login(_prev: FormState, fd: FormData): Promise<FormState> {
   const parsed = loginInput.safeParse({ email: text(fd, "email"), password: text(fd, "password") });
@@ -24,6 +24,22 @@ export async function login(_prev: FormState, fd: FormData): Promise<FormState> 
   loginLimiter.reset(key);
   await signIn(user.id);
   redirect(user.mustChangePassword ? "/account" : safeNext(text(fd, "next")));
+}
+
+export async function signup(_prev: FormState, fd: FormData): Promise<FormState> {
+  const parsed = signupInput.safeParse({
+    role: text(fd, "role"),
+    name: text(fd, "name"),
+    email: text(fd, "email"),
+  });
+  if (!parsed.success) return fromZodError(parsed.error);
+
+  if (signupLimiter.blockedFor("all")) return { ok: false, message: "Too many sign-ups right now. Try again later, or ask a QA Hub admin." };
+  signupLimiter.fail("all");
+
+  // The same answer whether or not the email already has an account, so the form can't be used to look people up.
+  await auth.signUp(parsed.data);
+  return { ok: true };
 }
 
 export async function logout() {

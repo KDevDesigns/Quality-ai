@@ -208,7 +208,7 @@ function People({ list, person }: { list: Member[]; person: string }) {
       {list.map((m) => (
         <span
           key={m.userId}
-          className={cn("rounded-md px-2 py-0.5 text-[13px]", m.userId === person ? "bg-acc text-white" : "bg-surface3 text-foreground")}
+          className={cn("rounded-md px-2 py-0.5 text-[13px]", m.userId === person ? "bg-acc text-primary-foreground" : "bg-surface3 text-foreground")}
         >
           {m.name}
         </span>

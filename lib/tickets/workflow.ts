@@ -1,0 +1,131 @@
+// Ticket statuses, labels and the status workflow: who may move a ticket from which status to which.
+// Pure functions, unit-tested. The permission matrix decides the role; these rules add per-ticket checks.
+
+import type { Tone } from "@/components/status-pill";
+import { can, type Role } from "@/lib/auth/permissions";
+
+export const TICKET_TYPES = ["BUG", "SUGGESTION", "IMPROVEMENT"] as const;
+export type TicketType = (typeof TICKET_TYPES)[number];
+
+export const TICKET_STATUSES = ["NEW", "IN_PROGRESS", "NEED_INFO", "FIXED", "VERIFIED", "CLOSED", "REOPENED", "REJECTED", "DUPLICATE", "WONT_FIX"] as const;
+export type TicketStatus = (typeof TICKET_STATUSES)[number];
+
+export const SEVERITIES = ["S1", "S2", "S3", "S4"] as const;
+export type SeverityValue = (typeof SEVERITIES)[number];
+
+export const TYPE_LABELS: Record<TicketType, string> = { BUG: "Bug", SUGGESTION: "Suggestion", IMPROVEMENT: "Improvement" };
+
+export const STATUS_LABELS: Record<TicketStatus, string> = {
+  NEW: "New",
+  IN_PROGRESS: "In progress",
+  NEED_INFO: "Needs info",
+  FIXED: "Fixed",
+  VERIFIED: "Verified",
+  CLOSED: "Closed",
+  REOPENED: "Reopened",
+  REJECTED: "Rejected",
+  DUPLICATE: "Duplicate",
+  WONT_FIX: "Won't fix",
+};
+
+export const STATUS_TONES: Record<TicketStatus, Tone> = {
+  NEW: "info",
+  IN_PROGRESS: "acc",
+  NEED_INFO: "warn",
+  FIXED: "ok",
+  VERIFIED: "ok",
+  CLOSED: "neutral",
+  REOPENED: "bad",
+  REJECTED: "neutral",
+  DUPLICATE: "neutral",
+  WONT_FIX: "neutral",
+};
+
+export const SEVERITY_LABELS: Record<SeverityValue, string> = { S1: "S1 Critical", S2: "S2 Major", S3: "S3 Minor", S4: "S4 Trivial" };
+export const PRIORITY_LABELS = { P1: "P1 Urgent", P2: "P2 High", P3: "P3 Normal", P4: "P4 Low" } as const;
+
+/** Statuses that end a ticket. `closedAt` is set when a ticket enters one and cleared when it is reopened. */
+export const DONE_STATUSES: readonly TicketStatus[] = ["CLOSED", "REJECTED", "DUPLICATE", "WONT_FIX"];
+export const OPEN_STATUSES: readonly TicketStatus[] = TICKET_STATUSES.filter((s) => !DONE_STATUSES.includes(s));
+export const isDone = (s: TicketStatus) => DONE_STATUSES.includes(s);
+
+export type Actor = { id: string; role: Role };
+export type TicketRef = { status: TicketStatus; reporterId: string; assigneeId: string | null };
+
+/**
+ * Which tickets a person sees: admins every ticket, QA testers the tickets they filed, developers the tickets
+ * assigned to them. Applied to the list, the ticket page, the dashboard, attachments and every change.
+ */
+export type TicketScope = "all" | { reporterId: string } | { assigneeId: string };
+
+export function ticketScope(u: Actor): TicketScope {
+  if (can(u, "tickets.viewAll")) return "all";
+  return u.role === "QA" ? { reporterId: u.id } : { assigneeId: u.id };
+}
+
+export function canSeeTicket(t: TicketRef, u: Actor): boolean {
+  const s = ticketScope(u);
+  if (s === "all") return true;
+  return "reporterId" in s ? t.reporterId === s.reporterId : t.assigneeId === s.assigneeId;
+}
+
+/** The assigned developer, or an admin. */
+const devSide = (t: TicketRef, u: Actor) => can(u, "tickets.resolve") && (u.role === "ADMIN" || t.assigneeId === u.id);
+/** The QA tester who filed it (the only tester who sees it), or an admin. */
+const qaSide = (t: TicketRef, u: Actor) => can(u, "tickets.verify") && (u.role === "ADMIN" || t.reporterId === u.id);
+const reporter = (t: TicketRef, u: Actor) => t.reporterId === u.id || u.role === "ADMIN";
+
+type Rule = {
+  from: readonly TicketStatus[];
+  to: TicketStatus;
+  label: string;
+  who: (t: TicketRef, u: Actor) => boolean;
+  needsNote?: boolean;
+  needsDuplicate?: boolean;
+};
+
+const WORKING: readonly TicketStatus[] = ["NEW", "IN_PROGRESS", "REOPENED"];
+
+// Order matters: it is the order of the buttons on the ticket page.
+const RULES: Rule[] = [
+  { from: ["NEW", "REOPENED"], to: "IN_PROGRESS", label: "Start work", who: devSide },
+  { from: ["NEED_INFO"], to: "IN_PROGRESS", label: "Info added, resume", who: (t, u) => reporter(t, u) || devSide(t, u) },
+  { from: WORKING, to: "FIXED", label: "Mark fixed", who: devSide },
+  { from: ["FIXED"], to: "VERIFIED", label: "Verified", who: qaSide },
+  { from: ["VERIFIED"], to: "CLOSED", label: "Close", who: qaSide },
+  { from: WORKING, to: "NEED_INFO", label: "Ask for info", who: devSide, needsNote: true },
+  { from: ["FIXED", "VERIFIED", "CLOSED", "REJECTED", "DUPLICATE", "WONT_FIX"], to: "REOPENED", label: "Reopen", who: qaSide, needsNote: true },
+  { from: [...WORKING, "NEED_INFO"], to: "DUPLICATE", label: "Duplicate", who: (t, u) => devSide(t, u) || qaSide(t, u), needsDuplicate: true },
+  { from: [...WORKING, "NEED_INFO"], to: "WONT_FIX", label: "Won't fix", who: devSide, needsNote: true },
+  { from: [...WORKING, "NEED_INFO"], to: "REJECTED", label: "Reject", who: devSide, needsNote: true },
+  { from: ["NEW", "NEED_INFO"], to: "CLOSED", label: "Withdraw", who: reporter, needsNote: true },
+];
+
+export type Transition = { to: TicketStatus; label: string; needsNote: boolean; needsDuplicate: boolean };
+
+/** The moves `user` may make on this ticket now, one per target status. */
+export function allowedTransitions(t: TicketRef, u: Actor): Transition[] {
+  const seen = new Set<TicketStatus>();
+  const out: Transition[] = [];
+  for (const r of RULES) {
+    if (seen.has(r.to) || !r.from.includes(t.status) || !r.who(t, u)) continue;
+    seen.add(r.to);
+    out.push({ to: r.to, label: r.label, needsNote: !!r.needsNote, needsDuplicate: !!r.needsDuplicate });
+  }
+  return out;
+}
+
+/** Why the move is refused, or null when it is allowed. */
+export function transitionError(t: TicketRef, u: Actor, input: { to: TicketStatus; note?: string | null; duplicateOf?: number | null }): string | null {
+  const move = allowedTransitions(t, u).find((m) => m.to === input.to);
+  if (!move) return `You can't move this ticket from ${STATUS_LABELS[t.status]} to ${STATUS_LABELS[input.to]}.`;
+  if (move.needsNote && !input.note?.trim()) return "Add a note explaining why.";
+  if (move.needsDuplicate && !input.duplicateOf) return "Enter the number of the ticket this duplicates.";
+  return null;
+}
+
+/** Title, description, type, module, severity, priority and "found in": the QA tester who filed it, or an admin. */
+export const canEditTicket = (t: TicketRef, u: Actor) => can(u, "tickets.create") && reporter(t, u);
+/** Deleting is permanent, so the same people as editing. */
+export const canDeleteTicket = (t: TicketRef, u: Actor) => can(u, "tickets.delete") && reporter(t, u);
+export const canAssign = (u: Actor) => can(u, "tickets.assign");

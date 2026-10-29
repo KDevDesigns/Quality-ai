@@ -5,7 +5,9 @@ import { Suspense } from "react";
 import { BugIcon, MessagesSquareIcon, PenToolIcon } from "lucide-react";
 import { LoadingBlock } from "@/components/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
+import { AuthTabs } from "./auth-tabs";
 import { LoginForm } from "./login-form";
+import { SignupForm } from "./signup-form";
 
 export const metadata: Metadata = { title: "Sign in" };
 
@@ -25,10 +27,12 @@ const WAVES = [
 
 export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
-    <div className="flex min-h-screen bg-background">
+    // The page itself never scrolls; only the form column does. A page scrollbar (it appears on the taller Sign up
+    // form) would narrow the window, resize the brand pane and make its text jump when switching tabs.
+    <div className="flex h-dvh overflow-hidden bg-background">
       <BrandPane />
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-        <div className="flex flex-1 overflow-y-auto px-4 pt-12 pb-8">
+      <div className="flex h-dvh min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 overflow-y-auto px-4 pt-12 pb-8">
           <div className="m-auto w-full max-w-[440px]">
             <MobileBrand />
             <Suspense fallback={<LoadingBlock />}>
@@ -37,7 +41,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
           </div>
         </div>
         <footer className="flex min-h-[68px] shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-1 border-t border-line2 px-6 py-3 text-[13px] text-muted-foreground md:px-16">
-          <span>Need help signing in? Ask a QA Hub admin.</span>
+          <span>Need help? Ask a QA Hub admin.</span>
           <span>Office network only · Davao City Water District</span>
         </footer>
       </div>
@@ -47,45 +51,43 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
 
 async function LoginBody({ searchParams }: { searchParams: PageProps<"/login">["searchParams"] }) {
   if (await getCurrentUser()) redirect("/");
-  const next = (await searchParams).next;
-  return <LoginForm next={typeof next === "string" ? next : "/"} />;
+  const { next, mode } = await searchParams;
+  const signup = mode === "signup";
+  return (
+    <>
+      <AuthTabs active={signup ? "signup" : "signin"} />
+      {signup ? <SignupForm /> : <LoginForm next={typeof next === "string" ? next : "/"} />}
+    </>
+  );
 }
 
 function BrandPane() {
   return (
-    <section aria-label="QA Hub" className="auth-brand relative hidden w-[41.6%] max-w-[800px] shrink-0 overflow-hidden bg-[#eef2fd] text-[#1e2a78] lg:block">
-      <div className="absolute left-1/2 top-[30.5%] size-[720px] -translate-1/2 rounded-full bg-[radial-gradient(circle,#ffffff_0,rgba(255,255,255,.7)_28%,rgba(255,255,255,0)_62%)]" />
-      <div className="absolute left-1/2 top-[30.5%] size-0">
-        {[
-          [236, "#bcc6f1"],
-          [330, "#cbd3f4"],
-          [440, "#d8def7"],
-          [570, "#e2e7f9"],
-        ].map(([s, c]) => (
-          <span key={s} className="rg" style={{ width: s, height: s, borderColor: c as string }} />
-        ))}
-        <span className="rip" />
-        <span className="rip" />
-        <span className="rip" />
-        <span className="rip" />
-      </div>
-      <div className="seal absolute left-1/2 top-[30.5%] -mt-[90px] -ml-[90px] flex size-[180px] items-center justify-center rounded-full bg-white shadow-[0_18px_50px_rgba(40,52,140,.16),0_0_0_8px_rgba(255,255,255,.6)]">
-        <Image src="/dcwd-seal.png" alt="Davao City Water District seal" width={140} height={140} priority />
-      </div>
-      <div className="auth-enter absolute inset-x-10 top-[46%] text-center xl:inset-x-20">
-        <div className="text-[13px] font-semibold tracking-[0.16em] text-[#5b63c7] uppercase">Davao City Water District</div>
-        <h1 className="mt-3.5 text-[44px] leading-[1.1] font-bold tracking-[-0.02em]">QA Hub</h1>
-        <p className="mx-auto mt-4 max-w-[500px] text-[17px] leading-relaxed text-[#525a8c]">
-          Report ERP bugs, suggestions and improvements with marked-up screenshots and videos, and talk them through with the developers who own each module.
-        </p>
-        <div className="mt-[30px] flex flex-wrap justify-center gap-2.5">
-          {CHIPS.map(({ icon: Icon, label }) => (
-            <span key={label} className="flex h-10 items-center gap-2 rounded-full border border-[#dde3f7] bg-white/75 px-4 text-[14.5px] font-medium text-[#2a3170]">
-              <Icon className="size-4 text-[#4f56d3]" aria-hidden />
-              {label}
-            </span>
-          ))}
+    // The seal and text are centred in the space above a reserved strip for the waves, and drawn above them, so the
+    // waves can never cover the chips, however short the window is. On short windows the seal and title shrink.
+    <section aria-label="QA Hub" className="auth-brand relative hidden h-dvh w-[41.6%] max-w-[800px] shrink-0 flex-col overflow-hidden bg-[#eef2fd] text-[#1e2a78] lg:flex">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center px-10 pt-8 pb-[150px] xl:px-20 [@media(max-height:760px)]:pb-[120px]">
+        <div className="relative size-[180px] shrink-0 [@media(max-height:760px)]:size-[130px]">
+          <div className="absolute top-1/2 left-1/2 size-[720px] -translate-1/2 rounded-full bg-[radial-gradient(circle,#ffffff_0,rgba(255,255,255,.7)_28%,rgba(255,255,255,0)_62%)]" />
+          <div className="absolute top-1/2 left-1/2 size-0" aria-hidden>
+            {[
+              [236, "#bcc6f1"],
+              [330, "#cbd3f4"],
+              [440, "#d8def7"],
+              [570, "#e2e7f9"],
+            ].map(([s, c]) => (
+              <span key={s} className="rg" style={{ width: s, height: s, borderColor: c as string }} />
+            ))}
+            <span className="rip" />
+            <span className="rip" />
+            <span className="rip" />
+            <span className="rip" />
+          </div>
+          <div className="seal relative flex size-full items-center justify-center rounded-full bg-white shadow-[0_18px_50px_rgba(40,52,140,.16),0_0_0_8px_rgba(255,255,255,.6)]">
+            <Image src="/dcwd-seal.png" alt="Davao City Water District seal" width={140} height={140} priority className="size-[78%]" />
+          </div>
         </div>
+        <BrandText />
       </div>
       {WAVES.map((w) => (
         <div key={w.cls} className="absolute inset-x-0 bottom-0 h-[220px]" aria-hidden>
@@ -94,8 +96,28 @@ function BrandPane() {
           </svg>
         </div>
       ))}
-      <div className="absolute inset-x-0 bottom-[26px] text-center text-[13px] text-[#4a5290]">© Davao City Water District · Est. 1973</div>
+      <div className="absolute inset-x-0 bottom-[26px] z-10 text-center text-[13px] text-[#4a5290]">© Davao City Water District · Est. 1973</div>
     </section>
+  );
+}
+
+function BrandText() {
+  return (
+    <div className="auth-enter relative mt-14 w-full text-center [@media(max-height:760px)]:mt-8">
+      <div className="text-[13px] font-semibold tracking-[0.16em] text-[#5b63c7] uppercase">Davao City Water District</div>
+      <h1 className="mt-3.5 text-[44px] leading-[1.1] font-bold tracking-[-0.02em] [@media(max-height:760px)]:mt-2 [@media(max-height:760px)]:text-[36px]">QA Hub</h1>
+      <p className="mx-auto mt-4 max-w-[500px] text-[17px] leading-relaxed text-[#525a8c] [@media(max-height:760px)]:mt-3 [@media(max-height:760px)]:text-[15.5px]">
+        Report ERP bugs, suggestions and improvements with marked-up screenshots and videos, and talk them through with the developers who own each module.
+      </p>
+      <div className="mt-[30px] flex flex-wrap justify-center gap-2.5 [@media(max-height:760px)]:mt-5">
+        {CHIPS.map(({ icon: Icon, label }) => (
+          <span key={label} className="flex h-10 items-center gap-2 rounded-full border border-[#dde3f7] bg-white/75 px-4 text-[14.5px] font-medium text-[#2a3170]">
+            <Icon className="size-4 text-[#4f56d3]" aria-hidden />
+            {label}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 

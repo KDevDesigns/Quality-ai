@@ -1,0 +1,69 @@
+import { describe, expect, it } from "vitest";
+import { ticketFlow, type FlowInput } from "@/lib/tickets/flow";
+import type { TicketStatus } from "@/lib/tickets/workflow";
+
+const at = (min: number) => new Date(Date.UTC(2026, 9, 29, 1, min));
+const move = (from: TicketStatus, to: TicketStatus, min: number) => ({ kind: "STATUS", from, to, createdAt: at(min) });
+
+const base = (status: TicketStatus, events: FlowInput["events"] = [], over: Partial<FlowInput> = {}): FlowInput => ({
+  status,
+  createdAt: at(0),
+  closedAt: null,
+  events,
+  reporter: { name: "Ana" },
+  assignee: { name: "Ben" },
+  ...over,
+});
+
+const shape = (input: FlowInput) => ticketFlow(input).steps.map((s) => `${s.label}:${s.state}`);
+
+describe("ticketFlow", () => {
+  it("starts on Filed, waiting for the developer", () => {
+    const f = ticketFlow(base("NEW"));
+    expect(shape(base("NEW"))).toEqual(["Filed:current", "In progress:upcoming", "Fixed:upcoming", "Verified:upcoming", "Closed:upcoming"]);
+    expect(f.steps[0].at).toEqual(at(0));
+    expect(f.next).toEqual({ who: "Ben", side: "developer", action: "start work" });
+    expect(ticketFlow(base("NEW", [], { assignee: null })).next).toEqual({ who: "Ana", side: "qa", action: "pick a developer" });
+  });
+
+  it("follows the main path with the time each step was reached", () => {
+    const events = [move("NEW", "IN_PROGRESS", 5), move("IN_PROGRESS", "FIXED", 30)];
+    const f = ticketFlow(base("FIXED", events));
+    expect(f.steps.map((s) => s.state)).toEqual(["done", "done", "current", "upcoming", "upcoming"]);
+    expect(f.steps.map((s) => s.at)).toEqual([at(0), at(5), at(30), null, null]);
+    expect(f.next).toEqual({ who: "Ana", side: "qa", action: "retest the fix" });
+    expect(ticketFlow(base("VERIFIED", [...events, move("FIXED", "VERIFIED", 40)])).next?.action).toBe("close the ticket");
+  });
+
+  it("shows Needs info and Reopened on the In progress step", () => {
+    const needInfo = ticketFlow(base("NEED_INFO", [move("NEW", "NEED_INFO", 3)]));
+    expect(needInfo.steps[1]).toMatchObject({ label: "Needs info", state: "current", tone: "warn", at: at(3) });
+    expect(needInfo.next).toMatchObject({ who: "Ana", side: "qa" });
+
+    const reopened = ticketFlow(base("REOPENED", [move("NEW", "IN_PROGRESS", 1), move("IN_PROGRESS", "FIXED", 2), move("FIXED", "REOPENED", 9)]));
+    expect(reopened.steps.map((s) => `${s.label}:${s.state}`)).toEqual(["Filed:done", "Reopened:current", "Fixed:upcoming", "Verified:upcoming", "Closed:upcoming"]);
+    expect(reopened.steps[1].tone).toBe("bad");
+    expect(reopened.next?.action).toBe("start work");
+  });
+
+  it("completes every step when closed", () => {
+    const f = ticketFlow(base("CLOSED", [move("NEW", "IN_PROGRESS", 1), move("IN_PROGRESS", "FIXED", 2), move("FIXED", "VERIFIED", 3), move("VERIFIED", "CLOSED", 4)], { closedAt: at(4) }));
+    expect(f.steps.every((s) => s.state === "done")).toBe(true);
+    expect(f.steps[4]).toMatchObject({ tone: "ok", at: at(4) });
+    expect(f.next).toBeNull();
+  });
+
+  it("ends early on Rejected, Duplicate or Won't fix and skips the steps in between", () => {
+    const f = ticketFlow(base("REJECTED", [move("NEW", "IN_PROGRESS", 1), move("IN_PROGRESS", "REJECTED", 6)], { closedAt: at(6) }));
+    expect(f.steps.map((s) => `${s.label}:${s.state}`)).toEqual(["Filed:done", "In progress:done", "Fixed:skipped", "Verified:skipped", "Rejected:done"]);
+    expect(f.steps[4]).toMatchObject({ tone: "neutral", at: at(6) });
+    expect(f.next).toBeNull();
+    expect(shape(base("DUPLICATE", [move("NEW", "DUPLICATE", 2)], { closedAt: at(2) }))).toEqual([
+      "Filed:done",
+      "In progress:skipped",
+      "Fixed:skipped",
+      "Verified:skipped",
+      "Duplicate:done",
+    ]);
+  });
+});
