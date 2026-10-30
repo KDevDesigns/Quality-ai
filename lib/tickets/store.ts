@@ -2,7 +2,7 @@ import type { Prisma, PrismaClient } from "@/lib/generated/prisma/client";
 import { areaPath } from "@/lib/areas/tree";
 import { can } from "@/lib/auth/permissions";
 import type { TicketCreate, TicketEdit, TicketFilters, TransitionInput } from "@/lib/schemas/ticket";
-import type { SavedFile } from "@/lib/uploads/files";
+import { MAX_IMAGES_PER_POST, MAX_PENDING_PER_USER, MAX_VIDEOS_PER_POST, type UploadKind } from "@/lib/uploads/limits";
 import {
   canAssign,
   canDeleteTicket,
@@ -21,14 +21,14 @@ import {
 } from "./workflow";
 
 // Prisma glue for tickets. Every change writes its timeline events and bumps lastActivityAt in the same transaction.
-// Takes the client as a parameter so tests can run it against a throwaway SQLite file.
+// Takes the client as a parameter so tests can run it against a throwaway in-memory Postgres (PGlite).
 
 /** A refusal the user can act on. Server Actions show its message as is. */
 export class TicketError extends Error {}
 
 export const PAGE_SIZE = 50;
 
-/** Videos uploaded but never sent with a ticket or reply are removed after this long. */
+/** Uploads never sent with a ticket or reply are removed after this long. */
 export const PENDING_TTL_MS = 24 * 60 * 60 * 1000;
 
 /** Setting row holding the last ticket number handed out. */
@@ -67,25 +67,31 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
     return areaPath(a);
   }
 
-  function attachmentRows(actor: Actor, ticketId: string, files: SavedFile[], commentId?: string) {
-    return files.map((f) => ({ ...f, ticketId, commentId: commentId ?? null, uploaderId: actor.id }));
+  /** Checks the upload ids a form sent before any transaction starts: at most 6 images and 1 video. */
+  function uploadCount(uploadIds: string[]) {
+    const ids = [...new Set(uploadIds)];
+    if (ids.length > MAX_IMAGES_PER_POST + MAX_VIDEOS_PER_POST) throw new TicketError(`Attach at most ${MAX_IMAGES_PER_POST} images and ${MAX_VIDEOS_PER_POST} video at a time.`);
+    return ids;
   }
 
   /**
-   * Turns the actor's own pending video uploads into attachments of this ticket (or reply), inside the caller's
-   * transaction. Someone else's upload, or one already swept, is refused.
+   * Turns the actor's own finished uploads into attachments of this ticket (or reply), inside the caller's
+   * transaction. Someone else's upload, an unfinished one, or one already swept, is refused.
    */
-  async function claimVideos(tx: Tx, actor: Actor, ticketId: string, videoIds: string[], commentId?: string) {
-    if (!videoIds.length) return;
-    const ids = [...new Set(videoIds)];
-    const rows = await tx.pendingUpload.findMany({ where: { id: { in: ids }, uploaderId: actor.id } });
-    if (rows.length !== ids.length) throw new TicketError("That video upload has expired. Remove it and add it again.");
+  async function claimUploads(tx: Tx, actor: Actor, ticketId: string, uploadIds: string[], commentId?: string) {
+    if (!uploadIds.length) return;
+    const ids = [...new Set(uploadIds)];
+    const rows = await tx.pendingUpload.findMany({ where: { id: { in: ids }, uploaderId: actor.id, status: "READY" } });
+    if (rows.length !== ids.length) throw new TicketError("An upload has expired or didn't finish. Remove it and add it again.");
+    const count = (k: UploadKind) => rows.filter((r) => r.kind === k).length;
+    if (count("IMAGE") > MAX_IMAGES_PER_POST) throw new TicketError(`Attach at most ${MAX_IMAGES_PER_POST} images at a time.`);
+    if (count("VIDEO") > MAX_VIDEOS_PER_POST) throw new TicketError(`Attach at most ${MAX_VIDEOS_PER_POST} video at a time.`);
     await tx.attachment.createMany({
       data: rows.map((r) => ({
         ticketId,
         commentId: commentId ?? null,
         uploaderId: actor.id,
-        kind: "VIDEO" as const,
+        kind: r.kind,
         storedName: r.storedName,
         originalName: r.originalName,
         mime: r.mime,
@@ -101,8 +107,9 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
   }
 
   return {
-    async create(actor: Actor, input: TicketCreate, files: SavedFile[] = [], videoIds: string[] = []): Promise<{ id: string; number: number }> {
+    async create(actor: Actor, input: TicketCreate, uploadIds: string[] = []): Promise<{ id: string; number: number }> {
       if (!can(actor, "tickets.create")) throw new TicketError("You can't file tickets.");
+      const ids = uploadCount(uploadIds);
       if (input.assigneeId && !canAssign(actor)) throw new TicketError("Only QA testers and admins pick the developer.");
       const assignee = await assigneeName(input.assigneeId);
       await areaLabel(input.areaId);
@@ -135,8 +142,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
                 lastActivityAt: at,
               },
             });
-            if (files.length) await tx.attachment.createMany({ data: attachmentRows(actor, t.id, files) });
-            await claimVideos(tx, actor, t.id, videoIds);
+            await claimUploads(tx, actor, t.id, ids);
             await tx.ticketEvent.create({ data: { ticketId: t.id, actorId: actor.id, kind: "CREATED", createdAt: at } });
             if (assignee) await tx.ticketEvent.create({ data: { ticketId: t.id, actorId: actor.id, kind: "ASSIGNEE", to: assignee, createdAt: at } });
             return { id: t.id, number: t.number };
@@ -216,31 +222,42 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
       });
     },
 
-    async comment(actor: Actor, id: string, body: string, files: SavedFile[] = [], videoIds: string[] = []): Promise<string> {
+    async comment(actor: Actor, id: string, body: string, uploadIds: string[] = []): Promise<string> {
       if (!can(actor, "tickets.comment")) throw new TicketError("You can't comment on tickets.");
-      if (!body.trim() && files.length === 0 && videoIds.length === 0) throw new TicketError("Write a message or attach an image or video.");
+      const ids = uploadCount(uploadIds);
+      if (!body.trim() && ids.length === 0) throw new TicketError("Write a message or attach an image or video.");
       await load(id, actor);
       return db.$transaction(async (tx) => {
         const at = now();
         const c = await tx.ticketComment.create({ data: { ticketId: id, authorId: actor.id, body: body.trim(), createdAt: at } });
-        if (files.length) await tx.attachment.createMany({ data: attachmentRows(actor, id, files, c.id) });
-        await claimVideos(tx, actor, id, videoIds, c.id);
+        await claimUploads(tx, actor, id, ids, c.id);
         await touch(tx, id, at);
         return c.id;
       });
     },
 
-    /** Videos streamed to disk ahead of the form that will attach them (see claimVideos). */
+    /** Files uploaded straight to Storage ahead of the form that will attach them (see claimUploads). */
     pending: {
-      async create(actor: Actor, f: SavedFile): Promise<string> {
-        if (!can(actor, "tickets.comment")) throw new TicketError("You can't add videos to tickets.");
-        const row = await db.pendingUpload.create({
-          data: { uploaderId: actor.id, storedName: f.storedName, originalName: f.originalName, mime: f.mime, size: f.size, durationSec: f.durationSec ?? null, createdAt: now() },
-        });
+      /** Records a signed upload before the browser sends the file. */
+      async create(actor: Actor, f: { kind: UploadKind; storedName: string; originalName: string; mime: string; size: number }): Promise<string> {
+        if (!can(actor, "tickets.comment")) throw new TicketError("You can't add files to tickets.");
+        const waiting = await db.pendingUpload.count({ where: { uploaderId: actor.id } });
+        if (waiting >= MAX_PENDING_PER_USER) throw new TicketError("You have too many files waiting to be sent. Send or remove some first.");
+        const row = await db.pendingUpload.create({ data: { uploaderId: actor.id, ...f, status: "SIGNED", createdAt: now() } });
         return row.id;
       },
 
-      /** Removes the actor's own pending upload. Returns its file to delete from disk, or null. */
+      /** The actor's own upload that is still waiting for its file, or null. */
+      async signed(actor: Actor, id: string) {
+        return db.pendingUpload.findFirst({ where: { id, uploaderId: actor.id, status: "SIGNED" } });
+      },
+
+      /** The file arrived and passed its checks; the form may now claim it. */
+      async ready(id: string, checked: { mime: string; size: number; durationSec: number | null }): Promise<void> {
+        await db.pendingUpload.update({ where: { id }, data: { ...checked, status: "READY" } });
+      },
+
+      /** Removes the actor's own pending upload. Returns its file to delete from Storage, or null. */
       async remove(actor: Actor, id: string): Promise<{ storedName: string } | null> {
         const row = await db.pendingUpload.findFirst({ where: { id, uploaderId: actor.id }, select: { storedName: true } });
         if (!row) return null;
@@ -248,7 +265,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
         return row;
       },
 
-      /** Drops uploads nobody sent within PENDING_TTL_MS. Returns their files to delete from disk. */
+      /** Drops uploads nobody sent within PENDING_TTL_MS. Returns their files to delete from Storage. */
       async sweep(): Promise<{ storedName: string }[]> {
         const where = { createdAt: { lt: new Date(now().getTime() - PENDING_TTL_MS) } };
         const stale = await db.pendingUpload.findMany({ where, select: { storedName: true } });
@@ -272,7 +289,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
       if (f.reporter) filters.reporterId = f.reporter === "me" ? actor.id : f.reporter;
       if (f.q) {
         const num = /^#?(\d{1,9})$/.exec(f.q);
-        filters.OR = [{ title: { contains: f.q } }, { description: { contains: f.q } }, ...(num ? [{ number: Number(num[1]) }] : [])];
+        filters.OR = [{ title: { contains: f.q, mode: "insensitive" } }, { description: { contains: f.q, mode: "insensitive" } }, ...(num ? [{ number: Number(num[1]) }] : [])];
       }
       // AND, so a filter can only narrow the person's scope, never widen it.
       const where: Prisma.TicketWhereInput = { AND: [scopeWhere(actor), filters] };
@@ -281,7 +298,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
         db.ticket.count({ where }),
         db.ticket.findMany({
           where,
-          orderBy: { lastActivityAt: "desc" },
+          orderBy: [{ lastActivityAt: "desc" }, { number: "desc" }],
           skip: (f.page - 1) * PAGE_SIZE,
           take: PAGE_SIZE,
           select: {
@@ -304,7 +321,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
       return { total, rows };
     },
 
-    /** Permanently deletes a ticket with its thread, log and attachment rows. Returns the files to remove from disk. */
+    /** Permanently deletes a ticket with its thread, log and attachment rows. Returns the files to remove from Storage. */
     async delete(actor: Actor, id: string, typedTitle: string): Promise<{ number: number; files: { storedName: string }[] }> {
       const t = await load(id, actor);
       if (!canDeleteTicket(t, actor)) throw new TicketError("Only the QA tester who filed this ticket, or an admin, can delete it.");
@@ -332,7 +349,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
     async recent(actor: Actor, take = 6) {
       return db.ticket.findMany({
         where: scopeWhere(actor),
-        orderBy: { lastActivityAt: "desc" },
+        orderBy: [{ lastActivityAt: "desc" }, { number: "desc" }],
         take,
         select: { id: true, number: true, title: true, status: true, type: true, lastActivityAt: true, assignee: { select: { name: true } }, reporter: { select: { name: true } } },
       });

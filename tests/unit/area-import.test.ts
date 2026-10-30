@@ -37,7 +37,7 @@ describe("data/erp-areas.json", () => {
 describe("importAreas", () => {
   const file = {
     modules: [
-      { name: "Human Resource", code: "HR", moduleCode: "HR", children: [{ name: "Payroll", code: "HR-PAY" }, { name: "Leave", code: "HR-LV" }] },
+      { name: "Human Resource", code: "HR", children: [{ name: "Payroll", code: "HR-PAY" }, { name: "Leave", code: "HR-LV" }] },
       { name: "Freedom of Information", code: "FOI" },
     ],
   };
@@ -46,7 +46,6 @@ describe("importAreas", () => {
     const r = await importAreas(db, file);
     expect(r.created).toEqual(["Human Resource", "  Payroll", "  Leave", "Freedom of Information"]);
     const hr = await db.erpArea.findUniqueOrThrow({ where: { code: "HR" }, include: { children: { orderBy: { sortOrder: "asc" } } } });
-    expect(hr.moduleCode).toBe("HR");
     expect(hr.children.map((c) => c.name)).toEqual(["Payroll", "Leave"]);
   });
 

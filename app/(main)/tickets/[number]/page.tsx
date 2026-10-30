@@ -15,6 +15,7 @@ import {
   UserRoundIcon,
 } from "lucide-react";
 import { LoadingBlock } from "@/components/page-header";
+import { ImageGallery, ImageThumb, type GalleryImage } from "./image-viewer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { areaPath } from "@/lib/areas/tree";
 import { ROLE_LABELS, type Role } from "@/lib/auth/permissions";
@@ -131,24 +132,26 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
       <TicketFlow flow={ticketFlow(t)} now={now} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="grid min-w-0 content-start gap-6">
-          <Card>
-            <CardContent className="grid gap-4">
-              <p className="text-[15px] leading-relaxed break-words whitespace-pre-wrap">{t.description}</p>
-              <Attachments files={t.attachments} />
-            </CardContent>
-          </Card>
-
-          <section aria-label="Conversation and history" className="grid gap-3">
-            <h2 className="text-xs font-semibold tracking-[0.06em] text-ink2 uppercase">Conversation</h2>
-            <Thread t={t} meId={me.id} now={now} />
+        <ImageGallery images={galleryImages(t)}>
+          <div className="grid min-w-0 content-start gap-6">
             <Card>
-              <CardContent>
-                <CommentForm ticket={ref} />
+              <CardContent className="grid gap-4">
+                <p className="text-[15px] leading-relaxed break-words whitespace-pre-wrap">{t.description}</p>
+                <Attachments files={t.attachments} />
               </CardContent>
             </Card>
-          </section>
-        </div>
+
+            <section aria-label="Conversation and history" className="grid gap-3">
+              <h2 className="text-xs font-semibold tracking-[0.06em] text-ink2 uppercase">Conversation</h2>
+              <Thread t={t} meId={me.id} now={now} />
+              <Card>
+                <CardContent>
+                  <CommentForm ticket={ref} />
+                </CardContent>
+              </Card>
+            </section>
+          </div>
+        </ImageGallery>
 
         <aside className="grid content-start gap-4">
           <Card>
@@ -257,18 +260,20 @@ function Attachments({ files }: { files: FileRow[] }) {
   );
 }
 
+/** Every image on the ticket in the order it is read: the description, then each reply, oldest first. Only what the viewer shows goes to the browser. */
+function galleryImages(t: TicketDetail): GalleryImage[] {
+  return [...t.attachments, ...t.comments.flatMap((c) => c.attachments)]
+    .filter((f) => f.kind !== "VIDEO")
+    .map((f) => ({ id: f.id, originalName: f.originalName, size: f.size }));
+}
+
+/** Thumbnails; each opens the ticket's image gallery (see image-viewer.tsx). */
 function ImageList({ files }: { files: FileRow[] }) {
   return (
     <ul className="flex flex-wrap gap-3">
       {files.map((f) => (
         <li key={f.id}>
-          <a href={`/files/${f.id}`} target="_blank" rel="noopener" className="group block w-44 overflow-hidden rounded-lg border border-line bg-surface2 hover:border-acc-b">
-            {/* eslint-disable-next-line @next/next/no-img-element -- served by the auth-checked /files route, not next/image */}
-            <img src={`/files/${f.id}`} alt={f.originalName} loading="lazy" className="h-28 w-full object-cover" />
-            <span className="block truncate px-2 py-1 text-[11.5px] text-muted-foreground group-hover:text-acc" title={f.originalName}>
-              {f.originalName} · {formatBytes(f.size)}
-            </span>
-          </a>
+          <ImageThumb file={{ id: f.id, originalName: f.originalName, size: f.size }} />
         </li>
       ))}
     </ul>

@@ -57,12 +57,21 @@ beforeEach(async () => {
   meterReading = (await db.erpArea.create({ data: { name: "Meter Reading", parentId: billing } })).id;
 });
 
+type Store = ReturnType<typeof ticketStore>;
+
+/** A finished upload: signed, then checked, as the upload routes do. Returns its id for a form to claim. */
+async function ready(s: Store, actor: Actor, f: { kind: "IMAGE" | "VIDEO"; storedName: string; originalName: string; mime: string; size: number; durationSec?: number | null }) {
+  const { durationSec = null, ...rest } = f;
+  const id = await s.pending.create(actor, rest);
+  await s.pending.ready(id, { mime: f.mime, size: f.size, durationSec });
+  return id;
+}
+const img = (c: string) => ({ kind: "IMAGE" as const, storedName: "2026/10/" + c.repeat(32) + ".png", originalName: "x.png", mime: "image/png", size: 5 });
+
 describe("ticketStore", () => {
   it("numbers tickets in order and records who filed and assigned them", async () => {
     const s = ticketStore(db, now);
-    const a = await s.create(qa, input({ assigneeId: dev.id, areaId: meterReading }), [
-      { kind: "IMAGE", storedName: "2026/10/" + "a".repeat(32) + ".png", originalName: "shot.png", mime: "image/png", size: 10 },
-    ]);
+    const a = await s.create(qa, input({ assigneeId: dev.id, areaId: meterReading }), [await ready(s, qa, img("a"))]);
     const b = await s.create(admin, input({ type: "SUGGESTION", severity: null }));
     expect([a.number, b.number]).toEqual([1, 2]);
 
@@ -189,7 +198,7 @@ describe("ticketStore", () => {
     const s = ticketStore(db, now);
     const { id } = await s.create(qa, input({ assigneeId: dev.id }));
     await expect(s.comment(dev, id, "   ")).rejects.toThrow(/Write a message/);
-    await s.comment(dev, id, "", [{ kind: "IMAGE", storedName: "2026/10/" + "b".repeat(32) + ".png", originalName: "x.png", mime: "image/png", size: 5 }]);
+    await s.comment(dev, id, "", [await ready(s, dev, img("b"))]);
     const d = (await s.get(1, admin))!;
     expect(d.comments[0].attachments).toHaveLength(1);
     expect(d.attachments).toHaveLength(0);
@@ -209,7 +218,7 @@ describe("ticketStore", () => {
     const titles = async (raw: Record<string, string>, who: Actor = admin) => (await s.list(filters(raw), who)).rows.map((r) => r.number);
     expect(await titles({})).toEqual([1, 2]); // open, newest activity first
     expect(await titles({ group: "done" })).toEqual([3]);
-    expect(await titles({ group: "all" })).toEqual([1, 3, 2]);
+    expect(await titles({ group: "all" })).toEqual([3, 1, 2]); // #1 and #3 moved at the same time: the newer ticket first
     expect(await titles({ status: "FIXED", reporter: "me" }, qa)).toEqual([1]);
     expect(await titles({ area: billing })).toEqual([1, 2]); // includes sub-modules
     expect(await titles({ area: meterReading })).toEqual([2]);
@@ -247,16 +256,17 @@ describe("ticketStore", () => {
     // Reassigning takes the ticket off the old developer's list.
     await s.assign(qa, mine.id, dev2.id);
     expect(await list(dev)).toEqual([]);
-    expect(await list(dev2)).toEqual(["Ana's bug", "Bea's bug"]);
+    // Same activity time (the test clock stands still): the newer ticket comes first.
+    expect(await list(dev2)).toEqual(["Bea's bug", "Ana's bug"]);
 
     expect(await s.counts(qa)).toMatchObject({ open: 1, toStart: 1, fixed: 0 });
-    expect((await s.recent(dev2)).map((r) => r.title)).toEqual(["Ana's bug", "Bea's bug"]);
+    expect((await s.recent(dev2)).map((r) => r.title)).toEqual(["Bea's bug", "Ana's bug"]);
   });
 
   it("only gives out attachments on tickets the person can see", async () => {
     const s = ticketStore(db, now);
-    const file = { kind: "IMAGE" as const, storedName: "2026/10/" + "c".repeat(32) + ".png", originalName: "x.png", mime: "image/png", size: 5 };
-    await s.create(qa, input({ assigneeId: dev.id }), [file]);
+    const file = img("c");
+    await s.create(qa, input({ assigneeId: dev.id }), [await ready(s, qa, file)]);
     const att = await db.attachment.findFirstOrThrow();
     expect(await s.attachmentFor(qa, att.id)).toMatchObject({ storedName: file.storedName });
     expect(await s.attachmentFor(dev, att.id)).not.toBeNull();
@@ -266,9 +276,8 @@ describe("ticketStore", () => {
 
   it("deletes permanently only for the filing QA tester or an admin, after the exact title is typed", async () => {
     const s = ticketStore(db, now);
-    const file = { kind: "IMAGE" as const, storedName: "2026/10/" + "d".repeat(32) + ".png", originalName: "x.png", mime: "image/png", size: 5 };
-    const { id } = await s.create(qa, input({ title: "Bill shows the wrong total", assigneeId: dev.id }), [file]);
-    await s.comment(dev, id, "Looking", [{ ...file, storedName: "2026/10/" + "e".repeat(32) + ".png" }]);
+    const { id } = await s.create(qa, input({ title: "Bill shows the wrong total", assigneeId: dev.id }), [await ready(s, qa, img("d"))]);
+    await s.comment(dev, id, "Looking", [await ready(s, dev, img("e"))]);
     const other = await s.create(qa, input({ title: "Another one" }));
     await s.transition(qa, other.id, { to: "DUPLICATE", note: null, duplicateOf: 1 });
 
@@ -291,29 +300,49 @@ describe("ticketStore", () => {
     expect((await s.create(qa, input())).number).toBe(3);
   });
 
-  it("attaches a pending video only for the person who uploaded it, once", async () => {
+  it("attaches a finished upload only for the person who uploaded it, once", async () => {
     const s = ticketStore(db, now);
     const vid = (c: string) => ({ kind: "VIDEO" as const, storedName: `2026/10/${c.repeat(32)}.mp4`, originalName: "repro.mp4", mime: "video/mp4", size: 5_000_000, durationSec: 42 });
-    const mine = await s.pending.create(qa, vid("a"));
-    const devs = await s.pending.create(dev, vid("b"));
+    const mine = await ready(s, qa, vid("a"));
+    const devs = await ready(s, dev, vid("b"));
 
     // Someone else's upload is refused, and nothing is filed.
-    await expect(s.create(qa, input(), [], [devs])).rejects.toThrow(TicketError);
+    await expect(s.create(qa, input(), [devs])).rejects.toThrow(TicketError);
     expect(await db.ticket.count()).toBe(0);
 
-    const tk = await s.create(qa, input(), [], [mine]);
+    const tk = await s.create(qa, input(), [mine]);
     const detail = (await s.get(tk.number, qa))!;
     expect(detail.attachments.map((a) => [a.kind, a.originalName, a.durationSec])).toEqual([["VIDEO", "repro.mp4", 42]]);
     expect(await db.pendingUpload.count({ where: { id: mine } })).toBe(0);
     // Already claimed: can't be attached twice.
-    await expect(s.comment(qa, tk.id, "again", [], [mine])).rejects.toThrow(/expired/);
+    await expect(s.comment(qa, tk.id, "again", [mine])).rejects.toThrow(/expired/);
 
     // A reply can be just a video.
     await s.assign(qa, tk.id, dev.id);
-    await s.comment(dev, tk.id, "", [], [devs]);
+    await s.comment(dev, tk.id, "", [devs]);
     const after = (await s.get(tk.number, dev))!;
     expect(after.comments[0].attachments.map((a) => a.kind)).toEqual(["VIDEO"]);
     expect(await s.attachmentFor(dev, after.comments[0].attachments[0].id)).toMatchObject({ mime: "video/mp4" });
+  });
+
+  it("refuses an upload that hasn't finished, and more than one video or six images", async () => {
+    const s = ticketStore(db, now);
+    const signed = await s.pending.create(qa, img("f"));
+    await expect(s.create(qa, input(), [signed])).rejects.toThrow(/didn't finish/);
+
+    const vid = (c: string) => ({ kind: "VIDEO" as const, storedName: `2026/10/${c.repeat(32)}.mp4`, originalName: "r.mp4", mime: "video/mp4", size: 10 });
+    const two = [await ready(s, qa, vid("1")), await ready(s, qa, vid("2"))];
+    await expect(s.create(qa, input(), two)).rejects.toThrow(/at most 1 video/);
+    const seven = await Promise.all(["3", "4", "5", "6", "7", "8", "9"].map((c) => ready(s, qa, img(c))));
+    await expect(s.create(qa, input(), seven)).rejects.toThrow(/at most 6 images/);
+    expect(await db.ticket.count()).toBe(0);
+  });
+
+  it("limits how many uploads one person may have waiting", async () => {
+    const s = ticketStore(db, now);
+    for (let i = 0; i < 20; i++) await s.pending.create(qa, img(i.toString(16).padStart(2, "0")));
+    await expect(s.pending.create(qa, img("ff"))).rejects.toThrow(/too many files waiting/);
+    expect(await s.pending.create(dev, img("ee"))).toBeTruthy();
   });
 
   it("removes your own pending video and sweeps old ones", async () => {

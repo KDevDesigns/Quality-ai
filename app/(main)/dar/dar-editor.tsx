@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CheckIcon, DownloadIcon, FileSpreadsheetIcon, PrinterIcon, RefreshCwIcon, SaveIcon, UserPenIcon } from "lucide-react";
+import { CheckIcon, FileSpreadsheetIcon, PrinterIcon, RefreshCwIcon, SaveIcon, UserPenIcon } from "lucide-react";
 import { Field, FormMessage, nativeSelectClass } from "@/components/form-field";
 import { FormDialog } from "@/components/form-dialog";
 import { InlineAlert } from "@/components/inline-alert";
@@ -41,7 +41,7 @@ export function DarEditor({
   const [dirty, setDirty] = useState(false);
   const [note, setNote] = useState<FormState | null>(null);
   const [busy, startTransition] = useTransition();
-  const [downloading, setDownloading] = useState<"xlsx" | "pdf" | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
   const attended = daysAttended(cells);
   const period = report.period.start;
@@ -89,16 +89,16 @@ export function DarEditor({
     });
   }
 
-  async function download(format: "xlsx" | "pdf") {
-    setDownloading(format);
+  async function download() {
+    setDownloading(true);
     try {
       if (dirty && !(await save())) return;
-      const res = await fetch(`/dar/export?period=${period}&format=${format}`);
+      const res = await fetch(`/dar/export?period=${period}&format=xlsx`);
       if (!res.ok) {
         setNote({ ok: false, message: (await res.text()) || "The download failed. Try again." });
         return;
       }
-      const name = decodeURIComponent(/filename\*=UTF-8''([^;]+)/.exec(res.headers.get("content-disposition") ?? "")?.[1] ?? `DAR.${format}`);
+      const name = decodeURIComponent(/filename\*=UTF-8''([^;]+)/.exec(res.headers.get("content-disposition") ?? "")?.[1] ?? "DAR.xlsx");
       const url = URL.createObjectURL(await res.blob());
       const a = Object.assign(document.createElement("a"), { href: url, download: name });
       document.body.append(a);
@@ -106,11 +106,11 @@ export function DarEditor({
       a.remove();
       URL.revokeObjectURL(url);
     } finally {
-      setDownloading(null);
+      setDownloading(false);
     }
   }
 
-  /** Prints the sheet as it is now (saved or not) on one landscape long bond (8.5 × 13 in) page, from the same HTML as the PDF. */
+  /** Prints the sheet as it is now (saved or not) on one landscape long bond (8.5 × 13 in) page. Save as PDF from the print dialog. */
   function print() {
     const html = darHtml({ ...report, cells, dateSubmitted, daysAttended: attended }, { seal: `${location.origin}/dcwd-seal.png`, title: `DAR ${report.period.start}` });
     const frame = document.createElement("iframe");
@@ -178,11 +178,8 @@ export function DarEditor({
           <Button variant="outline" onClick={print}>
             <PrinterIcon /> Print
           </Button>
-          <Button onClick={() => download("xlsx")} disabled={!!downloading}>
-            <FileSpreadsheetIcon /> {downloading === "xlsx" ? "Preparing…" : "Excel"}
-          </Button>
-          <Button onClick={() => download("pdf")} disabled={!!downloading}>
-            <DownloadIcon /> {downloading === "pdf" ? "Preparing…" : "PDF"}
+          <Button onClick={download} disabled={downloading}>
+            <FileSpreadsheetIcon /> {downloading ? "Preparing…" : "Excel"}
           </Button>
         </div>
       </div>

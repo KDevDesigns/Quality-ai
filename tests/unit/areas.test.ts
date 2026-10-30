@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { areaPath, buildTree, nextSortOrder, placementError, type AreaNode } from "@/lib/areas/tree";
 import { areaInput, areaMembersInput } from "@/lib/schemas/area";
-import { readWorkspaceSettings } from "@/lib/schemas/workspace";
 import { passwordChangeInput, userInput } from "@/lib/schemas/user";
 
 const areas: AreaNode[] = [
@@ -52,13 +51,13 @@ describe("placementError", () => {
 });
 
 describe("area schemas", () => {
-  const base = { name: "Meter Reading", code: "", parentId: "", moduleCode: "", sortOrder: "5", active: true };
+  const base = { name: "Meter Reading", code: "", parentId: "", sortOrder: "5", active: true };
 
   it("normalizes empty optional fields to null and upper-cases codes", () => {
-    expect(areaInput.parse(base)).toEqual({ name: "Meter Reading", code: null, parentId: null, moduleCode: null, sortOrder: 5, active: true });
+    expect(areaInput.parse(base)).toEqual({ name: "Meter Reading", code: null, parentId: null, sortOrder: 5, active: true });
     // Sub-modules have no sort order field; the action places them after their siblings.
     expect(areaInput.parse({ ...base, sortOrder: undefined }).sortOrder).toBeUndefined();
-    expect(areaInput.parse({ ...base, code: "bca-mr", parentId: "bca", moduleCode: "BILLING" })).toMatchObject({ code: "BCA-MR", parentId: "bca", moduleCode: "BILLING" });
+    expect(areaInput.parse({ ...base, code: "bca-mr", parentId: "bca" })).toMatchObject({ code: "BCA-MR", parentId: "bca" });
   });
 
   it.each(["X", "has space", "-LEAD", "TOO-LONG-CODE-123456789"])("rejects code %j", (code) => {
@@ -98,14 +97,5 @@ describe("user schemas", () => {
     expect(passwordChangeInput.safeParse({ ...ok, next: "short", confirm: "short" }).success).toBe(false);
     expect(passwordChangeInput.safeParse({ ...ok, confirm: "different-1" }).success).toBe(false);
     expect(passwordChangeInput.safeParse({ ...ok, next: "old-password", confirm: "old-password" }).success).toBe(false);
-  });
-});
-
-describe("workspace settings", () => {
-  it("keeps the AI workbench off by default and survives bad stored JSON", () => {
-    expect(readWorkspaceSettings(undefined)).toEqual({ aiWorkbench: false });
-    expect(readWorkspaceSettings({ aiWorkbench: true })).toEqual({ aiWorkbench: true });
-    expect(readWorkspaceSettings({ aiWorkbench: "yes" })).toEqual({ aiWorkbench: false });
-    expect(readWorkspaceSettings("garbage")).toEqual({ aiWorkbench: false });
   });
 });

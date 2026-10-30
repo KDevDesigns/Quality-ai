@@ -292,6 +292,49 @@ into tickets in Phase 9.
 another, they talk it through in the thread, the developer marks it fixed, QA verifies and closes it, and the timeline
 shows every step.
 
+### Phase 3.6 — Test library, manual runs, then record & replay ★ next
+The AI workbench is being dropped. Testers' own ChatGPT Plus/Pro plans **cannot** power QA Hub: they include no API
+access, driving the ChatGPT website from a server breaks OpenAI's terms, and ticket data must never reach an LLM
+(rule 12). Testers may use **Codex** ("Sign in with ChatGPT") on their own laptops to tidy Playwright specs against
+staging with `QA-` data, outside QA Hub. Paid SaaS tools (mabl, Testim) are cloud-hosted and don't fit LAN-only.
+Phase A comes first: Phase B automates the cases Phase A writes down.
+
+- **3.6a — Test library + manual test runs** (no coding for testers):
+  - Sidebar **Test cases**: cases grouped by module (`ErpArea`) and then by a named flow (e.g. "High consumption →
+    leak adjustment"). Search and filters by priority and tag (`smoke`, `money`, …).
+  - A case has an auto ID (`BCA-101`), title, module, flow, priority, tags, setup, numbered steps (each with an
+    optional expected result, drag to reorder) and an overall expected result. Cases use `QA-` test data only.
+  - Four ways to add cases: the form (**Save & add another**), **Excel import** with a template and a preview
+    ("22 cases found, 0 problems"), **Make test case** from a fixed ticket, and **Duplicate**.
+  - Case page shows a **History** of every run result and the tickets it produced.
+  - **Test runs → Start a run**: pick a flow or a tag (e.g. only `smoke`), assign testers, then work down a
+    checklist with a progress bar. Each case: Pass / Fail / Blocked / Skip plus a note.
+  - **Fail → prefilled ticket** (title, module, steps, expected, actual from the note; add screenshots as usual),
+    linked both ways. After the fix, re-run only that case.
+  - Run summary with counts, **Export to Excel** and **Re-run failed**. Run activity feeds DAR autofill
+    (`lib/dar/autofill.ts`).
+  - Seed example: the CS31 → CS61 → BAM leak-adjustment SOP (draft) gives ~22 cases. Read an SOP four times for the
+    happy path, branches (every "or"), negatives (missing fields, wrong order, duplicates, posting without "POST" or
+    before approval) and money/status checks (e.g. average 23 cu.m, credit ₱2,734.44, penalty ₱273.44, total BAM
+    ₱3,007.88, journal debits = credits).
+- **3.6b — Record & replay regression** (replaces most of Phase 5's generated-spec pipeline for now):
+  - Playwright is black-box: it needs only the staging URL and a QA login, not the ERP's source code. Testers record
+    with `npx playwright codegen <dev URL>` and attach the spec to a test case (`tests/generated/` until approved).
+  - The dev URL goes in the Environment allowlist; QA logins go in `.env.local`. Never the live portal.
+  - Ask the ERP developers to turn off CAPTCHA/OTP for the QA accounts on dev and to add `data-testid` to key buttons.
+  - The runner starts Playwright as a child process (JSON reporter, queued, progress in the DB) and shows screenshots
+    and traces from `runs/<runId>/`. A failure opens a draft ticket. Amounts are checked by `lib/oracles/` with
+    `decimal.js`. Start with stable `smoke` flows only.
+  - The Investigator mobile app: Playwright mobile mode if it is a web app/PWA, **Maestro** if it is native Android.
+    Keep its steps manual at first (map, photos, GPS) and start CSMS tests from a completed investigation.
+- **3.6c — Optional AI assist, outside the server:** a short guide in `docs/OPERATIONS.md` on using Codex or Claude
+  Code locally to clean up recorded specs (staging only, no ticket data). Any in-app AI later is local-only through
+  `lib/ai/router.ts`.
+
+**Done when:** a tester imports the leak-adjustment cases from Excel, runs them as a checklist, fails BCA-110, files
+the prefilled ticket, sees the case's history and that day's DAR entry; then a recorded CS31 spec replays from the hub
+against dev with screenshots, and a non-allowlisted URL is refused.
+
 ### Phase 4 — Test data and oracles
 `lib/oracles/*` with unit tests from the signed-off examples. Fixture builders that create referentially intact test records on staging through the ERP API or UI (customer + meter + reading; supplier + item + PR; employee + attendance). Read-only DB connector and `lib/recon` checks (balanced journals, subledger = GL, OR gaps, duplicate bills, negative stock). A Data page that lists the checks and runs them on demand.
 **Done when:** the tariff and payroll oracles match the hand-worked examples exactly, and the recon checks run against staging and show pass/fail with details.

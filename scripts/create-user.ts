@@ -1,12 +1,11 @@
-// Creates an account from the command line; this is how the first admin gets in. There is no open sign-up.
+// Creates an account from the command line; this is how the first admin gets in.
 //   npm run user:create -- --admin --name "Juan Dela Cruz" --email juan@example.gov.ph
 //   npm run user:create -- --role DEV --name "…" --email …
 // Prints a temporary password once; it must be changed at first sign-in.
 
-import "dotenv/config";
+import "./env";
 import { parseArgs } from "node:util";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import { PrismaClient } from "../lib/generated/prisma/client";
+import { createClient } from "../lib/db-client";
 import { generateTempPassword } from "../lib/auth/password";
 import { isRole } from "../lib/auth/permissions";
 import { authStore } from "../lib/auth/store";
@@ -27,7 +26,7 @@ async function main() {
   const parsed = userInput.safeParse({ name: values.name ?? "", email: values.email ?? "", role });
   if (!parsed.success) throw new Error(parsed.error.issues.map((i) => `--${i.path.join(".")}: ${i.message}`).join("\n"));
 
-  const db = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: process.env.DATABASE_URL! }) });
+  const db = createClient();
   try {
     if (await db.user.findUnique({ where: { email: parsed.data.email } })) throw new Error(`An account for ${parsed.data.email} already exists.`);
     const password = generateTempPassword();

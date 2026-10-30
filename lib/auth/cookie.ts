@@ -10,8 +10,8 @@ export function sessionCookieOptions() {
     httpOnly: true,
     sameSite: "lax" as const,
     path: "/",
-    // Plain HTTP on the LAN until IT provides a certificate; set COOKIE_SECURE=1 once the app is served over HTTPS.
-    secure: process.env.COOKIE_SECURE === "1",
+    // Vercel serves HTTPS only. `next dev` runs on plain http://localhost, where a secure cookie would be dropped.
+    secure: process.env.NODE_ENV === "production",
     maxAge: SESSION_MAX_AGE_S,
   };
 }

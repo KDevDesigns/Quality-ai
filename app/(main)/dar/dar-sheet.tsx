@@ -7,7 +7,7 @@ import type { DarReportData } from "@/lib/dar/store";
 import type { DarFunction } from "@/lib/dar/template";
 import { cn } from "@/lib/utils";
 
-// The DAR on screen, drawn like the DCWD paper form (same layout as lib/dar/html.ts, which makes the PDF and the
+// The DAR on screen, drawn like the DCWD paper form (same layout as lib/dar/html.ts, which makes the
 // printout): a white sheet in every theme, with the day cells and the date submitted editable in place.
 // The sheet keeps its paper proportions and is zoomed to fill the width of the page.
 

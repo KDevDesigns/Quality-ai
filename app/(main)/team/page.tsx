@@ -16,7 +16,6 @@ import { buildTree } from "@/lib/areas/tree";
 import { can, ROLE_LABELS, type Role } from "@/lib/auth/permissions";
 import { requireAction } from "@/lib/auth/session";
 import { db } from "@/lib/db";
-import { MODULE_LABELS, type ModuleCodeValue } from "@/lib/schemas/common";
 import { cn } from "@/lib/utils";
 import { deleteArea } from "./actions";
 import { AreaDialog, MembersDialog, type AreaValues, type PersonOption } from "./team-dialogs";
@@ -48,7 +47,6 @@ async function TeamBody({ searchParams }: { searchParams: Promise<SearchParams> 
         parentId: true,
         name: true,
         code: true,
-        moduleCode: true,
         sortOrder: true,
         active: true,
         members: { where: { user: { active: true } }, select: { isLead: true, user: { select: { id: true, name: true, role: true } } } },
@@ -73,7 +71,6 @@ async function TeamBody({ searchParams }: { searchParams: Promise<SearchParams> 
     name: a.name,
     code: a.code,
     parentId: a.parentId,
-    moduleCode: a.moduleCode as ModuleCodeValue | null,
     sortOrder: a.sortOrder,
     active: a.active,
   });
@@ -114,7 +111,6 @@ async function TeamBody({ searchParams }: { searchParams: Promise<SearchParams> 
               </CardTitle>
               <CardDescription>
                 {mod.children.length} sub-module{mod.children.length === 1 ? "" : "s"}
-                {mod.moduleCode ? ` · AI workbench module: ${MODULE_LABELS[mod.moduleCode as ModuleCodeValue]}` : ""}
               </CardDescription>
               {admin ? (
                 <CardAction className="flex gap-0.5">

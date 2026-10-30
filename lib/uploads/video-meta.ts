@@ -1,8 +1,16 @@
 // How long a stored video is, read from its container headers without decoding anything.
 // MP4: moov/mvhd (moov may sit at the end of the file). WebM: Segment/Info/Duration, which browser recordings
 // (MediaRecorder) often leave out; then the answer is null and only the size cap applies.
+// The bytes come through `read`, so the same code reads a Storage object (Range requests) or a buffer in tests.
 
-import { open, type FileHandle } from "node:fs/promises";
+/** Up to `length` bytes from `pos`; fewer at the end of the file. */
+export type ReadAt = (pos: number, length: number) => Promise<Buffer>;
+
+/** A ReadAt over bytes already in memory. */
+export const bufferReader =
+  (b: Uint8Array): ReadAt =>
+  async (pos, length) =>
+    Buffer.from(b.subarray(pos, pos + length));
 
 /** moov holds the sample tables; for a few minutes of video it is well under this. */
 const MOOV_MAX = 32 * 1024 * 1024;
@@ -10,29 +18,17 @@ const MOOV_MAX = 32 * 1024 * 1024;
 const WEBM_HEAD = 1024 * 1024;
 
 /** Whole seconds, or null when the file doesn't say. */
-export async function videoDuration(file: string, mime: string): Promise<number | null> {
-  const fh = await open(file, "r");
-  try {
-    const seconds = mime === "video/mp4" ? await mp4Duration(fh) : mime === "video/webm" ? await webmDuration(fh) : null;
-    return seconds === null || !Number.isFinite(seconds) || seconds < 0 ? null : Math.round(seconds);
-  } finally {
-    await fh.close();
-  }
-}
-
-async function readAt(fh: FileHandle, pos: number, length: number): Promise<Buffer> {
-  const buf = Buffer.alloc(length);
-  const { bytesRead } = await fh.read(buf, 0, length, pos);
-  return buf.subarray(0, bytesRead);
+export async function videoDuration(read: ReadAt, size: number, mime: string): Promise<number | null> {
+  const seconds = mime === "video/mp4" ? await mp4Duration(read, size) : mime === "video/webm" ? await webmDuration(read) : null;
+  return seconds === null || !Number.isFinite(seconds) || seconds < 0 ? null : Math.round(seconds);
 }
 
 // ── MP4 ──────────────────────────────────────────────────────────────────────
 
-async function mp4Duration(fh: FileHandle): Promise<number | null> {
-  const { size } = await fh.stat();
+async function mp4Duration(read: ReadAt, size: number): Promise<number | null> {
   let pos = 0;
   while (pos + 8 <= size) {
-    const head = await readAt(fh, pos, 16);
+    const head = await read(pos, 16);
     if (head.length < 8) return null;
     let boxSize = head.readUInt32BE(0);
     const type = head.toString("latin1", 4, 8);
@@ -48,7 +44,7 @@ async function mp4Duration(fh: FileHandle): Promise<number | null> {
     if (type === "moov") {
       const len = boxSize - headerLen;
       if (len > MOOV_MAX) return null;
-      return mvhdDuration(await readAt(fh, pos + headerLen, len));
+      return mvhdDuration(await read(pos + headerLen, len));
     }
     pos += boxSize;
   }
@@ -149,6 +145,6 @@ export function webmDurationFrom(b: Buffer): number | null {
   return result;
 }
 
-async function webmDuration(fh: FileHandle): Promise<number | null> {
-  return webmDurationFrom(await readAt(fh, 0, WEBM_HEAD));
+async function webmDuration(read: ReadAt): Promise<number | null> {
+  return webmDurationFrom(await read(0, WEBM_HEAD));
 }

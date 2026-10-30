@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { MODULE_CODES } from "./common";
 
 export const areaInput = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
@@ -13,9 +12,6 @@ export const areaInput = z.object({
   parentId: z
     .string()
     .trim()
-    .transform((v) => (v ? v : null)),
-  moduleCode: z
-    .union([z.enum(MODULE_CODES), z.literal("")])
     .transform((v) => (v ? v : null)),
   /** Only top-level modules show this field. A sub-module leaves it out and is placed after its siblings. */
   sortOrder: z.coerce.number().int().min(0).max(999).optional(),

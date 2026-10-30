@@ -18,8 +18,8 @@ export function proxy(req: NextRequest) {
 }
 
 // Skips the sign-in page, Next's assets and the static images in public/ (the seal must load before sign-in).
-// Also skips the video upload route: the proxy would buffer (and cut off) a 150 MB body; that route checks the session.
-// Ticket uploads are never in public/; they go through an auth-checked route (CLAUDE.md rule 13).
+// Also skips /api/cron, which Vercel Cron calls without a cookie; that route checks CRON_SECRET itself.
+// Ticket files are never in public/; they go through an auth-checked route (CLAUDE.md rule 13).
 export const config = {
-  matcher: ["/((?!login|uploads/video|_next/static|_next/image|favicon.ico|.*\\.(?:png|svg|ico)$).*)"],
+  matcher: ["/((?!login|api/cron|_next/static|_next/image|favicon.ico|.*\\.(?:png|svg|ico)$).*)"],
 };

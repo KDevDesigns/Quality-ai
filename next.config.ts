@@ -2,16 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  // Files never pass through Server Actions or routes (Vercel caps request bodies at 4.5 MB): the browser uploads
+  // them straight to Supabase Storage with a signed URL, so the default body limits stay.
   experimental: {
     agentFeedback: true,
-    // Ticket forms post up to 6 images of 10 MB each. proxy.ts runs on those requests and would otherwise
-    // cut the buffered body off at 10 MB without an error.
-    serverActions: { bodySizeLimit: "64mb" },
-    proxyClientMaxBodySize: "64mb",
   },
   // The dev script binds 127.0.0.1; allow both loopback names so either URL hydrates.
-  // `npm run lan:dev` also needs this machine's LAN address or name, listed in LAN_ORIGINS.
-  allowedDevOrigins: ["127.0.0.1", "localhost", ...(process.env.LAN_ORIGINS ?? "").split(",").map((s) => s.trim()).filter(Boolean)],
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
+  // The DAR Excel export reads the seal from public/; Vercel only bundles files a function is traced to use.
+  outputFileTracingIncludes: { "/dar/export": ["./public/dcwd-seal.png"] },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
