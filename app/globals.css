@@ -210,13 +210,56 @@
   }
 }
 
-/* Sign-in brand pane, from the DCWD Careers design (careers-static.css / careers-motion.css). */
+/* Sign-in brand pane, from the DCWD Careers design (careers-static.css / careers-motion.css).
+   Its colours are DCWD indigo in both modes (not the user's accent), so they live here as pane tokens with a dark set. */
+.auth-brand {
+  --ab-bg: #eef2fd;
+  --ab-ink: #1e2a78;
+  --ab-eyebrow: #5b63c7;
+  --ab-text: #525a8c;
+  --ab-foot: #4a5290;
+  --ab-glow: #ffffff;
+  --ab-ring-1: #bcc6f1;
+  --ab-ring-2: #cbd3f4;
+  --ab-ring-3: #d8def7;
+  --ab-ring-4: #e2e7f9;
+  --ab-ripple: rgba(110, 124, 222, 0.55);
+  --ab-seal-shadow: 0 18px 50px rgba(40, 52, 140, 0.16), 0 0 0 8px rgba(255, 255, 255, 0.6);
+  --ab-chip-bg: rgba(255, 255, 255, 0.75);
+  --ab-chip-line: #dde3f7;
+  --ab-chip-ink: #2a3170;
+  --ab-chip-icon: #4f56d3;
+  --ab-wave-1: #e2e8fb;
+  --ab-wave-2: #d4ddf8;
+  --ab-wave-3: #c7d2f5;
+}
+.dark .auth-brand {
+  --ab-bg: #121833;
+  --ab-ink: #e6e9fb;
+  --ab-eyebrow: #9aa3f0;
+  --ab-text: #aab0d6;
+  --ab-foot: #99a0cf; /* 5.1:1 over the front wave, which the footer crosses */
+  --ab-glow: rgba(120, 132, 230, 0.22);
+  --ab-ring-1: #34407a;
+  --ab-ring-2: #2d376b;
+  --ab-ring-3: #27305e;
+  --ab-ring-4: #222a53;
+  --ab-ripple: rgba(140, 152, 240, 0.45);
+  --ab-seal-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), 0 0 0 8px rgba(255, 255, 255, 0.08);
+  --ab-chip-bg: rgba(255, 255, 255, 0.06);
+  --ab-chip-line: #2d376b;
+  --ab-chip-ink: #d5d9f5;
+  --ab-chip-icon: #9aa3f0;
+  --ab-wave-1: #19214a;
+  --ab-wave-2: #1d2756;
+  --ab-wave-3: #222d63;
+}
 .auth-brand .rg {
   position: absolute;
   left: 50%;
   top: 50%;
   border-radius: 50%;
-  border: 1px solid #c9d2f4;
+  border: 1px solid var(--ab-ring-2);
   transform: translate(-50%, -50%);
 }
 .auth-brand .rip {
@@ -227,7 +270,7 @@
   height: 236px;
   margin: -118px 0 0 -118px;
   border-radius: 50%;
-  border: 1.5px solid rgba(110, 124, 222, 0.55);
+  border: 1.5px solid var(--ab-ripple);
   opacity: 0;
   animation: auth-ripple 7.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }

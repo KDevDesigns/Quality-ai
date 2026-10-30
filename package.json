@@ -17,7 +17,8 @@
     "postinstall": "prisma generate",
     "user:create": "tsx scripts/create-user.ts",
     "backup": "tsx scripts/backup.ts",
-    "areas:import": "tsx scripts/import-areas.ts"
+    "areas:import": "tsx scripts/import-areas.ts",
+    "user:reset-password": "tsx scripts/reset-password.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
