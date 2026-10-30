@@ -1,5 +1,5 @@
-// The DAR as one self-contained landscape HTML page, laid out like the DCWD form. The on-screen preview shows it in an
-// iframe and the PDF is printed from it, so both always match. Every value is escaped: cells are free text.
+// The DAR as one self-contained landscape HTML page, laid out like the DCWD form. Print renders it in a hidden iframe;
+// people who want a PDF pick "Save as PDF" in the print dialog. Every value is escaped: cells are free text.
 
 import { longDate, periodLabel } from "./period";
 import type { DarReportData } from "./store";

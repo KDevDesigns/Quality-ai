@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ROLE_LABELS, ROLES, type Role } from "@/lib/auth/permissions";
 import { initialFormState, type FormState } from "@/lib/form";
-import { MODULE_CODES, MODULE_LABELS, type ModuleCodeValue } from "@/lib/schemas/common";
 import { saveArea, saveAreaMembers } from "./actions";
 
 export type AreaValues = {
@@ -16,7 +15,6 @@ export type AreaValues = {
   name: string;
   code: string | null;
   parentId: string | null;
-  moduleCode: ModuleCodeValue | null;
   sortOrder: number;
   active: boolean;
 };
@@ -86,16 +84,6 @@ function AreaForm({ modules, area, parentId, onDone }: { modules: { id: string; 
             ))}
         </select>
       </Field>
-      {!isSub ? (
-        <Field label="AI workbench module" htmlFor="moduleCode" error={err.moduleCode} hint="Optional. Links this module to one of the four modules the AI workbench tests.">
-          <select id="moduleCode" name="moduleCode" defaultValue={area?.moduleCode ?? ""} className={nativeSelectClass}>
-            <option value="">None</option>
-            {MODULE_CODES.map((c) => (
-              <option key={c} value={c}>{MODULE_LABELS[c]}</option>
-            ))}
-          </select>
-        </Field>
-      ) : null}
       <label className="flex items-center gap-2.5 text-sm">
         <input type="checkbox" name="active" defaultChecked={area?.active ?? true} className="size-4 accent-acc" />
         Show in ticket forms

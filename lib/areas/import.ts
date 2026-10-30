@@ -1,6 +1,5 @@
 import { z } from "zod";
 import type { PrismaClient } from "@/lib/generated/prisma/client";
-import { MODULE_CODES } from "@/lib/schemas/common";
 
 // Loads data/erp-areas.json into ErpArea. Matches by code first, then by name, so renaming a module in the file
 // keeps its members. Takes the client as a parameter so tests can run it against a throwaway SQLite file.
@@ -9,7 +8,7 @@ const code = z.string().regex(/^[A-Z0-9][A-Z0-9-]{1,19}$/);
 const subArea = z.object({ name: z.string().trim().min(1).max(100), code: code.optional() });
 export const areaFile = z.object({
   modules: z
-    .array(subArea.extend({ moduleCode: z.enum(MODULE_CODES).optional(), children: z.array(subArea).default([]) }))
+    .array(subArea.extend({ children: z.array(subArea).default([]) }))
     .min(1),
 });
 export type AreaFile = z.infer<typeof areaFile>;
@@ -29,9 +28,9 @@ export async function importAreas(db: PrismaClient, input: unknown, { prune = fa
       (item.code ? rows.find((r) => r.code === item.code) : undefined) ??
       rows.find((r) => r.parentId === parentId && r.name.trim().toLowerCase() === item.name.trim().toLowerCase() && !touched.has(r.id));
 
-    const upsert = async (parentId: string | null, item: { name: string; code?: string; moduleCode?: (typeof MODULE_CODES)[number] }, sortOrder: number) => {
+    const upsert = async (parentId: string | null, item: { name: string; code?: string }, sortOrder: number) => {
       const label = parentId ? `  ${item.name}` : item.name;
-      const data = { parentId, name: item.name, code: item.code ?? null, sortOrder, active: true, ...(parentId ? {} : { moduleCode: item.moduleCode ?? null }) };
+      const data = { parentId, name: item.name, code: item.code ?? null, sortOrder, active: true };
       const existing = find(parentId, item);
       if (existing) {
         await tx.erpArea.update({ where: { id: existing.id }, data });

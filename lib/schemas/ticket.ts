@@ -1,7 +1,6 @@
 import { z } from "zod";
-import { SEVERITIES, TICKET_STATUSES, TICKET_TYPES } from "@/lib/tickets/workflow";
+import { PRIORITIES, SEVERITIES, TICKET_STATUSES, TICKET_TYPES } from "@/lib/tickets/workflow";
 import { optionalText } from "./common";
-import { PRIORITIES } from "./test-case";
 
 const emptyToNull = z
   .string()

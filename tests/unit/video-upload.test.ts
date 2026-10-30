@@ -1,12 +1,7 @@
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import path from "node:path";
-import { afterAll, describe, expect, it } from "vitest";
-import { resolveStored, saveVideoStream, sniffVideo, UploadError, VIDEO_MAX_SECONDS } from "@/lib/uploads/files";
-import { mvhdDuration, videoDuration, webmDurationFrom } from "@/lib/uploads/video-meta";
-
-const dir = mkdtempSync(path.join(tmpdir(), "qa-videos-"));
-afterAll(() => rmSync(dir, { recursive: true, force: true }));
+import { describe, expect, it } from "vitest";
+import { checkUploaded, sniffVideo, UploadError, type UploadedObject } from "@/lib/uploads/files";
+import { VIDEO_MAX_SECONDS } from "@/lib/uploads/limits";
+import { bufferReader, mvhdDuration, videoDuration, webmDurationFrom } from "@/lib/uploads/video-meta";
 
 // ── Tiny hand-built containers: just enough structure for the sniffers and duration readers ──
 
@@ -50,17 +45,27 @@ function webm(seconds: number | null) {
   return Buffer.concat([header, el([0x18, 0x53, 0x80, 0x67], Buffer.concat([info, cluster]), true)]);
 }
 
-const streamOf = (buf: Buffer, chunk = 37) =>
-  new ReadableStream<Uint8Array>({
-    start(c) {
-      for (let i = 0; i < buf.length; i += chunk) c.enqueue(new Uint8Array(buf.subarray(i, i + chunk)));
-      c.close();
-    },
-  });
-const leftovers = () =>
-  readdirSync(dir, { recursive: true })
-    .map(String)
-    .filter((f) => f.endsWith(".part"));
+/** Counts reads, to show a duration check fetches only the boxes it needs, not the whole file. */
+function countingReader(buf: Buffer) {
+  const r = { calls: 0, bytes: 0, read: bufferReader(buf) };
+  const read: typeof r.read = async (pos, len) => {
+    r.calls++;
+    const out = await bufferReader(buf)(pos, len);
+    r.bytes += out.length;
+    return out;
+  };
+  return Object.assign(r, { read });
+}
+
+const arrived = (buf: Buffer, ext: "mp4" | "webm", patch: Partial<UploadedObject> = {}): UploadedObject => ({
+  kind: "VIDEO",
+  storedName: `2026/10/${"b".repeat(32)}.${ext}`,
+  originalName: `Bill bug.${ext}`,
+  size: buf.length,
+  contentType: `video/${ext}`,
+  read: bufferReader(buf),
+  ...patch,
+});
 
 describe("sniffVideo", () => {
   it("knows MP4 and WebM from their first bytes", () => {
@@ -87,16 +92,18 @@ describe("video duration", () => {
   });
 
   it("finds moov at the start or the end of an MP4 file", async () => {
-    const a = path.join(dir, "probe.mp4");
-    writeFileSync(a, mp4(42.5));
-    expect(await videoDuration(a, "video/mp4")).toBe(43);
-    writeFileSync(a, mp4(61, { moovLast: true }));
-    expect(await videoDuration(a, "video/mp4")).toBe(61);
-    writeFileSync(a, mp4(150, { version: 1 }));
-    expect(await videoDuration(a, "video/mp4")).toBe(150);
-    writeFileSync(a, Buffer.concat([ftyp(), box("mdat", Buffer.alloc(10))]));
-    expect(await videoDuration(a, "video/mp4")).toBeNull();
-    rmSync(a);
+    const dur = (b: Buffer) => videoDuration(bufferReader(b), b.length, "video/mp4");
+    expect(await dur(mp4(42.5))).toBe(43);
+    expect(await dur(mp4(61, { moovLast: true }))).toBe(61);
+    expect(await dur(mp4(150, { version: 1 }))).toBe(150);
+    expect(await dur(Buffer.concat([ftyp(), box("mdat", Buffer.alloc(10))]))).toBeNull();
+  });
+
+  it("skips over mdat instead of reading it", async () => {
+    const file = mp4(30, { moovLast: true });
+    const r = countingReader(file);
+    expect(await videoDuration(r.read, file.length, "video/mp4")).toBe(30);
+    expect(r.bytes).toBeLessThan(file.length);
   });
 
   it("reads WebM Duration, and returns null when a recording leaves it out", () => {
@@ -106,40 +113,18 @@ describe("video duration", () => {
   });
 });
 
-describe("saveVideoStream", () => {
-  it("streams to a generated name and reports the length", async () => {
+describe("checkUploaded (videos)", () => {
+  it("accepts MP4 and WebM and reports the length", async () => {
     const file = mp4(30, { moovLast: true });
-    const saved = await saveVideoStream(dir, streamOf(file), "C:\\Users\\ana\\Videos\\Bill bug.mp4", { now: new Date(2026, 9, 29) });
-    expect(saved).toMatchObject({ kind: "VIDEO", mime: "video/mp4", size: file.length, originalName: "Bill bug.mp4", durationSec: 30 });
-    expect(saved.storedName).toMatch(/^2026\/10\/[a-f0-9]{32}\.mp4$/);
-    expect(readFileSync(resolveStored(dir, saved.storedName)!).equals(file)).toBe(true);
-
-    const w = await saveVideoStream(dir, streamOf(webm(null), 5), "rec.webm");
-    expect(w).toMatchObject({ mime: "video/webm", durationSec: null });
-    expect(w.storedName).toMatch(/\.webm$/);
-    expect(leftovers()).toEqual([]);
+    expect(await checkUploaded(arrived(file, "mp4"))).toEqual({ mime: "video/mp4", size: file.length, durationSec: 30 });
+    expect(await checkUploaded(arrived(webm(null), "webm"))).toMatchObject({ mime: "video/webm", durationSec: null });
   });
 
-  it("refuses non-videos, empty, oversize and overlong files and leaves nothing behind", async () => {
-    const before = readdirSync(dir, { recursive: true }).length;
+  it("refuses non-videos, mismatched names and overlong recordings", async () => {
     const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(100)]);
-    await expect(saveVideoStream(dir, streamOf(png), "fake.mp4")).rejects.toThrow(/isn't an MP4 or WebM/);
-    await expect(saveVideoStream(dir, streamOf(Buffer.alloc(0)), "empty.mp4")).rejects.toThrow(/empty/);
-    await expect(saveVideoStream(dir, streamOf(mp4(5)), "big.mp4", { maxBytes: 100 })).rejects.toThrow(/larger than/);
-    await expect(saveVideoStream(dir, streamOf(mp4(VIDEO_MAX_SECONDS + 1)), "long.mp4")).rejects.toThrow(/3:01 long/);
-    await expect(saveVideoStream(dir, streamOf(png), "x.mp4")).rejects.toBeInstanceOf(UploadError);
-    expect(leftovers()).toEqual([]);
-    expect(readdirSync(dir, { recursive: true }).length).toBe(before);
-  });
-
-  it("removes the partial file when the browser cancels", async () => {
-    const broken = new ReadableStream<Uint8Array>({
-      start(c) {
-        c.enqueue(new Uint8Array(mp4(5)));
-        c.error(new Error("aborted"));
-      },
-    });
-    await expect(saveVideoStream(dir, broken, "cut.mp4")).rejects.toThrow("aborted");
-    expect(leftovers()).toEqual([]);
+    await expect(checkUploaded(arrived(png, "mp4"))).rejects.toThrow(/isn't an MP4 or WebM/);
+    await expect(checkUploaded(arrived(webm(5), "mp4"))).rejects.toBeInstanceOf(UploadError);
+    await expect(checkUploaded(arrived(mp4(5), "mp4", { contentType: "text/html" }))).rejects.toBeInstanceOf(UploadError);
+    await expect(checkUploaded(arrived(mp4(VIDEO_MAX_SECONDS + 1), "mp4"))).rejects.toThrow(/3:01 long/);
   });
 });

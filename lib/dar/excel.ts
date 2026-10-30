@@ -135,7 +135,7 @@ export async function darXlsx(r: DarReportData, seal?: Buffer): Promise<Buffer> 
 
 /**
  * write-excel-file can't set the paper, so this edits the sheet's page setup directly: long bond (8.5 × 13 in, Excel
- * paper size 14, "Folio"), landscape, even 0.5 in margins (as on the PDF), and "fit to 1 page wide by 1 tall" so it prints like the PDF.
+ * paper size 14, "Folio"), landscape, even 0.5 in margins (as on the printout), and "fit to 1 page wide by 1 tall" so it prints like it.
  */
 export function longBondOnOnePage(xlsx: Buffer): Buffer {
   const files = unzipSync(new Uint8Array(xlsx));

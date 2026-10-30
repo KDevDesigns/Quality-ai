@@ -26,8 +26,8 @@ const navButton =
   "h-10 gap-3.5 rounded-lg px-3.5 text-[15px] font-medium text-sidebar-foreground transition-[background-color,transform,box-shadow] duration-200 hover:translate-x-[3px] hover:bg-acc-t2 data-active:translate-x-0 data-active:bg-acc data-active:font-medium data-active:text-primary-foreground data-active:shadow-[0_4px_14px_color-mix(in_srgb,var(--acc)_32%,transparent)] data-active:hover:bg-acc data-active:hover:text-primary-foreground [&_svg]:size-[18px]";
 const groupLabel = "h-auto px-[9px] pt-5 pb-2.5 text-[11px] font-normal tracking-[0.12em] text-muted-foreground uppercase";
 
-export function AppSidebar({ user, aiWorkbench }: { user: SidebarUser | null; aiWorkbench: boolean }) {
-  return <SidebarView pathname={usePathname()} user={user} aiWorkbench={aiWorkbench} />;
+export function AppSidebar({ user }: { user: SidebarUser | null }) {
+  return <SidebarView pathname={usePathname()} user={user} />;
 }
 
 /**
@@ -35,10 +35,10 @@ export function AppSidebar({ user, aiWorkbench }: { user: SidebarUser | null; ai
  * isn't known yet, so it must not read it (the build fails if it does).
  */
 export function AppSidebarShell() {
-  return <SidebarView pathname={null} user={null} aiWorkbench={false} />;
+  return <SidebarView pathname={null} user={null} />;
 }
 
-function SidebarView({ pathname, user, aiWorkbench }: { pathname: string | null; user: SidebarUser | null; aiWorkbench: boolean }) {
+function SidebarView({ pathname, user }: { pathname: string | null; user: SidebarUser | null }) {
   const active = (href: string) => pathname !== null && isActive(pathname, href);
   return (
     <Sidebar>
@@ -52,7 +52,7 @@ function SidebarView({ pathname, user, aiWorkbench }: { pathname: string | null;
         </Link>
       </SidebarHeader>
       <SidebarContent className="gap-0 px-2">
-        {navGroups(user?.role ?? null, aiWorkbench).map((group) => (
+        {navGroups(user?.role ?? null).map((group) => (
           <SidebarGroup key={group.key}>
             <SidebarGroupLabel className={groupLabel}>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>

@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ROLE_LABELS, type Role } from "@/lib/auth/permissions";
 import { initialFormState, type FormState } from "@/lib/form";
-import { PRIORITIES } from "@/lib/schemas/test-case";
-import { PRIORITY_LABELS, SEVERITIES, SEVERITY_LABELS, TICKET_TYPES, TYPE_LABELS, type SeverityValue, type TicketType } from "@/lib/tickets/workflow";
+import { PRIORITIES, PRIORITY_LABELS, SEVERITIES, SEVERITY_LABELS, TICKET_TYPES, TYPE_LABELS, type SeverityValue, type TicketType } from "@/lib/tickets/workflow";
 import { createTicket, editTicket } from "./actions";
 import { ImagePicker, useImageAttachments } from "./image-picker";
 import { useVideoUpload, VideoPicker } from "./video-picker";
@@ -31,7 +30,7 @@ export type TicketValues = {
 
 /**
  * `<form action>` resets every field once the action finishes, even when it failed validation, which would lose a long
- * description and the picked images. Submitting this way keeps what the user typed.
+ * description and the uploaded files' ids. Submitting this way keeps what the user typed.
  */
 export function submitKeepingInput(action: (fd: FormData) => void) {
   return (e: React.FormEvent<HTMLFormElement>) => {
@@ -229,8 +228,8 @@ export function TicketForm({
           </div>
           <FormMessage state={state} />
           <div className="flex justify-end gap-2 @4xl:grid">
-            <Button type="submit" disabled={pending || video.busy} size="lg">
-              {video.busy ? "Uploading video…" : pending ? (images.files.length ? "Uploading…" : "Saving…") : ticket ? "Save changes" : "File ticket"}
+            <Button type="submit" disabled={pending || video.busy || images.busy} size="lg">
+              {video.busy ? "Uploading video…" : images.busy ? "Uploading…" : pending ? "Saving…" : ticket ? "Save changes" : "File ticket"}
             </Button>
           </div>
         </div>

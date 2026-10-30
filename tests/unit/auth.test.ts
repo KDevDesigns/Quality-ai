@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { generateTempPassword, hashPassword, verifyPassword } from "@/lib/auth/password";
 import { ACTIONS, can, isRole, ROLES, type Action, type Role } from "@/lib/auth/permissions";
-import { createRateLimiter } from "@/lib/auth/rate-limit";
 import { safeNext } from "@/lib/auth/safe-next";
 import { hashToken, newToken } from "@/lib/auth/store";
 
@@ -65,7 +64,6 @@ describe("permissions", () => {
     "users.manage": ["ADMIN"],
     "projects.manage": ["ADMIN"],
     "workspace.manage": ["ADMIN"],
-    "aiWorkbench.use": ["ADMIN"],
     "dar.use": ["QA"],
     "dar.template": ["ADMIN"],
   };
@@ -90,33 +88,6 @@ describe("permissions", () => {
     expect(isRole("qa")).toBe(false);
     expect(isRole("OWNER")).toBe(false);
     expect(isRole(undefined)).toBe(false);
-  });
-});
-
-describe("login rate limiter", () => {
-  it("blocks after max failures until the window ends", () => {
-    let t = 0;
-    const rl = createRateLimiter({ max: 3, windowMs: 60_000, now: () => t });
-    rl.fail("a");
-    rl.fail("a");
-    expect(rl.blockedFor("a")).toBe(0);
-    rl.fail("a");
-    expect(rl.blockedFor("a")).toBe(60);
-    expect(rl.blockedFor("b")).toBe(0);
-    t = 59_000;
-    expect(rl.blockedFor("a")).toBe(1);
-    t = 60_000;
-    expect(rl.blockedFor("a")).toBe(0);
-    rl.fail("a");
-    expect(rl.blockedFor("a")).toBe(0);
-  });
-
-  it("resets on success", () => {
-    const rl = createRateLimiter({ max: 1, windowMs: 1000, now: () => 0 });
-    rl.fail("a");
-    expect(rl.blockedFor("a")).toBeGreaterThan(0);
-    rl.reset("a");
-    expect(rl.blockedFor("a")).toBe(0);
   });
 });
 

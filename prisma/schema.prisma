@@ -4,16 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-}
-
-// SQLite has no scalar lists: list-shaped fields are Json and validated with zod in lib/schemas.
-
-enum ModuleCode {
-  BILLING
-  P2P
-  FINANCE
-  HR
+  provider = "postgresql"
 }
 
 enum Priority {
@@ -23,51 +14,6 @@ enum Priority {
   P4
 }
 
-enum TestType {
-  UI
-  API
-  PROCESS
-  RECON
-  NFR
-}
-
-enum TestCaseStatus {
-  DRAFT
-  APPROVED
-  AUTOMATED
-  OBSOLETE
-}
-
-enum RunTrigger {
-  MANUAL
-  IMPACT
-  SCHEDULED
-}
-
-enum RunStatus {
-  QUEUED
-  RUNNING
-  PASSED
-  FAILED
-  CANCELLED
-  ERROR
-}
-
-enum ResultStatus {
-  PASS
-  FAIL
-  SKIP
-  FLAKY
-}
-
-enum ExplorationStatus {
-  QUEUED
-  RUNNING
-  COMPLETED
-  STOPPED
-  ERROR
-}
-
 enum Severity {
   S1
   S2
@@ -75,302 +21,21 @@ enum Severity {
   S4
 }
 
-enum DefectStatus {
-  DRAFT
-  CONFIRMED
-  FIXED
-  VERIFIED
-  CLOSED
-  REJECTED
-}
-
-enum ReviewKind {
-  DIFF
-  LOG
-  BUG
-}
-
-model Project {
-  id           String        @id @default(cuid())
-  name         String        @unique
-  description  String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  environments Environment[]
-}
-
-model Environment {
-  id           String        @id @default(cuid())
-  projectId    String
-  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  name         String
-  baseUrls     Json // string[]
-  apiBaseUrl   String?
-  dbConnRef    String? // name of an env var in .env.local, never the connection string itself
-  isProduction Boolean       @default(false)
-  notes        String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  testRuns     TestRun[]
-  explorations Exploration[]
-
-  @@unique([projectId, name])
-}
-
-model Module {
-  id           String            @id @default(cuid())
-  code         ModuleCode        @unique
-  name         String
-  description  String?
-  processes    BusinessProcess[]
-  risks        Risk[]
-  defects      Defect[]
-  requirements Requirement[]
-}
-
-model BusinessProcess {
-  id           String        @id @default(cuid())
-  moduleId     String
-  module       Module        @relation(fields: [moduleId], references: [id])
-  name         String        @unique
-  description  String?
-  steps        Json // ProcessStep[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  risks        Risk[]
-  testCases    TestCase[]
-  defects      Defect[]
-  requirements Requirement[]
-}
-
-model Risk {
-  id             String           @id @default(cuid())
-  moduleId       String
-  module         Module           @relation(fields: [moduleId], references: [id])
-  processId      String?
-  process        BusinessProcess? @relation(fields: [processId], references: [id], onDelete: SetNull)
-  title          String
-  characteristic String // ISO/IEC 25010:2023, validated in lib/schemas/risk.ts
-  likelihood     Int
-  impact         Int
-  score          Int // likelihood * impact, computed in lib/risk/score.ts
-  mitigation     String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-
-  @@index([score])
-}
-
-model Requirement {
-  id             String           @id @default(cuid())
-  title          String           @default("")
-  source         String // "paste" | "upload" | "seed"
-  sourceFile     String?
-  text           String
-  sensitive      Boolean          @default(false)
-  moduleId       String?
-  module         Module?          @relation(fields: [moduleId], references: [id], onDelete: SetNull)
-  processId      String?
-  process        BusinessProcess? @relation(fields: [processId], references: [id], onDelete: SetNull)
-  openQuestions  Json             @default("[]") // string[]
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  testCases      TestCase[]
-  generationJobs GenerationJob[]
-}
-
-enum GenerationStatus {
-  QUEUED
-  RUNNING
-  DONE
-  ERROR
-}
-
-model GenerationJob {
-  id             String           @id @default(cuid())
-  requirementId  String
-  requirement    Requirement      @relation(fields: [requirementId], references: [id], onDelete: Cascade)
-  status         GenerationStatus @default(QUEUED)
-  caseCount      Int              @default(0)
-  redactionCount Int              @default(0)
-  tokensIn       Int              @default(0)
-  tokensOut      Int              @default(0)
-  costMicroUsd   Int              @default(0)
-  error          String?
-  createdAt      DateTime         @default(now())
-  finishedAt     DateTime?
-
-  @@index([requirementId, createdAt])
-}
-
-model TestCase {
-  id            String           @id @default(cuid())
-  requirementId String?
-  requirement   Requirement?     @relation(fields: [requirementId], references: [id], onDelete: SetNull)
-  processId     String?
-  process       BusinessProcess? @relation(fields: [processId], references: [id], onDelete: SetNull)
-  title         String
-  technique     String
-  preconditions String?
-  steps         Json // string[]
-  expected      String
-  priority      Priority         @default(P3)
-  type          TestType
-  tags          Json             @default("[]") // string[]
-  status        TestCaseStatus   @default(DRAFT)
-  aiGenerated   Boolean          @default(false)
-  openQuestions Json             @default("[]") // string[]
-  processStep   String?
-  sortOrder     Int              @default(0)
-  approvedAt    DateTime?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  scripts       TestScript[]
-  results       TestResult[]
-}
-
-model TestScript {
-  id         String    @id @default(cuid())
-  testCaseId String
-  testCase   TestCase  @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
-  path       String
-  reviewedBy String?
-  reviewedAt DateTime?
-  createdAt  DateTime  @default(now())
-}
-
-model TestRun {
-  id           String        @id @default(cuid())
-  envId        String
-  env          Environment   @relation(fields: [envId], references: [id])
-  trigger      RunTrigger    @default(MANUAL)
-  selection    Json
-  status       RunStatus     @default(QUEUED)
-  startedAt    DateTime?
-  finishedAt   DateTime?
-  summary      Json?
-  createdAt    DateTime      @default(now())
-  results      TestResult[]
-  reconResults ReconResult[]
-}
-
-model TestResult {
-  id         String       @id @default(cuid())
-  runId      String
-  run        TestRun      @relation(fields: [runId], references: [id], onDelete: Cascade)
-  testCaseId String?
-  testCase   TestCase?    @relation(fields: [testCaseId], references: [id], onDelete: SetNull)
-  specTitle  String
-  status     ResultStatus
-  durationMs Int
-  error      String?
-  artifacts  Json?
-}
-
-model ReconCheck {
-  id          String        @id @default(cuid())
-  name        String        @unique
-  sql         String
-  expectation String
-  results     ReconResult[]
-}
-
-model ReconResult {
-  id      String     @id @default(cuid())
-  runId   String?
-  run     TestRun?   @relation(fields: [runId], references: [id], onDelete: Cascade)
-  checkId String
-  check   ReconCheck @relation(fields: [checkId], references: [id], onDelete: Cascade)
-  status  String
-  detail  Json?
-  at      DateTime   @default(now())
-}
-
-model Exploration {
-  id         String            @id @default(cuid())
-  envId      String
-  env        Environment       @relation(fields: [envId], references: [id])
-  goal       String
-  role       String
-  stepBudget Int               @default(40)
-  status     ExplorationStatus @default(QUEUED)
-  transcript Json              @default("[]")
-  createdAt  DateTime          @default(now())
-  findings   Finding[]
-}
-
-model Finding {
-  id            String      @id @default(cuid())
-  explorationId String
-  exploration   Exploration @relation(fields: [explorationId], references: [id], onDelete: Cascade)
-  title         String
-  description   String
-  severity      Severity?
-  reproSteps    Json?
-  screenshot    String?
-  defectId      String?
-  defect        Defect?     @relation(fields: [defectId], references: [id], onDelete: SetNull)
-  createdAt     DateTime    @default(now())
-}
-
-model Defect {
-  id                String           @id @default(cuid())
-  title             String
-  severity          Severity
-  moduleId          String?
-  module            Module?          @relation(fields: [moduleId], references: [id])
-  processId         String?
-  process           BusinessProcess? @relation(fields: [processId], references: [id], onDelete: SetNull)
-  repro             String
-  evidence          Json?
-  status            DefectStatus     @default(DRAFT)
-  linkedTestCaseIds Json             @default("[]") // string[]
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  findings          Finding[]
-}
-
-model Review {
-  id              String     @id @default(cuid())
-  kind            ReviewKind
-  input           String
-  output          Json?
-  impactedModules Json       @default("[]") // ModuleCode[]
-  createdAt       DateTime   @default(now())
-}
-
-enum AuditStatus {
-  OK
-  ERROR
-  BLOCKED
-}
-
-// Metadata only: prompt and response text are never stored here.
-model AuditLog {
-  id             String      @id @default(cuid())
-  at             DateTime    @default(now())
-  task           String
-  provider       String // "local" | "anthropic"
-  model          String
-  status         AuditStatus @default(OK)
-  tokensIn       Int         @default(0)
-  tokensOut      Int         @default(0)
-  costMicroUsd   Int         @default(0) // integer micro-dollars; 1_000_000 = $1
-  durationMs     Int         @default(0)
-  redacted       Boolean     @default(false)
-  redactionCount Int         @default(0)
-  sensitive      Boolean     @default(false)
-  error          String?
-  jobId          String?
-
-  @@index([at])
-  @@index([provider, at])
-}
-
 model Setting {
   key       String   @id
   value     Json
   updatedAt DateTime @updatedAt
+}
+
+/// One counted attempt (a failed sign-in, a sign-up). Kept in the database because serverless functions share no
+/// memory. Rows older than a day are removed by the daily clean-up.
+model RateLimitHit {
+  id  String   @id @default(cuid())
+  key String
+  at  DateTime @default(now())
+
+  @@index([key, at])
+  @@index([at])
 }
 
 // ── QA Hub: accounts and the who's-who directory (Phase 3.5a) ──
@@ -382,17 +47,17 @@ enum UserRole {
 }
 
 model User {
-  id                 String       @id @default(cuid())
+  id                 String          @id @default(cuid())
   name               String
-  email              String       @unique // stored lower-case
+  email              String          @unique // stored lower-case
   passwordHash       String
   role               UserRole
-  active             Boolean      @default(true)
+  active             Boolean         @default(true)
   /// Signed up on the sign-in page and waiting for an admin. Pending accounts are also inactive, so they can't sign in.
-  pending            Boolean      @default(false)
-  mustChangePassword Boolean      @default(true)
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  pending            Boolean         @default(false)
+  mustChangePassword Boolean         @default(true)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
   sessions           Session[]
   areas              AreaMember[]
   reported           Ticket[]        @relation("TicketReporter")
@@ -416,21 +81,19 @@ model Session {
 }
 
 /// The ERP's real module → sub-module tree used by tickets and the team directory.
-/// Separate from `Module`, whose four fixed codes belong to the AI workbench.
 model ErpArea {
-  id         String       @id @default(cuid())
-  parentId   String?
-  parent     ErpArea?     @relation("AreaTree", fields: [parentId], references: [id], onDelete: Restrict)
-  children   ErpArea[]    @relation("AreaTree")
-  name       String
-  code       String?      @unique
-  moduleCode ModuleCode?
-  sortOrder  Int          @default(0)
-  active     Boolean      @default(true)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  members    AreaMember[]
-  tickets    Ticket[]
+  id        String       @id @default(cuid())
+  parentId  String?
+  parent    ErpArea?     @relation("AreaTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children  ErpArea[]    @relation("AreaTree")
+  name      String
+  code      String?      @unique
+  sortOrder Int          @default(0)
+  active    Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  members   AreaMember[]
+  tickets   Ticket[]
 
   @@unique([parentId, name])
 }
@@ -557,18 +220,25 @@ model Attachment {
   @@index([ticketId])
 }
 
-/// A video streamed to UPLOAD_DIR before its ticket or reply is sent. The form claims it by id; unclaimed ones are
-/// swept after a day.
+enum UploadStatus {
+  SIGNED // the browser has a signed URL and may be uploading
+  READY // the file arrived and its real type, size and length were checked
+}
+
+/// An image or video uploaded straight to Storage before its ticket or reply is sent. The form claims READY ones by id;
+/// unclaimed ones are swept after a day.
 model PendingUpload {
-  id           String   @id @default(cuid())
+  id           String         @id @default(cuid())
   uploaderId   String
-  uploader     User     @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
-  storedName   String   @unique
+  uploader     User           @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  kind         AttachmentKind
+  status       UploadStatus   @default(SIGNED)
+  storedName   String         @unique
   originalName String
   mime         String
   size         Int
   durationSec  Int?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime       @default(now())
 
   @@index([uploaderId])
   @@index([createdAt])

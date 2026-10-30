@@ -3,15 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { FilmIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { discardUpload, UploadCancelled, uploadFile, type UploadHandle } from "@/lib/uploads/client";
+import { VIDEO_MAX_BYTES, VIDEO_MAX_MB, VIDEO_MAX_SECONDS, VIDEO_TYPES } from "@/lib/uploads/limits";
 import { formatBytes, formatDuration } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-// One screen recording for a ticket or reply. It is too big for the form post, so it uploads on its own as soon as
-// it's picked (streamed to /uploads/video, with progress and Cancel). The form then sends only its id in "videoIds".
-
-const ACCEPT = ["video/mp4", "video/webm"];
-const MAX_BYTES = 150 * 1024 * 1024;
-const MAX_SECONDS = 3 * 60;
+// One screen recording for a ticket or reply. It is too big for the form post, so it uploads straight to Storage as
+// soon as it's picked (with progress and Cancel). The form then sends only its id in "uploadIds".
 
 type Upload =
   | { status: "idle" }
@@ -44,7 +42,7 @@ function probeDuration(file: File): Promise<number | null> {
 export function useVideoUpload() {
   const [upload, setUpload] = useState<Upload>({ status: "idle" });
   const [error, setError] = useState<string | null>(null);
-  const xhr = useRef<XMLHttpRequest | null>(null);
+  const handle = useRef<UploadHandle | null>(null);
   const busy = upload.status === "uploading";
 
   // Leaving the page mid-upload would throw the upload away; let the browser ask first.
@@ -57,41 +55,26 @@ export function useVideoUpload() {
 
   async function start(file: File) {
     if (upload.status !== "idle") return setError("Only one video per post. Remove the current one first, or add another in a reply.");
-    if (!ACCEPT.includes(file.type)) return setError(`${file.name} isn't an MP4 or WebM video. Snipping Tool and Xbox Game Bar (Win+Alt+R) save MP4.`);
-    if (file.size > MAX_BYTES) return setError(`${file.name} is ${formatBytes(file.size)}. Videos can be at most 150 MB.`);
+    if (!VIDEO_TYPES.includes(file.type)) return setError(`${file.name} isn't an MP4 or WebM video. Snipping Tool and Xbox Game Bar (Win+Alt+R) save MP4.`);
+    if (file.size > VIDEO_MAX_BYTES) return setError(`${file.name} is ${formatBytes(file.size)}. Videos can be at most ${VIDEO_MAX_MB} MB.`);
     const seconds = await probeDuration(file);
-    if (seconds !== null && seconds > MAX_SECONDS + 0.5) {
-      return setError(`${file.name} is ${formatDuration(seconds)} long. Videos can be at most ${formatDuration(MAX_SECONDS)}; trim it or split it.`);
+    if (seconds !== null && seconds > VIDEO_MAX_SECONDS + 0.5) {
+      return setError(`${file.name} is ${formatDuration(seconds)} long. Videos can be at most ${formatDuration(VIDEO_MAX_SECONDS)}; trim it or split it.`);
     }
 
     setError(null);
     setUpload({ status: "uploading", name: file.name, size: file.size, loaded: 0 });
-    const req = new XMLHttpRequest();
-    xhr.current = req;
-    req.open("POST", "/uploads/video");
-    req.setRequestHeader("X-File-Name", encodeURIComponent(file.name));
-    req.responseType = "json";
-    req.upload.onprogress = (e) => setUpload((u) => (u.status === "uploading" ? { ...u, loaded: e.loaded } : u));
-    req.onload = () => {
-      xhr.current = null;
-      const body = req.response as { id?: string; name?: string; size?: number; durationSec?: number | null; error?: string } | null;
-      if (req.status === 200 && body?.id) {
-        setUpload({ status: "done", id: body.id, name: body.name ?? file.name, size: body.size ?? file.size, durationSec: body.durationSec ?? null });
-      } else {
-        setUpload({ status: "idle" });
-        setError(body?.error ?? `The upload failed (${req.status}). Try again.`);
-      }
-    };
-    req.onerror = () => {
-      xhr.current = null;
+    const h = uploadFile(file, "VIDEO", (loaded) => setUpload((u) => (u.status === "uploading" ? { ...u, loaded } : u)));
+    handle.current = h;
+    try {
+      const done = await h.done;
+      setUpload({ status: "done", ...done });
+    } catch (e) {
       setUpload({ status: "idle" });
-      setError("The upload was interrupted. Check the connection and try again.");
-    };
-    req.onabort = () => {
-      xhr.current = null;
-      setUpload({ status: "idle" });
-    };
-    req.send(file);
+      if (!(e instanceof UploadCancelled)) setError(e instanceof Error ? e.message : "The upload failed. Try again.");
+    } finally {
+      handle.current = null;
+    }
   }
 
   return {
@@ -99,10 +82,10 @@ export function useVideoUpload() {
     error,
     busy,
     start,
-    cancel: () => xhr.current?.abort(),
+    cancel: () => handle.current?.cancel(),
     /** Drops an uploaded video that hasn't been sent; the server deletes the file. */
     remove: () => {
-      if (upload.status === "done") void fetch(`/uploads/video?id=${encodeURIComponent(upload.id)}`, { method: "DELETE" }).catch(() => {});
+      if (upload.status === "done") void discardUpload(upload.id);
       setUpload({ status: "idle" });
       setError(null);
     },
@@ -136,7 +119,7 @@ export function VideoPicker({ state, id = "video", compact }: { state: VideoUplo
         if (f) void state.start(f);
       }}
     >
-      {upload.status === "done" ? <input type="hidden" name="videoIds" value={upload.id} /> : null}
+      {upload.status === "done" ? <input type="hidden" name="uploadIds" value={upload.id} /> : null}
 
       {upload.status === "idle" ? (
         <div className="flex flex-wrap items-center gap-3">
@@ -146,7 +129,7 @@ export function VideoPicker({ state, id = "video", compact }: { state: VideoUplo
           <input
             id={id}
             type="file"
-            accept={ACCEPT.join(",")}
+            accept={VIDEO_TYPES.join(",")}
             className="sr-only"
             tabIndex={-1}
             onChange={(e) => {
@@ -156,7 +139,7 @@ export function VideoPicker({ state, id = "video", compact }: { state: VideoUplo
             }}
           />
           <span className="text-[12.5px] text-muted-foreground">
-            {compact ? "One MP4 or WebM, up to 3 min / 150 MB." : "A screen recording: one MP4 or WebM, up to 3 min and 150 MB. You can also drop it here."}
+            {compact ? `One MP4 or WebM, up to 3 min / ${VIDEO_MAX_MB} MB.` : `A screen recording: one MP4 or WebM, up to 3 min and ${VIDEO_MAX_MB} MB. You can also drop it here.`}
           </span>
         </div>
       ) : upload.status === "uploading" ? (

@@ -3,7 +3,6 @@ import { AppSidebar, AppSidebarShell, type SidebarUser } from "@/components/app-
 import { AppTopbar, AppTopbarShell } from "@/components/app-topbar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { getCurrentUser } from "@/lib/auth/session";
-import { getWorkspaceSettings } from "@/lib/workspace";
 
 // The session is read behind Suspense (Cache Components), so the chrome streams in without holding up the page.
 // This only shapes the navigation; each page and action still checks access itself.
@@ -33,9 +32,7 @@ async function sessionUser(): Promise<SidebarUser | null> {
 }
 
 async function SessionSidebar() {
-  const user = await sessionUser();
-  const aiWorkbench = user?.role === "ADMIN" ? (await getWorkspaceSettings()).aiWorkbench : false;
-  return <AppSidebar user={user} aiWorkbench={aiWorkbench} />;
+  return <AppSidebar user={await sessionUser()} />;
 }
 
 async function SessionTopbar() {

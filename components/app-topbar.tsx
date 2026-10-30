@@ -1,14 +1,13 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { ShieldCheckIcon } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import type { SidebarUser } from "./app-sidebar";
 import { currentNav, isActive } from "./nav";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 
-const GROUP_LABEL = { tickets: "Tickets", admin: "Admin", ai: "AI workbench" } as const;
+const GROUP_LABEL = { tickets: "Tickets", admin: "Admin" } as const;
 
 export function AppTopbar({ user }: { user: SidebarUser | null }) {
   return <TopbarView pathname={usePathname()} user={user} />;
@@ -37,12 +36,6 @@ function TopbarView({ pathname, user }: { pathname: string | null; user: Sidebar
         </nav>
       </div>
       <div className="flex items-center gap-3">
-        {group === "ai" ? (
-          <span className="hidden h-[30px] items-center gap-1.5 rounded-full border border-ok-b bg-ok-t px-3 text-[13px] font-semibold whitespace-nowrap text-ok md:inline-flex">
-            <ShieldCheckIcon className="size-3.5" aria-hidden />
-            Staging only · never production
-          </span>
-        ) : null}
         <ThemeToggle />
         {user ? <UserMenu user={user} active={pathname !== null && isActive(pathname, "/account")} /> : null}
       </div>

@@ -42,6 +42,7 @@ export const STATUS_TONES: Record<TicketStatus, Tone> = {
 };
 
 export const SEVERITY_LABELS: Record<SeverityValue, string> = { S1: "S1 Critical", S2: "S2 Major", S3: "S3 Minor", S4: "S4 Trivial" };
+export const PRIORITIES = ["P1", "P2", "P3", "P4"] as const;
 export const PRIORITY_LABELS = { P1: "P1 Urgent", P2: "P2 High", P3: "P3 Normal", P4: "P4 Low" } as const;
 
 /** Statuses that end a ticket. `closedAt` is set when a ticket enters one and cleared when it is reopened. */

@@ -4,8 +4,7 @@
     { "name": "User Roles Management", "code": "URM", "children": [] },
     {
       "name": "Human Resource",
-      "code": "HR",
-      "moduleCode": "HR",
+      "code": "HR",
       "children": [
         { "name": "Attendance", "code": "HR-ATT" },
         { "name": "Employees", "code": "HR-EMP" },
@@ -16,11 +15,10 @@
         { "name": "Recruitment, Selection and Placement", "code": "HR-RSP" }
       ]
     },
-    { "name": "Procurement", "code": "PROC", "moduleCode": "P2P", "children": [] },
+    { "name": "Procurement", "code": "PROC", "children": [] },
     {
       "name": "Billing and Collection",
-      "code": "BCS",
-      "moduleCode": "BILLING",
+      "code": "BCS",
       "children": [
         { "name": "Billing and Collection", "code": "BCS-BC" },
         { "name": "Collection", "code": "BCS-COL" }
@@ -30,7 +28,7 @@
     { "name": "Text Blast Management", "code": "TBM", "children": [] },
     { "name": "Geographical Information System", "code": "GIS", "children": [] },
     { "name": "Performance Improvement Program", "code": "PIP", "children": [] },
-    { "name": "Financial Management System", "code": "FMS", "moduleCode": "FINANCE", "children": [] },
+    { "name": "Financial Management System", "code": "FMS", "children": [] },
     { "name": "Freedom of Information", "code": "FOI", "children": [] },
     { "name": "Project Monitoring System", "code": "PRMS", "children": [] }
   ]

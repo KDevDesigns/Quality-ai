@@ -21,7 +21,6 @@ const MATRIX = {
   "users.manage": ["ADMIN"],
   "projects.manage": ["ADMIN"],
   "workspace.manage": ["ADMIN"],
-  "aiWorkbench.use": ["ADMIN"],
   /** Your own Daily Accomplishment Report. Nobody else, admins included, sees a tester's DAR. */
   "dar.use": ["QA"],
   /** The DAR template: department, unit, signatories and the duties and MFOs. */

@@ -19,7 +19,6 @@ export async function saveArea(_prev: FormState, fd: FormData): Promise<FormStat
     name: text(fd, "name"),
     code: text(fd, "code"),
     parentId: text(fd, "parentId"),
-    moduleCode: text(fd, "moduleCode"),
     sortOrder: text(fd, "sortOrder") || undefined,
     active: fd.get("active") === "on",
   });

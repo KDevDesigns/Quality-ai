@@ -1,27 +1,26 @@
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PGlite } from "@electric-sql/pglite";
+import { PrismaPGlite } from "pglite-prisma-adapter";
 import { PrismaClient } from "@/lib/generated/prisma/client";
 
-/** A throwaway SQLite database with every migration applied. Never touches prisma/dev.db. */
+/** A throwaway in-memory Postgres (PGlite) with every migration applied. Never touches Supabase. */
 export async function createTestDb() {
-  const dir = mkdtempSync(path.join(tmpdir(), "qa-ai-test-"));
-  const db = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: `file:${path.join(dir, "test.db")}` }) });
+  const pg = new PGlite();
+  // Prisma creates this table itself before migrating; the RLS migration expects it.
+  await pg.exec(`CREATE TABLE "_prisma_migrations" (id text PRIMARY KEY)`);
 
   const migrations = path.join(process.cwd(), "prisma", "migrations");
   for (const name of readdirSync(migrations).filter((n) => /^\d+_/.test(n)).sort()) {
-    const sql = readFileSync(path.join(migrations, name, "migration.sql"), "utf8");
-    for (const stmt of sql.split(/;\s*\r?\n/).map((s) => s.trim()).filter((s) => s && !/^(--[^\n]*\n?)+$/.test(s))) {
-      await db.$executeRawUnsafe(stmt);
-    }
+    await pg.exec(readFileSync(path.join(migrations, name, "migration.sql"), "utf8"));
   }
 
+  const db = new PrismaClient({ adapter: new PrismaPGlite(pg) });
   return {
     db,
     async cleanup() {
       await db.$disconnect();
-      rmSync(dir, { recursive: true, force: true });
+      await pg.close();
     },
   };
 }

@@ -140,8 +140,8 @@ export function CommentForm({ ticket }: { ticket: Ref }) {
       <VideoPicker state={video} id="comment-video" compact />
       <FormMessage state={state} />
       <div className="flex justify-end">
-        <Button type="submit" disabled={pending || video.busy || (!body.trim() && images.files.length === 0 && video.upload.status !== "done")}>
-          <SendIcon /> {video.busy ? "Uploading video…" : pending ? (images.files.length ? "Uploading…" : "Sending…") : "Send"}
+        <Button type="submit" disabled={pending || video.busy || images.busy || (!body.trim() && images.items.length === 0 && video.upload.status !== "done")}>
+          <SendIcon /> {video.busy ? "Uploading video…" : images.busy ? "Uploading…" : pending ? "Sending…" : "Send"}
         </Button>
       </div>
     </form>
