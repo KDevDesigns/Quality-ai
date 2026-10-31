@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useActionState, useCallback, useState, useTransition } from "react";
 import { CheckIcon, CopyIcon, EyeIcon, EyeOffIcon, KeyRoundIcon, PencilIcon, PlusIcon } from "lucide-react";
 import { closeAllowed, CloseGuardProvider, useCloseGuard, useCloseGuardRef } from "@/components/close-guard";
@@ -184,26 +185,43 @@ export function TempPassword({ email, password, onDone }: { email: string; passw
   );
 }
 
-export function ResetPasswordButton({ id, name }: { id: string; name: string }) {
+/** The key icon in the user table, or with `labelled` a "Reset password" button (the forgot-password requests). */
+export function ResetPasswordButton({ id, name, labelled = false }: { id: string; name: string; labelled?: boolean }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<UserFormState | null>(null);
   const guard = useCloseGuardRef();
+  const router = useRouter();
+
+  // The page refreshes only once the dialog is closed: a reset can clear a forgot-password request, and refreshing
+  // earlier would remove that request's row, and this dialog with it.
+  const close = () => {
+    const reset = result?.ok;
+    setOpen(false);
+    setResult(null);
+    if (reset) router.refresh();
+  };
 
   return (
     <Dialog
       open={open}
       onOpenChange={(next, details) => {
-        if (!next && !closeAllowed(guard)) return details.cancel();
-        setOpen(next);
-        if (!next) setResult(null);
+        if (next) return setOpen(true);
+        if (!closeAllowed(guard)) return details.cancel();
+        close();
       }}
     >
       <DialogTrigger
         render={
-          <Button variant="ghost" size="icon-sm" aria-label={`Reset password for ${name}`}>
-            <KeyRoundIcon />
-          </Button>
+          labelled ? (
+            <Button size="sm" aria-label={`Reset password for ${name}`}>
+              <KeyRoundIcon /> Reset password
+            </Button>
+          ) : (
+            <Button variant="ghost" size="icon-sm" aria-label={`Reset password for ${name}`}>
+              <KeyRoundIcon />
+            </Button>
+          )
         }
       />
       <DialogContent>
@@ -216,10 +234,7 @@ export function ResetPasswordButton({ id, name }: { id: string; name: string }) 
             <TempPassword
               email={result.email ?? ""}
               password={result.tempPassword}
-              onDone={() => {
-                setOpen(false);
-                setResult(null);
-              }}
+              onDone={close}
             />
           </CloseGuardProvider>
         ) : (

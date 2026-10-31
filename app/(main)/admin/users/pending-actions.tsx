@@ -8,8 +8,8 @@ import { InlineAlert } from "@/components/inline-alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { FormState } from "@/lib/form";
-import { approveSignUp, rejectSignUp, type UserFormState } from "./actions";
-import { TempPassword } from "./user-dialog";
+import { approveSignUp, dismissResetRequest, rejectSignUp, type UserFormState } from "./actions";
+import { ResetPasswordButton, TempPassword } from "./user-dialog";
 
 // Approving moves the request out of the "Waiting for approval" list as soon as the page refreshes, which would take
 // a dialog inside that row with it, temporary password and all. So the dialog lives in ApprovalHost, which wraps the
@@ -88,6 +88,27 @@ export function PendingActions({ id, name }: { id: string; name: string }) {
       </Button>
       <Button size="sm" variant="outline" disabled={pending} onClick={reject} aria-label={`Reject ${name}`} className="hover:bg-bad-t hover:text-bad">
         <XIcon /> Reject
+      </Button>
+    </div>
+  );
+}
+
+/** A forgot-password request: reset (shows the temporary password to hand over) or dismiss it. */
+export function ResetRequestActions({ id, name }: { id: string; name: string }) {
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const dismiss = () =>
+    startTransition(async () => {
+      const r: FormState = await dismissResetRequest(id);
+      setError(r.ok ? null : (r.message ?? "Something went wrong."));
+    });
+
+  return (
+    <div className="flex items-center justify-end gap-1.5">
+      {error ? <span role="alert" className="mr-2 text-[12.5px] text-destructive">{error}</span> : null}
+      <ResetPasswordButton id={id} name={name} labelled />
+      <Button size="sm" variant="outline" disabled={pending} onClick={dismiss} aria-label={`Dismiss the request from ${name}`} className="hover:bg-bad-t hover:text-bad">
+        <XIcon /> Dismiss
       </Button>
     </div>
   );

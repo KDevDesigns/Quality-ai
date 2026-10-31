@@ -6,6 +6,7 @@ import { BugIcon, MessagesSquareIcon, PenToolIcon } from "lucide-react";
 import { LoadingBlock } from "@/components/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
 import { AuthTabs } from "./auth-tabs";
+import { ForgotForm } from "./forgot-form";
 import { LoginForm } from "./login-form";
 import { SignupForm } from "./signup-form";
 
@@ -56,7 +57,7 @@ async function LoginBody({ searchParams }: { searchParams: PageProps<"/login">["
   return (
     <>
       <AuthTabs active={signup ? "signup" : "signin"} />
-      {signup ? <SignupForm /> : <LoginForm next={typeof next === "string" ? next : "/"} />}
+      {signup ? <SignupForm /> : mode === "forgot" ? <ForgotForm /> : <LoginForm next={typeof next === "string" ? next : "/"} />}
     </>
   );
 }

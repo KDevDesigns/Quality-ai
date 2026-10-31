@@ -21,8 +21,8 @@ const MATRIX = {
   "users.manage": ["ADMIN"],
   "projects.manage": ["ADMIN"],
   "workspace.manage": ["ADMIN"],
-  /** Your own Daily Accomplishment Report. Nobody else, admins included, sees a tester's DAR. */
-  "dar.use": ["QA"],
+  /** Your own Daily Accomplishment Report. Each person sees only their own; admins can't open a tester's DAR. */
+  "dar.use": ["QA", "ADMIN"],
   /** The DAR template: department, unit, signatories and the duties and MFOs. */
   "dar.template": ["ADMIN"],
 } as const satisfies Record<string, readonly Role[]>;

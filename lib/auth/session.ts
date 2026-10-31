@@ -20,6 +20,10 @@ export const loginLimiter = createRateLimiter(db, { name: "login", max: 5, windo
 /** 20 sign-up requests per hour in total, so a script can't flood the approval list. */
 export const signupLimiter = createRateLimiter(db, { name: "signup", max: 20, windowMs: 60 * 60 * 1000 });
 
+/** Forgot-password requests: 5 per email and 30 in total per hour, so nobody can flood the admin's list. */
+export const resetLimiter = createRateLimiter(db, { name: "reset", max: 5, windowMs: 60 * 60 * 1000 });
+export const resetAllLimiter = createRateLimiter(db, { name: "reset-all", max: 30, windowMs: 60 * 60 * 1000 });
+
 /** The signed-in user, or null. Read once per request. */
 export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   // Session checks compare against the clock, so tell Cache Components this render is request-time.

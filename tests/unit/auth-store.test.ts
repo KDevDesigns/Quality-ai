@@ -70,10 +70,31 @@ describe("authStore", () => {
     expect(await store.checkCredentials("dev@x.ph", "pw-1234567")).toMatchObject({ name: "Dev", role: "DEV" });
 
     await store.signUp({ name: "Spam", email: "spam@x.ph", role: "DEV" });
+    expect(await store.signUp({ name: "Spam again", email: "SPAM@x.ph", role: "DEV" })).toBe("pending");
     const spam = await db.user.findUniqueOrThrow({ where: { email: "spam@x.ph" } });
     expect(await store.rejectSignUp(spam.id)).toBe(true);
     expect(await db.user.count({ where: { email: "spam@x.ph" } })).toBe(0);
     await expect(store.signUp({ name: "Root", email: "root@x.ph", role: "ADMIN" })).rejects.toThrow(/Admins/);
+  });
+
+  it("flags forgot-password requests for an admin, and only for working accounts", async () => {
+    const store = authStore(db, now);
+    const { id } = await store.createUser({ name: "Dev", email: "dev@x.ph", role: "DEV", password: "pw-1234567" });
+    await store.signUp({ name: "New", email: "new@x.ph", role: "QA" });
+    const off = await store.createUser({ name: "Off", email: "off@x.ph", role: "QA", password: "pw-1234567" });
+    await db.user.update({ where: { id: off.id }, data: { active: false } });
+
+    expect(await store.requestReset("nobody@x.ph")).toBe("unknown");
+    expect(await store.requestReset("new@x.ph")).toBe("pending");
+    expect(await store.requestReset("off@x.ph")).toBe("inactive");
+    expect(await store.requestReset(" Dev@X.ph ")).toBe("requested");
+    expect(await store.adminRequests()).toEqual({ signUps: 1, resets: 1 });
+    // The password itself is untouched until an admin resets it.
+    expect(await store.checkCredentials("dev@x.ph", "pw-1234567")).not.toBeNull();
+
+    expect(await store.clearResetRequest(id)).toBe(true);
+    expect(await store.clearResetRequest(id)).toBe(false);
+    expect(await store.adminRequests()).toEqual({ signUps: 1, resets: 0 });
   });
 
   it("stores only the token hash and resolves the session", async () => {

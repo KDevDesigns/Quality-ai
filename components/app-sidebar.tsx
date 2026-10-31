@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 import type { Role } from "@/lib/auth/permissions";
 import { isActive, navGroups } from "./nav";
+import { NavCount, useNotifications } from "./notifications";
 
 export type SidebarUser = { name: string; role: Role };
 
@@ -40,6 +41,13 @@ export function AppSidebarShell() {
 
 function SidebarView({ pathname, user }: { pathname: string | null; user: SidebarUser | null }) {
   const active = (href: string) => pathname !== null && isActive(pathname, href);
+  const { data } = useNotifications();
+  // Unread replies on My inbox, unopened new tickets on Tickets, and sign-up and password requests on Users.
+  const counts: Record<string, { count: number; label: string }> = {
+    "/inbox": { count: data?.messages ?? 0, label: "unread messages" },
+    "/tickets": { count: data?.newTickets ?? 0, label: "new tickets" },
+    "/admin/users": { count: data?.requests ?? 0, label: "waiting" },
+  };
   return (
     <Sidebar>
       <SidebarHeader className="h-[72px] flex-row items-center gap-3 border-b border-line2 px-4 py-0">
@@ -72,6 +80,11 @@ function SidebarView({ pathname, user }: { pathname: string | null; user: Sideba
                         <Icon />
                         <span>{label}</span>
                       </SidebarMenuButton>
+                      {counts[href]?.count ? (
+                        <SidebarMenuBadge className="right-2 h-auto px-0 peer-data-[size=default]/menu-button:top-1/2 -translate-y-1/2">
+                          <NavCount {...counts[href]} />
+                        </SidebarMenuBadge>
+                      ) : null}
                     </SidebarMenuItem>
                   ),
                 )}

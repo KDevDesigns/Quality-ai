@@ -18,11 +18,11 @@ export type NavGroup = { key: NavGroupKey; label: string; items: NavItem[] };
 export const TICKETS_NAV: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboardIcon },
   { href: "/tickets", label: "Tickets", icon: TicketIcon },
-  { href: "/inbox", label: "My inbox", icon: InboxIcon, soon: "Next" },
+  { href: "/inbox", label: "My inbox", icon: InboxIcon },
   { href: "/team", label: "Team & modules", icon: UsersRoundIcon },
 ];
 
-/** QA testers only: their own Daily Accomplishment Report. */
+/** QA testers and admins: their own Daily Accomplishment Report. */
 export const DAR_NAV: NavItem = { href: "/dar", label: "My DAR", icon: FileSpreadsheetIcon };
 
 export const ADMIN_NAV: NavItem[] = [

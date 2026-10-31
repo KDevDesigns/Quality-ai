@@ -117,6 +117,8 @@ export function CommentForm({ ticket }: { ticket: Ref }) {
     }
     return r;
   }, initialFormState);
+  const busy = pending || video.busy || images.busy;
+  const canSend = !busy && (!!body.trim() || images.items.length > 0 || video.upload.status === "done");
 
   return (
     <form onSubmit={submitKeepingInput(action)} className="grid gap-3">
@@ -132,15 +134,19 @@ export function CommentForm({ ticket }: { ticket: Ref }) {
         onChange={(e) => setBody(e.target.value)}
         onPaste={images.onPaste}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) e.currentTarget.form?.requestSubmit();
+          // Enter sends, like a chat; Shift+Enter starts a new line. Not while an IME is composing a word, and not
+          // while files are still uploading (the message would go without them).
+          if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+          e.preventDefault();
+          if (canSend) e.currentTarget.form?.requestSubmit();
         }}
-        placeholder="Write a reply… (Ctrl+Enter to send)"
+        placeholder="Write a reply… (Enter to send, Shift+Enter for a new line)"
       />
       <ImagePicker state={images} id="comment-images" compact />
       <VideoPicker state={video} id="comment-video" compact />
       <FormMessage state={state} />
       <div className="flex justify-end">
-        <Button type="submit" disabled={pending || video.busy || images.busy || (!body.trim() && images.items.length === 0 && video.upload.status !== "done")}>
+        <Button type="submit" disabled={!canSend}>
           <SendIcon /> {video.busy ? "Uploading video…" : images.busy ? "Uploading…" : pending ? "Sending…" : "Send"}
         </Button>
       </div>

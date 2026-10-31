@@ -20,7 +20,7 @@ const XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 export async function GET(req: Request) {
   await connection();
   const user = await getCurrentUser();
-  if (!user || user.mustChangePassword || !can(user, "dar.use")) return new Response("Sign in as a QA tester to download your DAR.", { status: 401 });
+  if (!user || user.mustChangePassword || !can(user, "dar.use")) return new Response("Sign in to download your DAR.", { status: 401 });
 
   const url = new URL(req.url);
   const period = parsePeriod(url.searchParams.get("period") ?? "");

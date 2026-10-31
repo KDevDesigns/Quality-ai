@@ -178,7 +178,6 @@ export function TicketForm({
               maxLength={20000}
               rows={8}
               className="min-h-40"
-              onPaste={ticket ? undefined : images.onPaste}
               aria-invalid={!!err.description}
               placeholder={type === "BUG" ? "1. Open …\n2. Click …\n\nExpected: …\nActual: …" : undefined}
             />

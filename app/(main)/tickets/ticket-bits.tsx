@@ -34,3 +34,12 @@ export function SeverityTag({ severity }: { severity: SeverityValue | null }) {
   if (!severity) return null;
   return <span className={cn("rounded-md px-1.5 py-0.5 font-mono text-[11.5px] font-semibold", SEVERITY_STYLE[severity])}>{severity}</span>;
 }
+
+/** The red dot on a ticket with activity you haven't opened yet. Screen readers hear "Unread". */
+export function UnreadDot({ className }: { className?: string }) {
+  return (
+    <span className={cn("inline-block size-2 shrink-0 rounded-full bg-bad", className)}>
+      <span className="sr-only">Unread</span>
+    </span>
+  );
+}
