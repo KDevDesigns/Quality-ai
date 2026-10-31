@@ -29,9 +29,9 @@ export function Field({
         {required ? <span className="-ml-1.5 text-destructive" aria-hidden>*</span> : null}
       </Label>
       {children}
-      {hint && !error?.length ? <p className="text-[12.5px] text-muted-foreground">{hint}</p> : null}
+      {hint && !error?.length ? <p className="text-[0.7813rem] text-muted-foreground">{hint}</p> : null}
       {error?.length ? (
-        <p id={`${htmlFor}-error`} className="flex items-center gap-1.5 text-[12.5px] font-medium text-destructive">
+        <p id={`${htmlFor}-error`} className="flex items-center gap-1.5 text-[0.7813rem] font-medium text-destructive">
           <CircleAlertIcon className="size-3.5 shrink-0" aria-hidden />
           {error.join(" ")}
         </p>

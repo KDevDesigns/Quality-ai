@@ -189,8 +189,8 @@ function AreaRow({
     <TableRow className={cn(hidden && "opacity-60")}>
       <TableCell className={cn("whitespace-normal", muted ? "text-muted-foreground italic" : "font-medium")}>
         {label}
-        {code ? <span className="ml-2 font-mono text-[12px] text-muted-foreground">{code}</span> : null}
-        {hidden ? <span className="ml-2 text-[12px] text-muted-foreground">(hidden)</span> : null}
+        {code ? <span className="ml-2 font-mono text-[0.75rem] text-muted-foreground">{code}</span> : null}
+        {hidden ? <span className="ml-2 text-[0.75rem] text-muted-foreground">(hidden)</span> : null}
       </TableCell>
       <TableCell className="whitespace-normal"><People list={lead} person={person} /></TableCell>
       <TableCell className="whitespace-normal"><People list={devs} person={person} /></TableCell>
@@ -201,13 +201,13 @@ function AreaRow({
 }
 
 function People({ list, person }: { list: Member[]; person: string }) {
-  if (list.length === 0) return <span className="text-[13px] text-muted-foreground">—</span>;
+  if (list.length === 0) return <span className="text-[0.8125rem] text-muted-foreground">—</span>;
   return (
     <span className="flex flex-wrap gap-1.5">
       {list.map((m) => (
         <span
           key={m.userId}
-          className={cn("rounded-md px-2 py-0.5 text-[13px]", m.userId === person ? "bg-acc text-primary-foreground" : "bg-surface3 text-foreground")}
+          className={cn("rounded-md px-2 py-0.5 text-[0.8125rem]", m.userId === person ? "bg-acc text-primary-foreground" : "bg-surface3 text-foreground")}
         >
           {m.name}
         </span>

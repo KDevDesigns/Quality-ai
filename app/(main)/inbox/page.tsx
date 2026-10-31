@@ -19,7 +19,7 @@ import { ImageGallery } from "../tickets/[number]/image-viewer";
 import { MarkRead } from "../tickets/[number]/mark-read";
 import { CommentForm } from "../tickets/[number]/ticket-controls";
 import { TicketStatusPill, UnreadDot } from "../tickets/ticket-bits";
-import { ScrollToLatest } from "./scroll-to-latest";
+import { ScrollToLatest } from "@/components/scroll-to-latest";
 
 // My inbox: the conversations on the tickets this person can see, Messenger-style. The list is on the left, the
 // selected conversation (?t=<number>) on the right with a reply box. On a phone, one of the two at a time.
@@ -79,7 +79,7 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
   return (
     <div
       data-full-width
-      className="grid overflow-hidden rounded-xl border border-line bg-card lg:h-[calc(100dvh-260px)] lg:min-h-[520px] lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)]"
+      className="grid overflow-hidden rounded-xl border border-line bg-card lg:h-[calc(100dvh-16.25rem)] lg:min-h-[32.5rem] lg:grid-cols-[minmax(18.75rem,23.75rem)_minmax(0,1fr)]"
     >
       {/* Conversations */}
       <section aria-label="Conversations" className={cn("min-h-0 flex-col border-line lg:flex lg:border-r", t ? "hidden" : "flex")}>
@@ -99,7 +99,7 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
                 href={v.href}
                 aria-current={v.on ? "page" : undefined}
                 className={cn(
-                  "rounded-full border px-3.5 py-1.5 text-[13.5px] font-medium transition-colors",
+                  "rounded-full border px-3.5 py-1.5 text-[0.8438rem] font-medium transition-colors",
                   v.on ? "border-acc bg-acc text-primary-foreground" : "border-line bg-card text-ink2 hover:border-acc-b hover:text-foreground",
                 )}
               >
@@ -135,10 +135,10 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
           <ScrollToLatest targetId="inbox-messages" endId="inbox-reply" version={t.lastActivityAt.toISOString()} />
           <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line2 px-4 py-3">
             <div className="min-w-0">
-              <Link href={hrefWith(p, { t: null })} className="mb-1 inline-flex items-center gap-1.5 text-[13.5px] text-muted-foreground hover:text-acc lg:hidden">
+              <Link href={hrefWith(p, { t: null })} className="mb-1 inline-flex items-center gap-1.5 text-[0.8438rem] text-muted-foreground hover:text-acc lg:hidden">
                 <ArrowLeftIcon className="size-3.5" aria-hidden /> My inbox
               </Link>
-              <h2 className="truncate text-[17px] font-semibold" title={t.title}>
+              <h2 className="truncate text-[1.0625rem] font-semibold" title={t.title}>
                 <span className="mr-1.5 font-mono text-muted-foreground">#{t.number}</span>
                 {t.title}
               </h2>
@@ -165,7 +165,7 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
           <span className="flex size-12 items-center justify-center rounded-full bg-acc-t text-acc" aria-hidden>
             <MessagesSquareIcon className="size-6" />
           </span>
-          <p className="text-[15px] font-semibold">Pick a conversation</p>
+          <p className="text-[0.9375rem] font-semibold">Pick a conversation</p>
           <p className="max-w-xs text-sm text-muted-foreground">Choose a ticket on the left to read its messages and reply.</p>
         </div>
       )}
@@ -183,16 +183,16 @@ function ThreadRow({ x, href, active, now }: { x: InboxThread; href: string; act
       >
         <span className="flex items-center gap-2">
           {x.unread ? <UnreadDot /> : null}
-          <span className={cn("min-w-0 flex-1 truncate text-[14px]", x.unread ? "font-semibold" : "font-medium")}>
-            <span className="mr-1.5 font-mono text-[13px] text-muted-foreground">#{x.number}</span>
+          <span className={cn("min-w-0 flex-1 truncate text-[0.875rem]", x.unread ? "font-semibold" : "font-medium")}>
+            <span className="mr-1.5 font-mono text-[0.8125rem] text-muted-foreground">#{x.number}</span>
             {x.title}
           </span>
-          <span className="shrink-0 text-[12.5px] text-muted-foreground">{timeAgo(x.lastActivityAt, now)}</span>
+          <span className="shrink-0 text-[0.7813rem] text-muted-foreground">{timeAgo(x.lastActivityAt, now)}</span>
         </span>
         <span className="flex items-center gap-2">
-          <span className={cn("min-w-0 flex-1 truncate text-[13px]", x.unread ? "text-foreground" : "text-muted-foreground")}>{x.preview}</span>
+          <span className={cn("min-w-0 flex-1 truncate text-[0.8125rem]", x.unread ? "text-foreground" : "text-muted-foreground")}>{x.preview}</span>
           {x.unreadMessages ? (
-            <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-bad px-1 text-[11px] leading-none font-semibold text-primary-foreground">
+            <span className="flex h-[1.125rem] min-w-[1.125rem] shrink-0 items-center justify-center rounded-full bg-bad px-1 text-[0.6875rem] leading-none font-semibold text-primary-foreground">
               {x.unreadMessages > 99 ? "99+" : x.unreadMessages}
               <span className="sr-only"> unread messages</span>
             </span>

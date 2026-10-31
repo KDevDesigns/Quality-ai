@@ -106,7 +106,7 @@ export function VideoPicker({ state, id = "video", compact }: { state: VideoUplo
 
   return (
     <div
-      className={cn("grid gap-2.5 rounded-[10px] border border-dashed border-line p-3 transition-colors", over && "border-acc bg-acc-t2")}
+      className={cn("grid gap-2.5 rounded-[0.625rem] border border-dashed border-line p-3 transition-colors", over && "border-acc bg-acc-t2")}
       onDragOver={(e) => {
         e.preventDefault();
         setOver(true);
@@ -138,13 +138,13 @@ export function VideoPicker({ state, id = "video", compact }: { state: VideoUplo
               if (f) void state.start(f);
             }}
           />
-          <span className="text-[12.5px] text-muted-foreground">
+          <span className="text-[0.7813rem] text-muted-foreground">
             {compact ? `One MP4 or WebM, up to 3 min / ${VIDEO_MAX_MB} MB.` : `A screen recording: one MP4 or WebM, up to 3 min and ${VIDEO_MAX_MB} MB. You can also drop it here.`}
           </span>
         </div>
       ) : upload.status === "uploading" ? (
         <div className="grid gap-1.5">
-          <div className="flex items-center gap-3 text-[13px]">
+          <div className="flex items-center gap-3 text-[0.8125rem]">
             <FilmIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
             <span className="min-w-0 flex-1 truncate" title={upload.name}>
               Uploading {upload.name}… {pct}% of {formatBytes(upload.size)}
@@ -158,7 +158,7 @@ export function VideoPicker({ state, id = "video", compact }: { state: VideoUplo
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-3 text-[13px]">
+        <div className="flex items-center gap-3 text-[0.8125rem]">
           <FilmIcon className="size-4 shrink-0 text-acc" aria-hidden />
           <span className="min-w-0 flex-1 truncate" title={upload.name}>
             {upload.name}
@@ -180,7 +180,7 @@ export function VideoPicker({ state, id = "video", compact }: { state: VideoUplo
       )}
 
       {state.error ? (
-        <p role="alert" className="text-[12.5px] font-medium text-destructive">
+        <p role="alert" className="text-[0.7813rem] font-medium text-destructive">
           {state.error}
         </p>
       ) : null}

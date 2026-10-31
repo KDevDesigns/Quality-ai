@@ -25,7 +25,7 @@ export function InlineAlert({
 }) {
   const Icon = ICON[tone];
   return (
-    <div role={role} className={cn("flex items-start gap-2.5 rounded-[10px] border px-3.5 py-3 text-sm leading-snug", STYLE[tone], className)}>
+    <div role={role} className={cn("flex items-start gap-2.5 rounded-[0.625rem] border px-3.5 py-3 text-sm leading-snug", STYLE[tone], className)}>
       <Icon className="mt-px size-4 shrink-0" aria-hidden />
       <div className="min-w-0">{children}</div>
     </div>

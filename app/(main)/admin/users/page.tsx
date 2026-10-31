@@ -66,7 +66,7 @@ async function UsersBody() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UserPlusIcon className="size-4 text-warn-ink" aria-hidden /> Waiting for approval
-              <span className="rounded-full bg-warn-t px-2 text-[12.5px] font-semibold text-warn-ink">{requests.length}</span>
+              <span className="rounded-full bg-warn-t px-2 text-[0.7813rem] font-semibold text-warn-ink">{requests.length}</span>
             </CardTitle>
             <CardDescription>They signed up on the sign-in page. Check that each one is really on the team before approving: approved users can see every ticket.</CardDescription>
           </CardHeader>
@@ -75,9 +75,9 @@ async function UsersBody() {
               {requests.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-semibold">{r.name}</TableCell>
-                  <TableCell className="font-mono text-[13px]">{r.email}</TableCell>
+                  <TableCell className="font-mono text-[0.8125rem]">{r.email}</TableCell>
                   <TableCell><Badge variant="outline">{ROLE_LABELS[r.role as Role]}</Badge></TableCell>
-                  <TableCell className="text-[13px] text-muted-foreground" title={formatDateTime(r.createdAt)}>{timeAgo(r.createdAt)}</TableCell>
+                  <TableCell className="text-[0.8125rem] text-muted-foreground" title={formatDateTime(r.createdAt)}>{timeAgo(r.createdAt)}</TableCell>
                   <TableCell><PendingActions id={r.id} name={r.name} /></TableCell>
                 </TableRow>
               ))}
@@ -90,7 +90,7 @@ async function UsersBody() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <KeyRoundIcon className="size-4 text-warn-ink" aria-hidden /> Password reset requests
-              <span className="rounded-full bg-warn-t px-2 text-[12.5px] font-semibold text-warn-ink">{resets.length}</span>
+              <span className="rounded-full bg-warn-t px-2 text-[0.7813rem] font-semibold text-warn-ink">{resets.length}</span>
             </CardTitle>
             <CardDescription>They used &ldquo;Forgot your password?&rdquo; on the sign-in page. Reset gives you a temporary password to hand over in person; check it&apos;s really them first.</CardDescription>
           </CardHeader>
@@ -99,9 +99,9 @@ async function UsersBody() {
               {resets.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-semibold">{r.name}</TableCell>
-                  <TableCell className="font-mono text-[13px]">{r.email}</TableCell>
+                  <TableCell className="font-mono text-[0.8125rem]">{r.email}</TableCell>
                   <TableCell><Badge variant="outline">{ROLE_LABELS[r.role as Role]}</Badge></TableCell>
-                  <TableCell className="text-[13px] text-muted-foreground" title={formatDateTime(r.resetRequestedAt!)}>{timeAgo(r.resetRequestedAt!)}</TableCell>
+                  <TableCell className="text-[0.8125rem] text-muted-foreground" title={formatDateTime(r.resetRequestedAt!)}>{timeAgo(r.resetRequestedAt!)}</TableCell>
                   <TableCell><ResetRequestActions id={r.id} name={r.name} /></TableCell>
                 </TableRow>
               ))}
@@ -129,11 +129,11 @@ async function UsersBody() {
                 <TableRow key={u.id} className={u.active ? undefined : "opacity-60"}>
                   <TableCell className="font-semibold">
                     {u.name}
-                    {u.id === me.id ? <span className="ml-1.5 text-[12.5px] font-normal text-muted-foreground">(you)</span> : null}
+                    {u.id === me.id ? <span className="ml-1.5 text-[0.7813rem] font-normal text-muted-foreground">(you)</span> : null}
                   </TableCell>
-                  <TableCell className="font-mono text-[13px]">{u.email}</TableCell>
+                  <TableCell className="font-mono text-[0.8125rem]">{u.email}</TableCell>
                   <TableCell><Badge variant="outline">{ROLE_LABELS[u.role as Role]}</Badge></TableCell>
-                  <TableCell className="max-w-xs whitespace-normal text-[13px] text-ink2">
+                  <TableCell className="max-w-xs whitespace-normal text-[0.8125rem] text-ink2">
                     {u.areas.length ? (
                       u.areas.map((a) => `${a.area.parent ? `${a.area.parent.name} › ` : ""}${a.area.name}${a.isLead ? " (lead)" : ""}`).join(", ")
                     ) : (

@@ -82,7 +82,7 @@ export function PendingActions({ id, name }: { id: string; name: string }) {
 
   return (
     <div className="flex items-center justify-end gap-1.5">
-      {error ? <span role="alert" className="mr-2 text-[12.5px] text-destructive">{error}</span> : null}
+      {error ? <span role="alert" className="mr-2 text-[0.7813rem] text-destructive">{error}</span> : null}
       <Button size="sm" onClick={() => openApproval?.({ id, name })} aria-label={`Approve ${name}`}>
         <CheckIcon /> Approve
       </Button>
@@ -105,7 +105,7 @@ export function ResetRequestActions({ id, name }: { id: string; name: string }) 
 
   return (
     <div className="flex items-center justify-end gap-1.5">
-      {error ? <span role="alert" className="mr-2 text-[12.5px] text-destructive">{error}</span> : null}
+      {error ? <span role="alert" className="mr-2 text-[0.7813rem] text-destructive">{error}</span> : null}
       <ResetPasswordButton id={id} name={name} labelled />
       <Button size="sm" variant="outline" disabled={pending} onClick={dismiss} aria-label={`Dismiss the request from ${name}`} className="hover:bg-bad-t hover:text-bad">
         <XIcon /> Dismiss

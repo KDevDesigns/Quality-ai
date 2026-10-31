@@ -92,9 +92,10 @@ export async function editTicket(_prev: FormState, fd: FormData): Promise<FormSt
 export async function assignTicket(_prev: FormState, fd: FormData): Promise<FormState> {
   const me = await requireAction("tickets.assign");
   const id = text(fd, "id");
-  const r = await run(() => tickets.assign(me, id, text(fd, "assigneeId") || null));
+  const note = text(fd, "note").trim().slice(0, 500) || null;
+  const r = await run(() => tickets.assign(me, id, text(fd, "assigneeId") || null, note));
   if (r.ok) {
-    push(id, me.id, { kind: "assigned" });
+    push(id, me.id, { kind: "assigned", note });
     refresh(Number(text(fd, "number")));
   }
   return r;

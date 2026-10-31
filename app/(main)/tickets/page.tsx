@@ -112,7 +112,7 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
             href={hrefWith(f, v.patch)}
             aria-current={isQuick(v.patch) ? "page" : undefined}
             className={cn(
-              "rounded-full border px-3.5 py-1.5 text-[13.5px] font-medium transition-colors",
+              "rounded-full border px-3.5 py-1.5 text-[0.8438rem] font-medium transition-colors",
               isQuick(v.patch) ? "border-acc bg-acc text-primary-foreground" : "border-line bg-card text-ink2 hover:border-acc-b hover:text-foreground",
             )}
           >
@@ -170,7 +170,7 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
             Clear
           </Button>
         ) : null}
-        {f.status ? <span className="text-[13px] text-muted-foreground">Status: {STATUS_LABELS[f.status]}</span> : null}
+        {f.status ? <span className="text-[0.8125rem] text-muted-foreground">Status: {STATUS_LABELS[f.status]}</span> : null}
       </form>
 
       {rows.length === 0 ? (
@@ -200,7 +200,7 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
             <TableBody className="stagger">
               {rows.map((t) => (
                 <TableRow key={t.id} className="relative">
-                  <TableCell className={cn("font-mono text-[13px] text-muted-foreground", typeStyle(t.type).stripe)}>
+                  <TableCell className={cn("font-mono text-[0.8125rem] text-muted-foreground", typeStyle(t.type).stripe)}>
                     <span className="inline-flex items-center gap-2">
                       {t.number}
                       {unread.has(t.id) ? <UnreadDot /> : null}
@@ -210,7 +210,7 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
                     <Link href={`/tickets/${t.number}`} className={cn(unread.has(t.id) ? "font-semibold" : "font-medium", "after:absolute after:inset-0 hover:text-acc")}>
                       {t.title}
                     </Link>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-muted-foreground">
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.7813rem] text-muted-foreground">
                       <TicketTypeLabel type={t.type} />
                       <SeverityTag severity={t.severity as SeverityValue | null} />
                       {t.area ? <span>{areaPath(t.area)}</span> : null}
@@ -223,8 +223,8 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
                     </div>
                   </TableCell>
                   <TableCell><TicketStatusPill status={t.status} /></TableCell>
-                  <TableCell className={cn("text-[13.5px]", !t.assignee && "text-muted-foreground")}>{t.assignee?.name ?? "Not assigned"}</TableCell>
-                  <TableCell className="text-right text-[13px] text-muted-foreground" title={t.lastActivityAt.toISOString()}>
+                  <TableCell className={cn("text-[0.8438rem]", !t.assignee && "text-muted-foreground")}>{t.assignee?.name ?? "Not assigned"}</TableCell>
+                  <TableCell className="text-right text-[0.8125rem] text-muted-foreground" title={t.lastActivityAt.toISOString()}>
                     {timeAgo(t.lastActivityAt, now)}
                   </TableCell>
                 </TableRow>
@@ -235,7 +235,7 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
       )}
 
       {total > 0 ? (
-        <div className="flex items-center justify-between text-[13px] text-muted-foreground">
+        <div className="flex items-center justify-between text-[0.8125rem] text-muted-foreground">
           <span>
             {total} ticket{total === 1 ? "" : "s"}
             {pages > 1 ? ` · page ${f.page} of ${pages}` : ""}

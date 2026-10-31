@@ -85,7 +85,7 @@ export function DeviceNotificationsCard() {
 
         {state === "on" || state === "off" ? (
           <div className="flex flex-wrap items-center justify-end gap-3">
-            <span aria-live="polite" className={cn("text-[13px] text-muted-foreground", !note?.ok && "sr-only")}>{note?.ok ? note.message : ""}</span>
+            <span aria-live="polite" className={cn("text-[0.8125rem] text-muted-foreground", !note?.ok && "sr-only")}>{note?.ok ? note.message : ""}</span>
             {state === "on" ? (
               <>
                 <Button variant="outline" onClick={turnOff} disabled={busy}>Turn off</Button>
@@ -122,7 +122,7 @@ export function WorkHoursCard({ initial }: { initial: { pushWorkHoursOnly: boole
             Only notify me during work hours
           </label>
           {initial.pushWorkHoursOnly ? (
-            <p className="text-[13px] text-muted-foreground">
+            <p className="text-[0.8125rem] text-muted-foreground">
               Saved: notifications from <strong className="text-foreground">{ampm(initial.workStartMin)}</strong> to <strong className="text-foreground">{ampm(initial.workEndMin)}</strong>
               {initial.workEndMin <= initial.workStartMin ? " (the next day)" : ""}. Quiet the rest of the time.
             </p>
@@ -146,7 +146,7 @@ export function WorkHoursCard({ initial }: { initial: { pushWorkHoursOnly: boole
                   </label>
                 ))}
               </div>
-              {err.days?.length ? <p className="text-[12.5px] font-medium text-destructive">{err.days.join(" ")}</p> : null}
+              {err.days?.length ? <p className="text-[0.7813rem] font-medium text-destructive">{err.days.join(" ")}</p> : null}
             </fieldset>
           </fieldset>
           {/* A disabled fieldset sends no values; keep the saved hours when the switch is off. */}
@@ -159,7 +159,7 @@ export function WorkHoursCard({ initial }: { initial: { pushWorkHoursOnly: boole
           ) : null}
           <FormMessage state={state} />
           <div className="flex items-center justify-end gap-3">
-            <span aria-live="polite" className={cn("text-[13px] text-muted-foreground", !state.ok && "sr-only")}>{state.ok ? state.message : ""}</span>
+            <span aria-live="polite" className={cn("text-[0.8125rem] text-muted-foreground", !state.ok && "sr-only")}>{state.ok ? state.message : ""}</span>
             <Button type="submit" disabled={pending}>{pending ? "Saving…" : "Save work hours"}</Button>
           </div>
         </form>
@@ -201,13 +201,13 @@ export function ToneCard({ initial }: { initial: { tone: string; previews: boole
               <input type="checkbox" checked={previews} onChange={(e) => setPreviews(e.target.checked)} />
               Show message previews
             </label>
-            <p className="pl-[26px] text-[12.5px] text-muted-foreground">
+            <p className="pl-[1.625rem] text-[0.7813rem] text-muted-foreground">
               The ticket title and the message. Turn it off if others can see your screen: you&apos;ll get only &quot;#12 · New reply from Ana&quot;.
             </p>
           </div>
           {note && !note.ok ? <InlineAlert tone="bad" role="alert">{note.message}</InlineAlert> : null}
           <div className="flex items-center justify-end gap-3">
-            <span aria-live="polite" className={cn("text-[13px] text-muted-foreground", !note?.ok && "sr-only")}>{note?.ok ? note.message : ""}</span>
+            <span aria-live="polite" className={cn("text-[0.8125rem] text-muted-foreground", !note?.ok && "sr-only")}>{note?.ok ? note.message : ""}</span>
             <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
           </div>
         </div>

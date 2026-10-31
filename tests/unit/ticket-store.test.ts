@@ -183,14 +183,14 @@ describe("ticketStore", () => {
     const s = ticketStore(db, now);
     const { id } = await s.create(qa, input({ assigneeId: dev.id }));
     await expect(s.assign(dev, id, dev2.id)).rejects.toThrow(/Only QA testers and admins/);
-    await s.assign(qa, id, dev2.id);
-    await s.assign(qa, id, dev2.id); // no-op
+    await s.assign(qa, id, dev2.id, "  Ben is on leave ");
+    await s.assign(qa, id, dev2.id, "again"); // no-op
     await s.assign(admin, id, null);
     const evs = (await s.get(1, admin))!.events.filter((e) => e.kind === "ASSIGNEE");
-    expect(evs.map((e) => [e.from, e.to])).toEqual([
-      [null, "Ben Dev"],
-      ["Ben Dev", "Cy Dev"],
-      ["Cy Dev", null],
+    expect(evs.map((e) => [e.from, e.to, e.note])).toEqual([
+      [null, "Ben Dev", null],
+      ["Ben Dev", "Cy Dev", "Ben is on leave"],
+      ["Cy Dev", null, null],
     ]);
   });
 

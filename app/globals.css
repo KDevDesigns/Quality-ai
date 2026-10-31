@@ -77,7 +77,7 @@
   --color-type-imp: var(--type-imp);
   --color-type-imp-t: var(--type-imp-t);
   --color-type-imp-b: var(--type-imp-b);
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -90,6 +90,11 @@
 
 :root {
   /* The accent everything is tinted from. Users pick another one in the account menu (lib/theme.ts, data-accent). */
+  /* Motion: the shared easing, and minimising or opening the sidebar with a little springy overshoot
+     (components/ui/sidebar.tsx, app-sidebar.tsx). */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --sidebar-dur: 520ms;
+  --sidebar-ease: cubic-bezier(0.34, 1.3, 0.5, 1);
   --acc-base: #4f56d3;
   --acc: var(--acc-base);
   --brand: #2233b8;
@@ -313,6 +318,10 @@
   }
   html {
     @apply font-sans;
+    /* Everything is sized in rem, so the whole UI grows with this: as on a 1920 × 1080 screen up to 1920 px wide, then in
+       step with the width (2560 px wide → 21.3 px, like 1920 scaled up), capped at twice the size on 4K. Media queries
+       still use the browser's 16 px, so the layout breakpoints don't move. */
+    font-size: clamp(16px, 0.8334vw, 32px);
   }
 }
 
@@ -372,9 +381,9 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 236px;
-  height: 236px;
-  margin: -118px 0 0 -118px;
+  width: 14.75rem;
+  height: 14.75rem;
+  margin: -7.375rem 0 0 -7.375rem;
   border-radius: 50%;
   border: 1.5px solid var(--ab-ripple);
   opacity: 0;
@@ -384,7 +393,8 @@
 .auth-brand .rip:nth-child(3) { animation-delay: 3.6s; }
 .auth-brand .rip:nth-child(4) { animation-delay: 5.4s; }
 .auth-brand .seal { animation: auth-float 6.4s ease-in-out infinite; }
-.auth-brand .wave { position: absolute; left: 0; bottom: 0; width: 1600px; max-width: none; height: 220px; }
+/* 4000 px wide, one wave every 800 px: exactly how far auth-drift slides it, so the loop is seamless on wide screens. */
+.auth-brand .wave { position: absolute; left: 0; bottom: 0; width: 4000px; max-width: none; height: 220px; }
 .auth-brand .w1 { animation: auth-drift 22s linear infinite; }
 .auth-brand .w2 { animation: auth-drift 15s linear infinite reverse; }
 .auth-brand .w3 { animation: auth-drift 10s linear infinite; }
@@ -486,13 +496,6 @@
   from { transform: translate3d(0, 0, 0); }
   to { transform: translate3d(-50%, 0, 0); }
 }
-.qa-splash .bar-shine {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
-  transform: translate3d(-100%, 0, 0);
-  animation: skeleton-sweep 1.8s ease-in-out infinite;
-}
 .qa-splash {
   transition: opacity 420ms var(--ease-out), transform 420ms var(--ease-out);
 }
@@ -515,8 +518,7 @@ html:not(.qa-splash-on) .qa-splash {
     transition-duration: 1ms !important;
     scroll-behavior: auto !important;
   }
-  .skeleton-shine::after,
-  .qa-splash .bar-shine {
+  .skeleton-shine::after {
     display: none;
   }
 }

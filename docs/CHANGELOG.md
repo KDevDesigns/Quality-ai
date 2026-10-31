@@ -17,6 +17,20 @@
   are restyled, and scrollbars are thin and quiet.
 - **Motion:** pages rise in gently, lists come in one after another, dialogs and menus grow in, dashboard tiles lift
   on hover, unread dots pop. All of it stops when the computer or phone is set to reduce motion.
+- **Minimise the sidebar** (the toggle in the top bar, or Ctrl+B): it springs down to a centred rail of icons; the
+  brand text and labels slide away in turn, the seal turns, counts become red dots, and each icon shows its name on
+  hover.
+- **Sized for big screens:** the whole interface is in rem and grows with the screen past 1920 px wide, so a
+  2560 × 1440 monitor shows it at the same proportions as 1920 × 1080 (up to twice the size on 4K). Phones and laptops
+  are unchanged. The sign-in and preloader waves now loop without a gap at any width.
+- **A ticket's conversation keeps its look but stops growing:** past a set height the messages scroll on their own,
+  opened at the newest one like Messenger, so the reply box, Add images and Send stay in place. Messages are chat
+  bubbles: yours on the right in a tinted bubble marked "You", everyone else's on the left (also in My inbox). The
+  **Activity log** scrolls in its own box too and keeps the newest entry at the top.
+- **Reassign:** on a ticket, Developer shows who has it and a **Reassign** button: pick another developer and, if you
+  like, a reason ("Ben is on leave"). The timeline reads "reassigned it from Ben to Cy" with the reason, and the new
+  developer's notification includes it (when previews are on). This also fixes the developer picker, which had
+  stopped showing its Save button with the new dropdowns.
 - Code: `components/preloader.tsx`, `app-splash.tsx`, `skeletons.tsx`, `select-field.tsx`, `date-picker.tsx`,
   `components/ui/select.tsx`; `lib/calendar.ts`, `lib/time-options.ts`, `lib/splash.ts`; `app/(main)/dar/setup/`,
   `app/(main)/account/account-tabs.tsx`; `app/globals.css`.

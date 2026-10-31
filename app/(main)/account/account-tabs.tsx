@@ -31,7 +31,7 @@ export function AccountTabs({ tabs, initial }: { tabs: AccountTab[]; initial: st
 
   const active = tabs.find((t) => t.id === current)!;
   return (
-    <div className="grid gap-5 md:grid-cols-[230px_minmax(0,1fr)] md:items-start md:gap-8">
+    <div className="grid gap-5 md:grid-cols-[14.375rem_minmax(0,1fr)] md:items-start md:gap-8">
       <div
         ref={list}
         role="tablist"
@@ -54,14 +54,14 @@ export function AccountTabs({ tabs, initial }: { tabs: AccountTab[]; initial: st
               tabIndex={on ? 0 : -1}
               onClick={() => pick(t.id)}
               className={cn(
-                "relative flex shrink-0 cursor-pointer items-center gap-2.5 rounded-[10px] px-3.5 py-2.5 text-left text-[14.5px] font-medium whitespace-nowrap transition-[background-color,color,transform] duration-200 ease-(--ease-out) outline-none focus-visible:ring-3 focus-visible:ring-acc/25 active:scale-[0.98] [&_svg]:size-[18px] [&_svg]:shrink-0",
-                on ? "bg-acc text-primary-foreground shadow-[0_4px_14px_color-mix(in_srgb,var(--acc)_30%,transparent)]" : "text-ink2 hover:bg-acc-t2 hover:text-foreground md:hover:translate-x-[3px]",
+                "relative flex shrink-0 cursor-pointer items-center gap-2.5 rounded-[0.625rem] px-3.5 py-2.5 text-left text-[0.9063rem] font-medium whitespace-nowrap transition-[background-color,color,transform] duration-200 ease-(--ease-out) outline-none focus-visible:ring-3 focus-visible:ring-acc/25 active:scale-[0.98] [&_svg]:size-[1.125rem] [&_svg]:shrink-0",
+                on ? "bg-acc text-primary-foreground shadow-[0_0.25rem_0.875rem_color-mix(in_srgb,var(--acc)_30%,transparent)]" : "text-ink2 hover:bg-acc-t2 hover:text-foreground md:hover:translate-x-[0.1875rem]",
               )}
             >
               {t.icon}
               <span className="grid">
                 {t.label}
-                <span className={cn("hidden text-[12px] font-normal md:block", on ? "text-primary-foreground/80" : "text-muted-foreground")}>{t.hint}</span>
+                <span className={cn("hidden text-[0.75rem] font-normal md:block", on ? "text-primary-foreground/80" : "text-muted-foreground")}>{t.hint}</span>
               </span>
             </button>
           );

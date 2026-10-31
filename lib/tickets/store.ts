@@ -180,7 +180,8 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
       return changes.length;
     },
 
-    async assign(actor: Actor, id: string, assigneeId: string | null): Promise<void> {
+    /** Assigns or reassigns the developer; `note` is an optional reason, shown on the timeline line. */
+    async assign(actor: Actor, id: string, assigneeId: string | null, note?: string | null): Promise<void> {
       if (!canAssign(actor)) throw new TicketError("Only QA testers and admins assign tickets.");
       const t = await load(id, actor);
       if (t.assigneeId === assigneeId) return;
@@ -191,7 +192,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
       await db.$transaction(async (tx) => {
         const at = now();
         await touch(tx, actor, id, at, { assigneeId });
-        await tx.ticketEvent.create({ data: { ticketId: id, actorId: actor.id, kind: "ASSIGNEE", from, to, createdAt: at } });
+        await tx.ticketEvent.create({ data: { ticketId: id, actorId: actor.id, kind: "ASSIGNEE", from, to, note: note?.trim() || null, createdAt: at } });
       });
     },
 

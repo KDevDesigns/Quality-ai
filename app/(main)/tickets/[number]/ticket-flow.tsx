@@ -24,7 +24,7 @@ const RING: Record<FlowTone, string> = {
 const LABEL: Record<FlowTone, string> = { acc: "text-acc", ok: "text-ok", warn: "text-warn-ink", bad: "text-bad", neutral: "text-foreground" };
 
 function StepDot({ step, n }: { step: FlowStep; n: number }) {
-  const base = "relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-[13px] font-semibold";
+  const base = "relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-[0.8125rem] font-semibold";
   if (step.state === "done") return <span className={cn(base, DOT[step.tone])}>{step.tone === "neutral" ? <MinusIcon className="size-4" /> : <CheckIcon className="size-4" strokeWidth={3} />}</span>;
   if (step.state === "current") return <span className={cn(base, DOT[step.tone], "ring-4", RING[step.tone])}>{n}</span>;
   if (step.state === "skipped") return <span className={cn(base, "border-dashed border-line bg-card text-muted-foreground")}><MinusIcon className="size-3.5" /></span>;
@@ -42,12 +42,12 @@ export function TicketFlow({ flow, now }: { flow: Flow; now: Date }) {
             return (
               <li key={s.key} className="relative grid content-start justify-items-center gap-1.5 text-center" aria-current={s.state === "current" ? "step" : undefined}>
                 {i < steps.length - 1 ? (
-                  <span aria-hidden className={cn("absolute top-[15px] left-1/2 h-0.5 w-full", lineDone ? "bg-acc" : "bg-line", steps[i + 1].state === "skipped" && "border-t-2 border-dashed border-line bg-transparent")} />
+                  <span aria-hidden className={cn("absolute top-[0.9375rem] left-1/2 h-0.5 w-full", lineDone ? "bg-acc" : "bg-line", steps[i + 1].state === "skipped" && "border-t-2 border-dashed border-line bg-transparent")} />
                 ) : null}
                 <StepDot step={s} n={i + 1} />
                 <span
                   className={cn(
-                    "px-1 text-[12.5px] leading-tight font-medium sm:text-[13.5px]",
+                    "px-1 text-[0.7813rem] leading-tight font-medium sm:text-[0.8438rem]",
                     s.state === "current" ? cn("font-semibold", LABEL[s.tone]) : s.state === "done" ? "text-foreground" : "text-muted-foreground",
                     s.state === "skipped" && "line-through decoration-line",
                   )}
@@ -56,7 +56,7 @@ export function TicketFlow({ flow, now }: { flow: Flow; now: Date }) {
                   <span className="sr-only"> ({s.state})</span>
                 </span>
                 {s.at ? (
-                  <time dateTime={s.at.toISOString()} title={formatDateTime(s.at)} className="hidden text-[11.5px] text-muted-foreground sm:block">
+                  <time dateTime={s.at.toISOString()} title={formatDateTime(s.at)} className="hidden text-[0.7188rem] text-muted-foreground sm:block">
                     {timeAgo(s.at, now)}
                   </time>
                 ) : null}
@@ -64,7 +64,7 @@ export function TicketFlow({ flow, now }: { flow: Flow; now: Date }) {
             );
           })}
         </ol>
-        <p className="flex items-center gap-2 rounded-[10px] bg-surface2 px-3.5 py-2.5 text-[13.5px]">
+        <p className="flex items-center gap-2 rounded-[0.625rem] bg-surface2 px-3.5 py-2.5 text-[0.8438rem]">
           {next ? (
             <>
               <HourglassIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />

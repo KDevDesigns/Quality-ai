@@ -29,13 +29,13 @@ export function SignupForm() {
           <MailCheckIcon className="size-7" />
         </span>
         <div>
-          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em]">Request sent</h2>
+          <h2 className="text-[1.75rem] leading-tight font-semibold tracking-[-0.02em]">Request sent</h2>
           <p className="mt-2.5 text-base leading-normal text-muted-foreground">
             A QA Hub admin will review it. Once it&apos;s approved, they&apos;ll give you a temporary password. Sign in with your email and that
             password, then choose your own.
           </p>
         </div>
-        <Button nativeButton={false} render={<Link href="/login" />} className="h-[50px] text-base">
+        <Button nativeButton={false} render={<Link href="/login" />} className="h-[3.125rem] text-base">
           Back to sign in
         </Button>
       </div>
@@ -50,10 +50,10 @@ export function SignupForm() {
         const fd = new FormData(e.currentTarget);
         startTransition(() => action(fd));
       }}
-      className="auth-enter grid gap-[18px]"
+      className="auth-enter grid gap-[1.125rem]"
     >
       <div className="mb-1.5">
-        <h2 className="text-[32px] leading-tight font-semibold tracking-[-0.02em]">Request an account</h2>
+        <h2 className="text-[2rem] leading-tight font-semibold tracking-[-0.02em]">Request an account</h2>
         <p className="mt-2.5 text-base leading-normal text-muted-foreground">
           An admin reviews your request and gives you a temporary password. You choose your own password at first sign-in.
         </p>
@@ -76,27 +76,27 @@ export function SignupForm() {
                 <span className={cn("flex size-10 items-center justify-center rounded-full", role === r ? "bg-acc text-primary-foreground" : "bg-acc-t text-acc")} aria-hidden>
                   <Icon className="size-5" />
                 </span>
-                <span className="text-[15px] font-semibold">{label}</span>
-                <span className="text-[12.5px] leading-snug text-muted-foreground">{hint}</span>
+                <span className="text-[0.9375rem] font-semibold">{label}</span>
+                <span className="text-[0.7813rem] leading-snug text-muted-foreground">{hint}</span>
               </label>
             );
           })}
         </div>
-        {err.role?.length ? <p className="text-[12.5px] font-medium text-destructive">{err.role.join(" ")}</p> : null}
+        {err.role?.length ? <p className="text-[0.7813rem] font-medium text-destructive">{err.role.join(" ")}</p> : null}
       </fieldset>
 
       <Field label="Nickname" htmlFor="name" error={err.name} hint="What the team calls you. It's shown on your tickets and replies.">
         <IconField icon={UserIcon}>
-          <Input id="name" name="name" placeholder="e.g. Kevin" autoComplete="nickname" required minLength={2} maxLength={NICKNAME_MAX} aria-invalid={!!err.name} className="h-12 pl-[42px]" />
+          <Input id="name" name="name" placeholder="e.g. Kevin" autoComplete="nickname" required minLength={2} maxLength={NICKNAME_MAX} aria-invalid={!!err.name} className="h-12 pl-[2.625rem]" />
         </IconField>
       </Field>
       <Field label="Email" htmlFor="email" error={err.email} hint={`Your @${EMAIL_DOMAIN} office email.`}>
         <IconField icon={MailIcon}>
-          <Input id="email" name="email" type="email" placeholder="you@davao-water.gov.ph" autoComplete="email" required maxLength={200} aria-invalid={!!err.email} className="h-12 pl-[42px]" />
+          <Input id="email" name="email" type="email" placeholder="you@davao-water.gov.ph" autoComplete="email" required maxLength={200} aria-invalid={!!err.email} className="h-12 pl-[2.625rem]" />
         </IconField>
       </Field>
       <FormMessage state={state} />
-      <Button type="submit" disabled={pending} className="mt-2 h-[50px] text-base">{pending ? "Sending…" : "Request account"}</Button>
+      <Button type="submit" disabled={pending} className="mt-2 h-[3.125rem] text-base">{pending ? "Sending…" : "Request account"}</Button>
     </form>
   );
 }

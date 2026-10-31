@@ -60,6 +60,8 @@ describe("pushMessage", () => {
     expect(line({ kind: "filed" })).toBe("New ticket from Ana");
     expect(line({ kind: "assigned" }, { forAssignee: true })).toBe("Assigned to you by Ana");
     expect(line({ kind: "assigned" })).toBe("Assignee changed by Ana");
+    expect(line({ kind: "assigned", note: "Ben is on leave" }, { forAssignee: true })).toBe("Assigned to you by Ana: Ben is on leave");
+    expect(line({ kind: "assigned", note: "Juan's account" }, { forAssignee: true, previews: false })).toBe("Assigned to you by Ana");
     expect(line({ kind: "edited" })).toBe("Edited by Ana");
     expect(line({ kind: "status", to: "NEED_INFO", note: "Which account?" })).toMatch(/^Ana marked it .+: Which account\?$/);
     expect(pushMessage({ kind: "edited" }, { ...t, areaName: null }).body).toBe("Edited by Ana\nModule: none");

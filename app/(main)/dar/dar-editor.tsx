@@ -185,13 +185,13 @@ export function DarEditor({
 
       {note && !note.ok ? <FormMessage state={note} /> : null}
       {note?.ok && note.message !== "Saved." ? (
-        <p role="status" className="text-[13px] text-muted-foreground">
+        <p role="status" className="text-[0.8125rem] text-muted-foreground">
           {note.message}
         </p>
       ) : null}
 
       {empty ? (
-        <div className="grid justify-items-start gap-3 rounded-[12px] border border-dashed border-line2 bg-card px-5 py-6">
+        <div className="grid justify-items-start gap-3 rounded-[0.75rem] border border-dashed border-line2 bg-card px-5 py-6">
           <h2 className="text-base font-semibold">Set up your DAR</h2>
           <p className="max-w-prose text-sm text-ink2">
             Add your full name, position, office, who confirms and notes your report, and your core and support duties. You do this once; it&apos;s used
@@ -214,7 +214,7 @@ export function DarEditor({
               setDirty(true);
             }}
           />
-          <p className="-mt-2 text-[12.5px] text-muted-foreground">
+          <p className="-mt-2 text-[0.7813rem] text-muted-foreground">
             Click any day to type in it. Rows marked <span className="font-medium text-acc">↻ from my ticket work</span> are filled from the tickets you filed, replied to
             or moved each day, using the module Codes in Team &amp; modules. A day with nothing is {REST_DAY}; type over it if you worked outside QA Hub (e.g. HR201,
             encoding). Click the date submitted to change it.

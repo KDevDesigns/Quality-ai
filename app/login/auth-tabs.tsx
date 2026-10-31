@@ -20,8 +20,8 @@ export function AuthTabs({ active }: { active: (typeof TABS)[number]["key"] }) {
             href={t.href}
             aria-current={on ? "page" : undefined}
             className={cn(
-              "flex h-11 items-center justify-center rounded-[9px] text-[15px] transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acc",
-              on ? "auth-tab-on bg-card font-semibold text-foreground shadow-[0_1px_3px_rgba(20,20,40,0.12)]" : "font-medium text-muted-foreground hover:bg-card/55 hover:text-foreground",
+              "flex h-11 items-center justify-center rounded-[0.5625rem] text-[0.9375rem] transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acc",
+              on ? "auth-tab-on bg-card font-semibold text-foreground shadow-[0_0.0625rem_0.1875rem_rgba(20,20,40,0.12)]" : "font-medium text-muted-foreground hover:bg-card/55 hover:text-foreground",
             )}
           >
             {t.label}

@@ -71,7 +71,7 @@ export function DatePicker({
         <Popover.Positioner sideOffset={8} align="end" className="isolate z-50">
           <Popover.Popup
             aria-label={label}
-            className="w-[300px] origin-(--transform-origin) rounded-[14px] border border-line bg-popover p-3 text-popover-foreground shadow-[0_16px_40px_rgba(20,24,40,0.16)] outline-none transition-[opacity,transform] duration-200 ease-(--ease-out) data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0"
+            className="w-[18.75rem] origin-(--transform-origin) rounded-[0.875rem] border border-line bg-popover p-3 text-popover-foreground shadow-[0_1rem_2.5rem_rgba(20,24,40,0.16)] outline-none transition-[opacity,transform] duration-200 ease-(--ease-out) data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0"
           >
             <div className="mb-2 flex items-center justify-between">
               <button type="button" onClick={() => step(-1)} aria-label="Previous month" className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-ink2 transition-colors hover:bg-acc-t2 hover:text-foreground">
@@ -86,7 +86,7 @@ export function DatePicker({
             </div>
             <div role="grid" aria-label={`${MONTHS[view.m - 1]} ${view.y}`} tabIndex={0} onKeyDown={onKeyDown} className="grid grid-cols-7 gap-0.5 rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-acc/20">
               {WEEKDAYS.map((d) => (
-                <span key={d} className="pb-1 text-center text-[11.5px] font-semibold text-muted-foreground" aria-hidden>
+                <span key={d} className="pb-1 text-center text-[0.7188rem] font-semibold text-muted-foreground" aria-hidden>
                   {d}
                 </span>
               ))}
@@ -102,9 +102,9 @@ export function DatePicker({
                     aria-label={d.date}
                     onClick={() => pick(d.date)}
                     className={cn(
-                      "flex h-9 cursor-pointer items-center justify-center rounded-lg text-[13.5px] tabular-nums transition-[background-color,color,transform] duration-150 active:scale-95",
+                      "flex h-9 cursor-pointer items-center justify-center rounded-lg text-[0.8438rem] tabular-nums transition-[background-color,color,transform] duration-150 active:scale-95",
                       !d.inMonth && "text-muted-foreground/60",
-                      chosen ? "bg-acc font-semibold text-primary-foreground shadow-[0_3px_10px_color-mix(in_srgb,var(--acc)_35%,transparent)]" : "hover:bg-acc-t",
+                      chosen ? "bg-acc font-semibold text-primary-foreground shadow-[0_0.1875rem_0.625rem_color-mix(in_srgb,var(--acc)_35%,transparent)]" : "hover:bg-acc-t",
                       !chosen && d.date === today && "font-semibold text-acc ring-1 ring-acc-b ring-inset",
                       !chosen && d.date === focus && "bg-acc-t2 ring-2 ring-acc/40 ring-inset",
                     )}
@@ -115,10 +115,10 @@ export function DatePicker({
               })}
             </div>
             <div className="mt-2 flex justify-between border-t border-line2 pt-2">
-              <button type="button" onClick={() => pick(today)} className="cursor-pointer rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-acc transition-colors hover:bg-acc-t2">
+              <button type="button" onClick={() => pick(today)} className="cursor-pointer rounded-lg px-2.5 py-1.5 text-[0.8125rem] font-medium text-acc transition-colors hover:bg-acc-t2">
                 Today
               </button>
-              <button type="button" onClick={() => setOpen(false)} className="cursor-pointer rounded-lg px-2.5 py-1.5 text-[13px] text-muted-foreground transition-colors hover:bg-surface2 hover:text-foreground">
+              <button type="button" onClick={() => setOpen(false)} className="cursor-pointer rounded-lg px-2.5 py-1.5 text-[0.8125rem] text-muted-foreground transition-colors hover:bg-surface2 hover:text-foreground">
                 Close
               </button>
             </div>
