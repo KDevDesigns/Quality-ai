@@ -80,7 +80,7 @@ function SidebarView({ pathname, user }: { pathname: string | null; user: Sideba
                         <span>{label}</span>
                       </SidebarMenuButton>
                       {counts[href]?.count ? (
-                        <SidebarMenuBadge className="top-2.5 right-2 px-0">
+                        <SidebarMenuBadge className="right-2 h-auto px-0 peer-data-[size=default]/menu-button:top-1/2 -translate-y-1/2">
                           <NavCount {...counts[href]} />
                         </SidebarMenuBadge>
                       ) : null}

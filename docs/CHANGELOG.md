@@ -1,5 +1,15 @@
 # Changelog
 
+## Screenshot markup (2026-10-31)
+
+- **Mark up screenshot:** every image added to a ticket or reply (paste, Add images, drop) opens in a markup editor before it uploads: **Box**, **Arrow**, **Pen**, **Text**, **Hide** (a solid black box) and **Crop**, four colours, undo and redo, keys B/A/P/T/H/C and Ctrl+Z/Ctrl+Y. Several images go through it one after another ("2 of 3").
+  - **Use image** uploads only the marked-up copy (PNG, or JPEG if the PNG would be over 10 MB), so hidden data never leaves the PC. **Use original** and **Remove** are there too, and the pencil on a thumbnail reopens it.
+  - Hide is a black box, not a blur: blurred or pixelated text can be recovered by de-pixelation tools.
+- **Capture screen** (Chrome and Edge on a PC): pick a tab or window, such as the ERP; one frame is taken, sharing stops at once, and it opens in the editor.
+- **Paste goes to Screenshots:** Ctrl+V pastes a screenshot into the **Screenshots** box (click it, or just paste anywhere on the page outside a text box). The Description box no longer takes images. In a reply, pasting into the message still works.
+- **Sidebar:** the red count on Tickets and Users is centred on the row.
+- Code: `lib/markup/` (shapes, undo history, export rules; unit-tested) and `app/(main)/tickets/markup/markup-editor.tsx` (canvas). The image picker queues images for the editor. Next: a Chrome/Edge extension that captures the ERP in one click and opens this editor (Phase 3.9).
+
 ## Notifications, forgot password, clearer sign-up, admin's own DAR (2026-10-31)
 
 - **Notifications:** a bell in the top bar with the number of tickets that have something new for you and a list of the newest, a red count on **Tickets** in the sidebar, and a red dot plus bold title on unread rows in the ticket list and the dashboard. "New" is anything someone else did on a ticket you can see; your own actions never count. Opening a ticket marks it read; **Mark all as read** clears all.

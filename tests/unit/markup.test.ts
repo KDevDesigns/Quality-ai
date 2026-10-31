@@ -1,0 +1,79 @@
+import { describe, expect, it } from "vitest";
+import { JPEG, markedName, PNG, pickFormat } from "@/lib/markup/export";
+import { canRedo, canUndo, emptyHistory, push, redo, undo } from "@/lib/markup/history";
+import { arrowHead, clampRect, cropOf, drawOrder, isTiny, normalizeRect, strokeFor, type Shape } from "@/lib/markup/shapes";
+
+const size = { w: 1000, h: 600 };
+
+describe("markup shapes", () => {
+  it("normalises a rectangle dragged in any direction", () => {
+    expect(normalizeRect({ x: 50, y: 80 }, { x: 10, y: 20 })).toEqual({ x: 10, y: 20, w: 40, h: 60 });
+  });
+
+  it("keeps rectangles inside the image", () => {
+    expect(clampRect({ x: -20, y: 550, w: 100, h: 100 }, size)).toEqual({ x: 0, y: 550, w: 80, h: 50 });
+    expect(clampRect({ x: 1200, y: 0, w: 50, h: 50 }, size)).toBeNull();
+  });
+
+  it("scales lines with the image width", () => {
+    expect(strokeFor(800)).toBe(3);
+    expect(strokeFor(3840)).toBe(10);
+  });
+
+  it("points the arrow head back along the line", () => {
+    const [a, b] = arrowHead({ x: 0, y: 0 }, { x: 100, y: 0 }, 20);
+    expect(a.x).toBeLessThan(100);
+    expect(b.x).toBeLessThan(100);
+    expect(a.y).toBeCloseTo(-b.y);
+  });
+
+  it("drops clicks that weren't meant as drags", () => {
+    expect(isTiny({ kind: "box", rect: { x: 0, y: 0, w: 2, h: 50 }, color: "#000" })).toBe(true);
+    expect(isTiny({ kind: "text", at: { x: 0, y: 0 }, text: "  ", color: "#000" })).toBe(true);
+    expect(isTiny({ kind: "arrow", from: { x: 0, y: 0 }, to: { x: 30, y: 40 }, color: "#000" })).toBe(false);
+  });
+
+  it("uses the last crop, kept inside the image", () => {
+    const shapes: Shape[] = [
+      { kind: "crop", rect: { x: 0, y: 0, w: 10, h: 10 } },
+      { kind: "crop", rect: { x: 900, y: 500, w: 300, h: 300 } },
+    ];
+    expect(cropOf(shapes, size)).toEqual({ x: 900, y: 500, w: 100, h: 100 });
+    expect(cropOf([], size)).toEqual({ x: 0, y: 0, w: 1000, h: 600 });
+  });
+
+  it("draws hidden areas over every mark, and never draws crops", () => {
+    const hide: Shape = { kind: "hide", rect: { x: 0, y: 0, w: 50, h: 50 } };
+    const pen: Shape = { kind: "pen", points: [{ x: 1, y: 1 }, { x: 9, y: 9 }], color: "#e5251b" };
+    const crop: Shape = { kind: "crop", rect: { x: 0, y: 0, w: 500, h: 500 } };
+    expect(drawOrder([hide, pen, crop])).toEqual([pen, hide]);
+  });
+});
+
+describe("markup history", () => {
+  it("undoes and redoes, and a new change clears what was undone", () => {
+    let h = push(push(emptyHistory<number>(), [1]), [1, 2]);
+    h = undo(h);
+    expect(h.present).toEqual([1]);
+    expect(canRedo(h)).toBe(true);
+    h = redo(h);
+    expect(h.present).toEqual([1, 2]);
+    h = push(undo(h), [1, 3]);
+    expect(canRedo(h)).toBe(false);
+    expect(undo(undo(undo(h))).present).toEqual([]);
+    expect(canUndo(emptyHistory())).toBe(false);
+  });
+});
+
+describe("markup export", () => {
+  it("keeps PNG unless it would be over the upload limit", () => {
+    expect(pickFormat(2_000_000, 10_000_000)).toBe(PNG);
+    expect(pickFormat(12_000_000, 10_000_000)).toBe(JPEG);
+  });
+
+  it("names the marked-up file after the original", () => {
+    expect(markedName("screenshot-2026-10-31.png", PNG)).toBe("screenshot-2026-10-31-marked.png");
+    expect(markedName("shot-marked.png", JPEG)).toBe("shot-marked.jpg");
+    expect(markedName(".png", PNG)).toBe("screenshot-marked.png");
+  });
+});

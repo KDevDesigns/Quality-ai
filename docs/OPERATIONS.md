@@ -164,6 +164,14 @@ Check usage in Supabase → **Organization → Usage** about once a month.
 
 ## 8. Good to know
 
+- **Screenshots:** every image added to a ticket or reply opens in the **Mark up screenshot** tools before it uploads.
+  - Add one with **Win+Shift+S** then **Ctrl+V** (anywhere on the page outside a text box, or after clicking the
+    **Screenshots** box), **Add images**, drag-and-drop, or **Capture screen**
+    (Chrome and Edge on a PC: pick the ERP tab or window; one picture is taken and sharing stops at once).
+  - Tools: **Box**, **Arrow**, **Pen**, **Text**, **Hide** and **Crop** (keys B, A, P, T, H, C; Ctrl+Z / Ctrl+Y undo and redo).
+  - **Hide** paints a solid black box. It's not a blur on purpose: blurred or pixelated text can be read back by tools.
+    Only the marked-up copy is uploaded, so hidden names, account numbers and amounts never leave the PC.
+  - **Use original** uploads the picture unchanged; **Remove** drops it. The pencil on a thumbnail marks it up again.
 - **Videos:** QA records with **Snipping Tool (Win+Shift+R)** or Xbox Game Bar (Win+Alt+R) and uploads the MP4 with
   **Add video** (MP4 or WebM, up to 3 min / 50 MB). iPhone `.mov` files are refused; share them as MP4 ("Most
   Compatible") instead.
