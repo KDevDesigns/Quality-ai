@@ -76,16 +76,16 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
     <>
       <MarkRead ticketId={t.id} number={t.number} lastActivityAt={t.lastActivityAt.toISOString()} />
       <div className="grid gap-3">
-        <Link href="/tickets" className="inline-flex w-fit items-center gap-1.5 text-[13.5px] text-muted-foreground hover:text-acc">
+        <Link href="/tickets" className="inline-flex w-fit items-center gap-1.5 text-[0.8438rem] text-muted-foreground hover:text-acc">
           <ArrowLeftIcon className="size-3.5" aria-hidden /> {me.role === "ADMIN" ? "All tickets" : "My tickets"}
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
           <div className="min-w-0">
-            <h1 className="text-[24px] leading-tight font-semibold tracking-[-0.015em]">
+            <h1 className="text-[1.5rem] leading-tight font-semibold tracking-[-0.015em]">
               <span className="mr-2 font-mono text-muted-foreground">#{t.number}</span>
               {t.title}
             </h1>
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] text-muted-foreground">
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[0.8125rem] text-muted-foreground">
               <TicketStatusPill status={t.status} />
               <TicketTypeLabel type={t.type} />
               <SeverityTag severity={t.severity as SeverityValue | null} />
@@ -131,12 +131,12 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
 
       <TicketFlow flow={ticketFlow(t)} now={now} />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18.75rem]">
         <ImageGallery images={galleryImages(t)}>
           <div className="grid min-w-0 content-start gap-6">
             <Card>
               <CardContent className="grid gap-4">
-                <p className="text-[15px] leading-relaxed break-words whitespace-pre-wrap">{t.description}</p>
+                <p className="text-[0.9375rem] leading-relaxed break-words whitespace-pre-wrap">{t.description}</p>
                 <Attachments files={t.attachments} />
               </CardContent>
             </Card>
@@ -148,7 +148,7 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
                 id="ticket-thread"
                 tabIndex={0}
                 aria-label="Messages and history"
-                className="max-h-[min(62svh,640px)] overflow-y-auto overscroll-contain rounded-xl border border-line2 bg-surface2 p-3 outline-none [scrollbar-gutter:stable] focus-visible:ring-3 focus-visible:ring-acc/20 sm:p-4"
+                className="max-h-[min(62svh,40rem)] overflow-y-auto overscroll-contain rounded-xl border border-line2 bg-surface2 p-3 outline-none [scrollbar-gutter:stable] focus-visible:ring-3 focus-visible:ring-acc/20 sm:p-4"
               >
                 <Thread t={t} meId={me.id} now={now} />
               </div>
@@ -168,7 +168,7 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
               <CardTitle>Details</CardTitle>
             </CardHeader>
             <CardContent>
-              <dl className="grid gap-3.5 text-[14px]">
+              <dl className="grid gap-3.5 text-[0.875rem]">
                 <Detail label="Status"><TicketStatusPill status={t.status} /></Detail>
                 <Detail label="Developer">
                   {assignable && options ? (
@@ -212,18 +212,18 @@ function ActivityLog({ entries }: { entries: LogEntry[] }) {
           <HistoryIcon className="size-4 text-acc" aria-hidden /> Activity log
         </CardTitle>
       </CardHeader>
-      <ol className="max-h-[420px] overflow-y-auto" aria-label="Activity log, newest first">
+      <ol className="max-h-[26.25rem] overflow-y-auto" aria-label="Activity log, newest first">
         {[...entries].reverse().map((e) => {
           const Icon = LOG_ICON[e.kind];
           return (
             <li key={`${e.kind}-${e.id}`} className="flex gap-2.5 border-t border-line2 px-5 py-2.5 first:border-t-0">
               <Icon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-              <div className="min-w-0 text-[13px] leading-snug">
+              <div className="min-w-0 text-[0.8125rem] leading-snug">
                 <div>
                   <span className="font-semibold">{e.who}</span> <span className="text-ink2">{e.text}</span>
                 </div>
                 {e.note ? <div className="mt-0.5 line-clamp-2 text-muted-foreground" title={e.note}>“{e.note}”</div> : null}
-                <time className="mt-0.5 block text-[12px] text-muted-foreground tabular-nums" dateTime={e.at.toISOString()}>
+                <time className="mt-0.5 block text-[0.75rem] text-muted-foreground tabular-nums" dateTime={e.at.toISOString()}>
                   {formatDateTime(e.at)}
                 </time>
               </div>
@@ -238,7 +238,7 @@ function ActivityLog({ entries }: { entries: LogEntry[] }) {
 function Detail({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid gap-1">
-      <dt className="text-[12px] font-medium tracking-[0.04em] text-muted-foreground uppercase">{label}</dt>
+      <dt className="text-[0.75rem] font-medium tracking-[0.04em] text-muted-foreground uppercase">{label}</dt>
       <dd className="min-w-0 break-words">{children}</dd>
     </div>
   );

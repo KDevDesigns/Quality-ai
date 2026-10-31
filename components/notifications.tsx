@@ -71,7 +71,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 }
 
 const item =
-  "flex cursor-default items-start gap-2.5 rounded-md px-3 py-2.5 text-[14.5px] outline-hidden select-none data-highlighted:bg-acc-t2 data-highlighted:text-acc-ink";
+  "flex cursor-default items-start gap-2.5 rounded-md px-3 py-2.5 text-[0.9063rem] outline-hidden select-none data-highlighted:bg-acc-t2 data-highlighted:text-acc-ink";
 
 /** The topbar bell: how many tickets are unread, and the newest ones. Same menu as the account menu beside it. */
 export function NotificationBell() {
@@ -90,14 +90,14 @@ export function NotificationBell() {
             size="icon"
             aria-label={count ? `Notifications: ${count} unread ticket${count === 1 ? "" : "s"}` : "Notifications"}
             title="Notifications"
-            className="relative size-[38px] rounded-[9px] text-ink2 data-popup-open:bg-acc-t2"
+            className="relative size-[2.375rem] rounded-[0.5625rem] text-ink2 data-popup-open:bg-acc-t2"
           />
         }
       >
         <BellIcon />
         {count ? (
           <span
-            className="absolute -top-1.5 -right-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-bad px-1 text-[11px] leading-none font-semibold text-primary-foreground ring-2 ring-background"
+            className="absolute -top-1.5 -right-1.5 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-bad px-1 text-[0.6875rem] leading-none font-semibold text-primary-foreground ring-2 ring-background"
             aria-hidden
           >
             {count > 9 ? "9+" : count}
@@ -108,8 +108,8 @@ export function NotificationBell() {
         <Menu.Positioner side="bottom" align="end" sideOffset={8} className="isolate z-50">
           <Menu.Popup className="w-[22rem] max-w-[calc(100vw-2rem)] origin-(--transform-origin) rounded-xl bg-popover p-1.5 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-150 ease-(--ease-out) data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
             <div className="flex items-center justify-between gap-3 px-3 pt-2 pb-2.5">
-              <span className="text-[14.5px] font-semibold">Notifications</span>
-              {count ? <span className="text-[12.5px] text-muted-foreground">{count} unread</span> : null}
+              <span className="text-[0.9063rem] font-semibold">Notifications</span>
+              {count ? <span className="text-[0.7813rem] text-muted-foreground">{count} unread</span> : null}
             </div>
             <Menu.Separator className="-mx-1.5 my-1 h-px bg-line2" />
             {data?.items.length ? (
@@ -118,9 +118,9 @@ export function NotificationBell() {
                   <UnreadDot className="mt-2" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">
-                      <span className="font-mono text-[12.5px] text-muted-foreground">#{t.number}</span> {t.title}
+                      <span className="font-mono text-[0.7813rem] text-muted-foreground">#{t.number}</span> {t.title}
                     </span>
-                    <span className="block text-[12.5px] text-muted-foreground">
+                    <span className="block text-[0.7813rem] text-muted-foreground">
                       {t.actorName ? `${t.actorName} · ` : ""}
                       {timeAgo(new Date(t.lastActivityAt), now)}
                     </span>
@@ -162,7 +162,7 @@ export function NotificationBell() {
 export function NavCount({ count, label }: { count: number; label: string }) {
   if (!count) return null;
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-md bg-bad-t px-1.5 py-0.5 text-[12px] leading-none font-semibold text-bad">
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-bad-t px-1.5 py-0.5 text-[0.75rem] leading-none font-semibold text-bad">
       <span className="size-1.5 rounded-full bg-bad" aria-hidden />
       {count > 99 ? "99+" : count}
       <span className="sr-only"> {label}</span>

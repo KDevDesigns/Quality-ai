@@ -16,7 +16,7 @@ function Loading({ children, className }: { children: React.ReactNode; className
   );
 }
 
-const card = "rounded-[12px] border border-line bg-card";
+const card = "rounded-[0.75rem] border border-line bg-card";
 
 /** A page title and description, for pages whose header waits for the session. */
 export function HeaderSkeleton() {
@@ -52,7 +52,7 @@ function ListRows({ rows }: { rows: number }) {
   return (
     <div className={cn(card, "divide-y divide-line overflow-hidden")}>
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="flex items-center gap-4 border-l-[3px] border-l-line px-4 py-3.5">
+        <div key={i} className="flex items-center gap-4 border-l-[0.1875rem] border-l-line px-4 py-3.5">
           <Bone className="h-4 w-10 shrink-0" />
           <div className="grid min-w-0 flex-1 gap-2">
             <Bone className={cn("h-4", i % 3 === 0 ? "w-3/5" : i % 3 === 1 ? "w-4/5" : "w-2/3")} />
@@ -82,13 +82,13 @@ export function TicketPageSkeleton() {
           <Bone className="h-6 w-16 rounded-full" />
         </div>
       </div>
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
         <div className="grid gap-4">
           <div className={cn(card, "grid gap-2.5 p-5")}>
             <Bone className="h-4 w-full" />
             <Bone className="h-4 w-11/12" />
             <Bone className="h-4 w-3/4" />
-            <Bone className="mt-2 h-40 w-full max-w-md rounded-[10px]" />
+            <Bone className="mt-2 h-40 w-full max-w-md rounded-[0.625rem]" />
           </div>
           {[0, 1, 2].map((i) => (
             <div key={i} className={cn("flex gap-3", i === 1 && "flex-row-reverse")}>
@@ -219,13 +219,13 @@ export function FormSkeleton({ sections = 2 }: { sections?: number }) {
             {[0, 1].map((j) => (
               <div key={j} className="grid gap-2">
                 <Bone className="h-3.5 w-24" />
-                <Bone className="h-11 w-full rounded-[9px]" />
+                <Bone className="h-11 w-full rounded-[0.5625rem]" />
               </div>
             ))}
           </div>
         </div>
       ))}
-      <Bone className="h-10 w-32 justify-self-end rounded-[9px]" />
+      <Bone className="h-10 w-32 justify-self-end rounded-[0.5625rem]" />
     </Loading>
   );
 }
@@ -233,10 +233,10 @@ export function FormSkeleton({ sections = 2 }: { sections?: number }) {
 /** Account settings: the side tabs and one panel. */
 export function AccountSkeleton() {
   return (
-    <Loading className="gap-6 md:grid-cols-[220px_minmax(0,1fr)]">
+    <Loading className="gap-6 md:grid-cols-[13.75rem_minmax(0,1fr)]">
       <div className="flex gap-2 md:grid md:content-start">
         {[0, 1, 2, 3, 4].map((i) => (
-          <Bone key={i} className="h-10 w-28 rounded-[9px] md:w-full" />
+          <Bone key={i} className="h-10 w-28 rounded-[0.5625rem] md:w-full" />
         ))}
       </div>
       <FormSkeleton sections={1} />

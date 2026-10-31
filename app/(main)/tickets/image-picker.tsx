@@ -256,7 +256,7 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
       }}
       className={cn(
         // Focused: a solid outline (ready for Ctrl+V). Dragging a file over keeps its own look, the filled box.
-        "grid cursor-default gap-2.5 rounded-[10px] border border-dashed border-line p-3 transition-colors outline-none focus:border-solid focus:border-acc-b focus-visible:ring-3 focus-visible:ring-acc/30",
+        "grid cursor-default gap-2.5 rounded-[0.625rem] border border-dashed border-line p-3 transition-colors outline-none focus:border-solid focus:border-acc-b focus-visible:ring-3 focus-visible:ring-acc/30",
         over && "border-acc bg-acc-t2",
       )}
       onDragOver={(e) => {
@@ -293,7 +293,7 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
             <MonitorIcon /> Capture screen
           </Button>
         ) : null}
-        <span className="text-[12.5px] text-muted-foreground">
+        <span className="text-[0.7813rem] text-muted-foreground">
           {compact ? "Or paste a screenshot (Ctrl+V) into your message or this box." : "Or click this box and paste a screenshot (Ctrl+V), or drop images here."} Each
           one opens in the markup tools first. Up to {MAX_IMAGES_PER_POST}, {IMAGE_MAX_BYTES / 1024 / 1024} MB each.
         </span>
@@ -311,7 +311,7 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
                     <div className="h-full bg-acc transition-[width]" style={{ width: `${pct}%` }} />
                   </div>
                 ) : null}
-                <div className="truncate px-2 py-1 text-[11.5px] text-muted-foreground" title={i.name}>
+                <div className="truncate px-2 py-1 text-[0.7188rem] text-muted-foreground" title={i.name}>
                   {i.id ? formatBytes(i.size) : `${pct}%`} · {i.name}
                 </div>
                 {i.id ? (
@@ -340,7 +340,7 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
         </ul>
       ) : null}
       {state.error ? (
-        <p role="alert" className="text-[12.5px] font-medium text-destructive">
+        <p role="alert" className="text-[0.7813rem] font-medium text-destructive">
           {state.error}
         </p>
       ) : null}

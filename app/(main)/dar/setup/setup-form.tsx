@@ -54,11 +54,11 @@ export function DarSetupForm({ header: h, hasFullName }: { header: DarHeader; ha
       <FormSection>Duties and MFOs</FormSection>
       <FunctionsEditor name="coreFunctions" label="A.) Core functions" initial={h.core} />
       <FunctionsEditor name="supportFunctions" label="B.) Support functions" initial={h.support} />
-      {err.coreFunctions || err.supportFunctions ? <p className="text-[12.5px] font-medium text-destructive">Every row needs a duty.</p> : null}
+      {err.coreFunctions || err.supportFunctions ? <p className="text-[0.7813rem] font-medium text-destructive">Every row needs a duty.</p> : null}
 
       <FormMessage state={state} />
       <div className="flex items-center justify-end gap-3">
-        <span aria-live="polite" className={cn("text-[13px] text-muted-foreground", !state.ok && "sr-only")}>{state.ok ? state.message : ""}</span>
+        <span aria-live="polite" className={cn("text-[0.8125rem] text-muted-foreground", !state.ok && "sr-only")}>{state.ok ? state.message : ""}</span>
         <Button type="submit" disabled={pending}>{pending ? "Saving…" : "Save set-up"}</Button>
       </div>
     </form>

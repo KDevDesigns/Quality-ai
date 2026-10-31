@@ -10,8 +10,8 @@ export function PageHeader({
   return (
     <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
       <div className="min-w-0">
-        <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.015em]">{title}</h1>
-        {description ? <p className="mt-1.5 max-w-2xl text-[14.5px] text-muted-foreground">{description}</p> : null}
+        <h1 className="text-[1.625rem] leading-tight font-semibold tracking-[-0.015em]">{title}</h1>
+        {description ? <p className="mt-1.5 max-w-2xl text-[0.9063rem] text-muted-foreground">{description}</p> : null}
       </div>
       {actions ? <div className="flex items-center gap-2.5">{actions}</div> : null}
     </div>

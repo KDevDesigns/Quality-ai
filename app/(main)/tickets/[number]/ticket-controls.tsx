@@ -127,7 +127,7 @@ export function AssignControl({
       <input type="hidden" name="number" value={ticket.number} />
       <AssigneeSelect areas={areas} people={people} areaId={areaId} defaultValue={assigneeId} id="assign" onValueChange={setChosen} />
       {assigneeId ? (
-        <Textarea name="note" rows={2} maxLength={500} placeholder="Reason (optional), e.g. Ben is on leave" aria-label="Reason for reassigning" className="min-h-0 text-[14px]" />
+        <Textarea name="note" rows={2} maxLength={500} placeholder="Reason (optional), e.g. Ben is on leave" aria-label="Reason for reassigning" className="min-h-0 text-[0.875rem]" />
       ) : null}
       <div className="flex flex-wrap gap-2">
         <Button type="submit" size="sm" disabled={pending || !changed}>
@@ -237,7 +237,7 @@ export function DeleteTicketDialog({ ticket, replies, files }: { ticket: { id: s
         </DialogHeader>
         <form onSubmit={submitKeepingInput(action)} className="grid gap-4">
           <input type="hidden" name="id" value={ticket.id} />
-          <div className="rounded-[10px] border border-bad-b bg-bad-t px-4 py-3 text-[13.5px] leading-relaxed text-bad">
+          <div className="rounded-[0.625rem] border border-bad-b bg-bad-t px-4 py-3 text-[0.8438rem] leading-relaxed text-bad">
             <p className="font-semibold">This permanently deletes, for everyone:</p>
             <ul className="mt-1 list-disc pl-5">
               <li>the ticket and its description</li>
@@ -249,7 +249,7 @@ export function DeleteTicketDialog({ ticket, replies, files }: { ticket: { id: s
           <div className="grid gap-2">
             <label htmlFor="confirm-title" className="text-sm">
               To confirm, type the ticket&apos;s title exactly:
-              <span className="mt-1.5 block rounded-md bg-surface3 px-2.5 py-1.5 font-mono text-[13px] font-semibold break-words select-all">{ticket.title}</span>
+              <span className="mt-1.5 block rounded-md bg-surface3 px-2.5 py-1.5 font-mono text-[0.8125rem] font-semibold break-words select-all">{ticket.title}</span>
             </label>
             <Input id="confirm-title" name="confirm" value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" spellCheck={false} autoFocus aria-invalid={!!state.message} />
           </div>

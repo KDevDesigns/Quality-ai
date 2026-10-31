@@ -166,7 +166,7 @@ function MembersForm({ areaId, people, members, onDone }: { areaId: string; peop
                   {p.name}
                 </label>
                 {p.role !== "QA" ? (
-                  <label className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+                  <label className="flex items-center gap-1.5 text-[0.8125rem] text-muted-foreground">
                     <input type="radio" name="lead-pick" checked={lead === p.id} disabled={!chosen.has(p.id)} onChange={() => setLead(p.id)} />
                     Lead
                   </label>
@@ -178,7 +178,7 @@ function MembersForm({ areaId, people, members, onDone }: { areaId: string; peop
       })}
       <FormMessage state={state} />
       <div className="flex items-center justify-between gap-3">
-        <span className="text-[13px] text-muted-foreground">{chosen.size} selected{lead ? "" : " · no lead"}</span>
+        <span className="text-[0.8125rem] text-muted-foreground">{chosen.size} selected{lead ? "" : " · no lead"}</span>
         <div className="flex gap-2">
           {lead ? <Button type="button" variant="ghost" onClick={() => setLead("")}>Clear lead</Button> : null}
           <Button type="submit" disabled={pending}>{pending ? "Saving…" : "Save members"}</Button>

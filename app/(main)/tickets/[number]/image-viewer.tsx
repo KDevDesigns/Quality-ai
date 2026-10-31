@@ -66,7 +66,7 @@ export function ImageGallery({ images, children }: { images: GalleryImage[]; chi
               <Button type="button" variant="ghost" size="icon-sm" aria-label="Previous image" disabled={!hasPrev} focusableWhenDisabled onClick={prev}>
                 <ChevronLeftIcon />
               </Button>
-              <a href={`/files/${current.id}`} target="_blank" rel="noopener" className="text-[13px] text-muted-foreground hover:text-acc">
+              <a href={`/files/${current.id}`} target="_blank" rel="noopener" className="text-[0.8125rem] text-muted-foreground hover:text-acc">
                 Open full size
               </a>
               <Button type="button" variant="ghost" size="icon-sm" aria-label="Next image" disabled={!hasNext} focusableWhenDisabled onClick={next}>
@@ -92,7 +92,7 @@ export function ImageThumb({ file }: { file: GalleryImage }) {
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- served by the auth-checked /files route, not next/image */}
       <img src={`/files/${file.id}`} alt="" loading="lazy" className="h-28 w-full object-cover" />
-      <span className="block truncate px-2 py-1 text-[11.5px] text-muted-foreground group-hover:text-acc" title={file.originalName}>
+      <span className="block truncate px-2 py-1 text-[0.7188rem] text-muted-foreground group-hover:text-acc" title={file.originalName}>
         {file.originalName} · {formatBytes(file.size)}
       </span>
     </button>

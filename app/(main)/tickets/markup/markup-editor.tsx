@@ -315,8 +315,8 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
                   title={c.name}
                   onClick={() => setColor(c.value)}
                   className={cn(
-                    "size-7 cursor-pointer rounded-full border-2 border-card shadow-[0_0_0_1px_var(--line)] focus-visible:ring-3 focus-visible:ring-acc/30 focus-visible:outline-none",
-                    color === c.value && "shadow-[0_0_0_2px_var(--acc)]",
+                    "size-7 cursor-pointer rounded-full border-2 border-card shadow-[0_0_0_0.0625rem_var(--line)] focus-visible:ring-3 focus-visible:ring-acc/30 focus-visible:outline-none",
+                    color === c.value && "shadow-[0_0_0_0.125rem_var(--acc)]",
                   )}
                   style={{ backgroundColor: c.value }}
                 />
@@ -384,7 +384,7 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
           </div>
 
           {error && img ? (
-            <p role="alert" className="text-[12.5px] font-medium text-destructive">
+            <p role="alert" className="text-[0.7813rem] font-medium text-destructive">
               {error}
             </p>
           ) : null}

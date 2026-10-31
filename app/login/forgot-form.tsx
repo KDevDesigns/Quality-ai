@@ -24,12 +24,12 @@ export function ForgotForm() {
           <KeyRoundIcon className="size-7" />
         </span>
         <div>
-          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em]">Request sent</h2>
+          <h2 className="text-[1.75rem] leading-tight font-semibold tracking-[-0.02em]">Request sent</h2>
           <p className="mt-2.5 text-base leading-normal text-muted-foreground">
             A QA Hub admin will reset your password and give you a temporary one. Sign in with it, then choose your own.
           </p>
         </div>
-        <Button nativeButton={false} render={<Link href="/login" />} className="h-[50px] text-base">
+        <Button nativeButton={false} render={<Link href="/login" />} className="h-[3.125rem] text-base">
           Back to sign in
         </Button>
       </div>
@@ -44,22 +44,22 @@ export function ForgotForm() {
         const fd = new FormData(e.currentTarget);
         startTransition(() => action(fd));
       }}
-      className="auth-enter grid gap-[18px]"
+      className="auth-enter grid gap-[1.125rem]"
     >
       <div className="mb-1.5">
-        <h2 className="text-[32px] leading-tight font-semibold tracking-[-0.02em]">Forgot your password?</h2>
+        <h2 className="text-[2rem] leading-tight font-semibold tracking-[-0.02em]">Forgot your password?</h2>
         <p className="mt-2.5 text-base leading-normal text-muted-foreground">
           Enter your email. An admin will reset your password and give you a temporary one.
         </p>
       </div>
       <Field label="Email" htmlFor="email" error={err.email} hint={`Your @${EMAIL_DOMAIN} office email.`}>
         <IconField icon={MailIcon}>
-          <Input id="email" name="email" type="email" placeholder="you@davao-water.gov.ph" autoComplete="email" required autoFocus maxLength={200} aria-invalid={!!err.email} className="h-12 pl-[42px]" />
+          <Input id="email" name="email" type="email" placeholder="you@davao-water.gov.ph" autoComplete="email" required autoFocus maxLength={200} aria-invalid={!!err.email} className="h-12 pl-[2.625rem]" />
         </IconField>
       </Field>
       <FormMessage state={state} />
-      <Button type="submit" disabled={pending} className="mt-2 h-[50px] text-base">{pending ? "Sending…" : "Send request"}</Button>
-      <Link href="/login" className="mx-auto inline-flex items-center gap-1.5 text-[13.5px] text-muted-foreground hover:text-acc">
+      <Button type="submit" disabled={pending} className="mt-2 h-[3.125rem] text-base">{pending ? "Sending…" : "Send request"}</Button>
+      <Link href="/login" className="mx-auto inline-flex items-center gap-1.5 text-[0.8438rem] text-muted-foreground hover:text-acc">
         <ArrowLeftIcon className="size-3.5" aria-hidden /> Back to sign in
       </Link>
     </form>

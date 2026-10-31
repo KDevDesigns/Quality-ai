@@ -91,9 +91,9 @@ async function Overview() {
           ) : (
             <ul className="stagger">
               {myAreas.map((a, i) => (
-                <li key={i} className="flex items-center justify-between gap-3 border-t border-line2 px-5 py-3 text-[14.5px] first:border-t-0">
+                <li key={i} className="flex items-center justify-between gap-3 border-t border-line2 px-5 py-3 text-[0.9063rem] first:border-t-0">
                   <span className="truncate font-medium">{a.area.parent ? `${a.area.parent.name} › ` : ""}{a.area.name}</span>
-                  {a.isLead ? <span className="text-[12.5px] font-semibold text-acc-ink">Lead</span> : null}
+                  {a.isLead ? <span className="text-[0.7813rem] font-semibold text-acc-ink">Lead</span> : null}
                 </li>
               ))}
             </ul>
@@ -154,9 +154,9 @@ async function NotInAnyModule() {
       ) : (
         <ul className="stagger">
           {unassigned.map((u) => (
-            <li key={u.id} className="flex items-center justify-between gap-3 border-t border-line2 px-5 py-3 text-[14.5px] first:border-t-0">
+            <li key={u.id} className="flex items-center justify-between gap-3 border-t border-line2 px-5 py-3 text-[0.9063rem] first:border-t-0">
               <span className="truncate font-medium">{u.name}</span>
-              <span className="text-[12.5px] text-muted-foreground">{ROLE_LABELS[u.role as Role]}</span>
+              <span className="text-[0.7813rem] text-muted-foreground">{ROLE_LABELS[u.role as Role]}</span>
             </li>
           ))}
         </ul>
@@ -210,8 +210,8 @@ function RecentTickets({ rows, role, unread }: { rows: Awaited<ReturnType<typeof
       ) : (
         <ul className="stagger">
           {rows.map((t) => (
-            <li key={t.id} className="relative flex items-center gap-3 border-t border-line2 px-5 py-3 text-[14px] first:border-t-0 hover:bg-surface2">
-              <span className="flex w-14 shrink-0 items-center gap-2 font-mono text-[13px] text-muted-foreground">
+            <li key={t.id} className="relative flex items-center gap-3 border-t border-line2 px-5 py-3 text-[0.875rem] first:border-t-0 hover:bg-surface2">
+              <span className="flex w-14 shrink-0 items-center gap-2 font-mono text-[0.8125rem] text-muted-foreground">
                 #{t.number}
                 {unread.has(t.id) ? <UnreadDot /> : null}
               </span>
@@ -221,11 +221,11 @@ function RecentTickets({ rows, role, unread }: { rows: Awaited<ReturnType<typeof
               >
                 {t.title}
               </Link>
-              <span className="hidden shrink-0 text-[12.5px] text-muted-foreground sm:inline">
+              <span className="hidden shrink-0 text-[0.7813rem] text-muted-foreground sm:inline">
                 {role === "DEV" ? `from ${t.reporter.name}` : (t.assignee?.name ?? "Not assigned")}
               </span>
               <TicketStatusPill status={t.status} />
-              <span className="hidden w-20 shrink-0 text-right text-[12.5px] text-muted-foreground md:inline">{timeAgo(t.lastActivityAt, now)}</span>
+              <span className="hidden w-20 shrink-0 text-right text-[0.7813rem] text-muted-foreground md:inline">{timeAgo(t.lastActivityAt, now)}</span>
             </li>
           ))}
         </ul>
@@ -241,16 +241,16 @@ function StatRow({ stats }: { stats: Stat[] }) {
         <Link
           key={label}
           href={href}
-          className="group flex items-center gap-4 rounded-xl border border-line bg-card p-5 transition-[border-color,box-shadow,transform] duration-200 ease-(--ease-out) hover:-translate-y-0.5 hover:border-acc-b hover:shadow-[0_10px_24px_rgba(40,46,140,0.08)] active:translate-y-0"
+          className="group flex items-center gap-4 rounded-xl border border-line bg-card p-5 transition-[border-color,box-shadow,transform] duration-200 ease-(--ease-out) hover:-translate-y-0.5 hover:border-acc-b hover:shadow-[0_0.625rem_1.5rem_rgba(40,46,140,0.08)] active:translate-y-0"
         >
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-[11px] bg-acc-t text-acc transition-transform duration-300 ease-(--ease-out) group-hover:scale-110" aria-hidden>
-            <Icon className="size-[22px]" />
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-[0.6875rem] bg-acc-t text-acc transition-transform duration-300 ease-(--ease-out) group-hover:scale-110" aria-hidden>
+            <Icon className="size-[1.375rem]" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[13px] text-muted-foreground">{label}</span>
+            <span className="block text-[0.8125rem] text-muted-foreground">{label}</span>
             <span className="mt-0.5 flex items-baseline gap-2">
-              <span className="text-[28px] leading-none font-semibold tracking-tight tabular-nums">{value}</span>
-              {note ? <span className="text-[12.5px] text-muted-foreground">{note}</span> : null}
+              <span className="text-[1.75rem] leading-none font-semibold tracking-tight tabular-nums">{value}</span>
+              {note ? <span className="text-[0.7813rem] text-muted-foreground">{note}</span> : null}
             </span>
           </span>
           <ArrowRightIcon className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-acc" aria-hidden />

@@ -20,6 +20,9 @@
 - **Minimise the sidebar** (the toggle in the top bar, or Ctrl+B): it springs down to a centred rail of icons; the
   brand text and labels slide away in turn, the seal turns, counts become red dots, and each icon shows its name on
   hover.
+- **Sized for big screens:** the whole interface is in rem and grows with the screen past 1920 px wide, so a
+  2560 × 1440 monitor shows it at the same proportions as 1920 × 1080 (up to twice the size on 4K). Phones and laptops
+  are unchanged. The sign-in and preloader waves now loop without a gap at any width.
 - **A ticket's conversation scrolls in its own pane** (opened at the newest message, the reply box right below), so a
   long conversation no longer stretches the whole page.
 - **Reassign:** on a ticket, Developer shows who has it and a **Reassign** button: pick another developer and, if you

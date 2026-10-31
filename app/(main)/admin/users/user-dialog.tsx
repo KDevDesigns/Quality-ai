@@ -145,7 +145,7 @@ export function TempPassword({ email, password, onDone }: { email: string; passw
       <InlineAlert tone="ok" role="status">
         Give these sign-in details to the user. The password is shown only once and isn&apos;t emailed, so copy it now.
       </InlineAlert>
-      <dl className="grid gap-3 rounded-[10px] border border-line bg-surface2 p-4 text-sm">
+      <dl className="grid gap-3 rounded-[0.625rem] border border-line bg-surface2 p-4 text-sm">
         <div className="flex justify-between gap-3">
           <dt className="text-muted-foreground">Email</dt>
           <dd className="truncate font-mono">{email}</dd>
@@ -166,7 +166,7 @@ export function TempPassword({ email, password, onDone }: { email: string; passw
               {copy === "copied" ? <CheckIcon className="text-ok" /> : <CopyIcon />} {copy === "copied" ? "Copied" : "Copy"}
             </Button>
           </dd>
-          <p role="status" className="text-[12.5px] text-muted-foreground">
+          <p role="status" className="text-[0.7813rem] text-muted-foreground">
             {copy === "copied"
               ? "Copied to the clipboard. Paste it to the user, then clear it from wherever you pasted it."
               : copy === "failed"

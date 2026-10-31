@@ -12,7 +12,7 @@ export function PasswordInput({ className, icon, ...props }: Omit<React.Componen
 
   return (
     <IconField icon={icon}>
-      <Input {...props} type={visible ? "text" : "password"} autoCapitalize="off" autoCorrect="off" spellCheck={false} className={cn("pr-12", icon && "pl-[42px]", className)} />
+      <Input {...props} type={visible ? "text" : "password"} autoCapitalize="off" autoCorrect="off" spellCheck={false} className={cn("pr-12", icon && "pl-[2.625rem]", className)} />
       <button
         type="button"
         onClick={() => setVisible((v) => !v)}
@@ -28,7 +28,7 @@ export function PasswordInput({ className, icon, ...props }: Omit<React.Componen
   );
 }
 
-/** Wraps an input and draws a muted leading icon inside it; give the input `pl-[42px]`. */
+/** Wraps an input and draws a muted leading icon inside it; give the input `pl-[2.625rem]`. */
 export function IconField({ icon: Icon, children }: { icon?: LucideIcon; children: React.ReactNode }) {
   return (
     <div className="relative">

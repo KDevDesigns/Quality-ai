@@ -143,7 +143,7 @@ export function TicketForm({
       ) : null}
 
       {/* Wide screens: what happened on the left, the details beside it. In the edit dialog it stays one column. */}
-      <div className="grid gap-5 @4xl:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] @4xl:items-start @4xl:gap-8">
+      <div className="grid gap-5 @4xl:grid-cols-[minmax(0,1fr)_minmax(17.5rem,21.25rem)] @4xl:items-start @4xl:gap-8">
         <div className="grid min-w-0 gap-5">
           <fieldset className="grid gap-2">
             <legend className="mb-2 text-sm font-medium">What is it?</legend>
@@ -153,7 +153,7 @@ export function TicketForm({
                 return (
                 <label
                   key={t}
-                  className={cn("flex cursor-pointer items-start gap-2.5 rounded-[10px] border border-line p-3 text-sm transition-[border-color,background-color,transform] duration-200 active:scale-[0.99]", typeStyle(t).choice)}
+                  className={cn("flex cursor-pointer items-start gap-2.5 rounded-[0.625rem] border border-line p-3 text-sm transition-[border-color,background-color,transform] duration-200 active:scale-[0.99]", typeStyle(t).choice)}
                 >
                   <input type="radio" name="type" value={t} checked={type === t} onChange={() => setType(t)} className="mt-0.5" />
                   <span>
@@ -161,7 +161,7 @@ export function TicketForm({
                       <Icon className={cn("size-4", typeStyle(t).icon)} aria-hidden />
                       {TYPE_LABELS[t]}
                     </span>
-                    <span className="text-[12.5px] text-muted-foreground">{TYPE_HINTS[t]}</span>
+                    <span className="text-[0.7813rem] text-muted-foreground">{TYPE_HINTS[t]}</span>
                   </span>
                 </label>
                 );
@@ -204,7 +204,7 @@ export function TicketForm({
             </Field>
           ) : null}
         </div>
-        <div className="grid gap-5 @4xl:sticky @4xl:top-20 @4xl:rounded-[12px] @4xl:border @4xl:border-line @4xl:bg-surface2 @4xl:p-5">
+        <div className="grid gap-5 @4xl:sticky @4xl:top-20 @4xl:rounded-[0.75rem] @4xl:border @4xl:border-line @4xl:bg-surface2 @4xl:p-5">
           <FormSection>Details</FormSection>
           <div className="grid gap-4 @md:grid-cols-2 @4xl:grid-cols-1">
             <Field label="Module" htmlFor="areaId" error={err.areaId} hint="Where in the ERP. It decides who is suggested below.">

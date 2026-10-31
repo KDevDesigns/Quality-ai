@@ -318,6 +318,10 @@
   }
   html {
     @apply font-sans;
+    /* Everything is sized in rem, so the whole UI grows with this: as on a 1920 × 1080 screen up to 1920 px wide, then in
+       step with the width (2560 px wide → 21.3 px, like 1920 scaled up), capped at twice the size on 4K. Media queries
+       still use the browser's 16 px, so the layout breakpoints don't move. */
+    font-size: clamp(16px, 0.8334vw, 32px);
   }
 }
 
@@ -377,9 +381,9 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 236px;
-  height: 236px;
-  margin: -118px 0 0 -118px;
+  width: 14.75rem;
+  height: 14.75rem;
+  margin: -7.375rem 0 0 -7.375rem;
   border-radius: 50%;
   border: 1.5px solid var(--ab-ripple);
   opacity: 0;
@@ -389,7 +393,8 @@
 .auth-brand .rip:nth-child(3) { animation-delay: 3.6s; }
 .auth-brand .rip:nth-child(4) { animation-delay: 5.4s; }
 .auth-brand .seal { animation: auth-float 6.4s ease-in-out infinite; }
-.auth-brand .wave { position: absolute; left: 0; bottom: 0; width: 1600px; max-width: none; height: 220px; }
+/* 4000 px wide, one wave every 800 px: exactly how far auth-drift slides it, so the loop is seamless on wide screens. */
+.auth-brand .wave { position: absolute; left: 0; bottom: 0; width: 4000px; max-width: none; height: 220px; }
 .auth-brand .w1 { animation: auth-drift 22s linear infinite; }
 .auth-brand .w2 { animation: auth-drift 15s linear infinite reverse; }
 .auth-brand .w3 { animation: auth-drift 10s linear infinite; }
@@ -490,10 +495,6 @@
 @keyframes qa-slosh {
   from { transform: translate3d(0, 0, 0); }
   to { transform: translate3d(-50%, 0, 0); }
-}
-/* Full-screen waves: 4000 px wide (components/preloader.tsx explains the size), so no gap opens as they drift. */
-.qa-splash .wave {
-  width: 4000px;
 }
 .qa-splash {
   transition: opacity 420ms var(--ease-out), transform 420ms var(--ease-out);
