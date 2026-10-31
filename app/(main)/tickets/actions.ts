@@ -18,7 +18,12 @@ const sender = webPushSender();
 
 /** Device notifications are sent after the response, so a slow push service never holds up the person's change. */
 const photoLink = (storedName: string) => signedReadUrl(storedName, { expiresIn: PHOTO_LINK_SECONDS });
-const push = (ticketId: string, actorId: string, event: TicketTrigger) => after(() => notifyTicket(db, sender, { ticketId, actorId, event }, { photoLink }));
+const push = (ticketId: string, actorId: string, event: TicketTrigger) =>
+  after(async () => {
+    const r = await notifyTicket(db, sender, { ticketId, actorId, event }, { photoLink });
+    // Counts only, so the logs show whether a device was reached without any ticket text or address.
+    console.info(`[push] ${event.kind}: sent to ${r.sent} device(s), removed ${r.removed} dead`);
+  });
 
 /**
  * Ids of images and videos the browser already uploaded to Storage (see app/(main)/uploads). The store claims them,
