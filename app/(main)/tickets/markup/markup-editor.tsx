@@ -1,83 +1,41 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { CropIcon, EyeOffIcon, MoveUpRightIcon, PencilLineIcon, Redo2Icon, SquareIcon, Trash2Icon, TypeIcon, Undo2Icon, type LucideIcon } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CROP_DIM, CROP_LINE, DEFAULT_MARK_COLOR, HIDE_COLOR, MARK_COLORS, TEXT_OUTLINE } from "@/lib/markup/colors";
+import { CROP_DIM, CROP_LINE, DEFAULT_MARK_COLOR, MARK_COLORS, ON_MARK, TEXT_OUTLINE } from "@/lib/markup/colors";
+import { canvasMeasure, drawSelection, drawShape, FONT } from "@/lib/markup/draw";
 import { JPEG, JPEG_QUALITY, markedName, pickFormat, PNG } from "@/lib/markup/export";
+import { handleAt, hitTest, LINE, move, resize, type Handle, type Measure } from "@/lib/markup/geometry";
 import { canRedo, canUndo, emptyHistory, push, redo, undo, type History } from "@/lib/markup/history";
-import { arrowHead, cropOf, DEFAULT_TEXT_SIZE, drawOrder, isTiny, normalizeRect, strokeFor, TEXT_SIZES, textFontSize, type Point, type Shape, type TextSize, type Tool } from "@/lib/markup/shapes";
+import {
+  clampFont,
+  cropOf,
+  DEFAULT_TEXT_SIZE,
+  drawOrder,
+  fontOf,
+  isTiny,
+  nextStep,
+  normalizeRect,
+  strokeFor,
+  TEXT_SIZES,
+  textFontSize,
+  type Point,
+  type Shape,
+  type TextSize,
+  type Tool,
+} from "@/lib/markup/shapes";
+import { clampZoom, ZOOM_STEP, zoomAt } from "@/lib/markup/view";
 import { IMAGE_MAX_BYTES } from "@/lib/uploads/limits";
 import { cn } from "@/lib/utils";
+import { MarkupToolbar } from "./markup-toolbar";
+import { toolForKey } from "./shortcuts";
 
 // The screenshot markup editor (Phase 3.8). Every image added to a ticket or reply opens here before it uploads, so a
 // tester can point at the problem and hide customer data first. Only the marked-up copy is uploaded; Hide replaces the
 // pixels with solid black in that copy, so the hidden data never leaves the PC.
 
 export type MarkupResult = { action: "use"; file: File } | { action: "original" } | { action: "remove" };
-
-const TOOL_BUTTONS: { tool: Tool; label: string; key: string; icon: LucideIcon; hint?: string }[] = [
-  { tool: "box", label: "Box", key: "B", icon: SquareIcon },
-  { tool: "arrow", label: "Arrow", key: "A", icon: MoveUpRightIcon },
-  { tool: "pen", label: "Pen", key: "P", icon: PencilLineIcon },
-  { tool: "text", label: "Text", key: "T", icon: TypeIcon },
-  { tool: "hide", label: "Hide", key: "H", icon: EyeOffIcon, hint: "Hide private data (black box)" },
-  { tool: "crop", label: "Crop", key: "C", icon: CropIcon },
-];
-
-/** Draws one mark at image scale. `sw` is the line width for this image; text is sized from the image width. */
-function drawShape(ctx: CanvasRenderingContext2D, s: Shape, sw: number, imageWidth: number) {
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.lineWidth = sw;
-  switch (s.kind) {
-    case "box":
-      ctx.strokeStyle = s.color;
-      ctx.strokeRect(s.rect.x, s.rect.y, s.rect.w, s.rect.h);
-      break;
-    case "arrow": {
-      const [a, b] = arrowHead(s.from, s.to, sw * 5);
-      ctx.strokeStyle = s.color;
-      ctx.fillStyle = s.color;
-      ctx.beginPath();
-      ctx.moveTo(s.from.x, s.from.y);
-      ctx.lineTo(s.to.x, s.to.y);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(s.to.x, s.to.y);
-      ctx.lineTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.closePath();
-      ctx.fill();
-      break;
-    }
-    case "pen":
-      ctx.strokeStyle = s.color;
-      ctx.beginPath();
-      s.points.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-      ctx.stroke();
-      break;
-    case "text": {
-      const fs = textFontSize(imageWidth, s.size);
-      ctx.font = `600 ${fs}px system-ui, sans-serif`;
-      ctx.textBaseline = "top";
-      // A white outline keeps the note readable on any background.
-      ctx.lineWidth = Math.max(3, fs / 5);
-      ctx.strokeStyle = TEXT_OUTLINE;
-      ctx.strokeText(s.text, s.at.x, s.at.y);
-      ctx.fillStyle = s.color;
-      ctx.fillText(s.text, s.at.x, s.at.y);
-      break;
-    }
-    case "hide":
-      ctx.fillStyle = HIDE_COLOR;
-      ctx.fillRect(s.rect.x, s.rect.y, s.rect.w, s.rect.h);
-      break;
-    case "crop":
-      break;
-  }
-}
 
 /** The marked-up image at full resolution, cropped: PNG, or JPEG when the PNG would be over the upload limit. */
 async function exportImage(img: HTMLImageElement, shapes: Shape[], name: string): Promise<File> {
@@ -89,7 +47,8 @@ async function exportImage(img: HTMLImageElement, shapes: Shape[], name: string)
   const ctx = canvas.getContext("2d")!;
   ctx.translate(-crop.x, -crop.y);
   ctx.drawImage(img, 0, 0);
-  for (const s of drawOrder(shapes)) drawShape(ctx, s, strokeFor(size.w), size.w);
+  const measure = canvasMeasure(ctx);
+  for (const s of drawOrder(shapes)) drawShape(ctx, s, size.w, measure);
 
   const blob = (type: string, quality?: number) =>
     new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("The image couldn't be saved."))), type, quality));
@@ -100,31 +59,56 @@ async function exportImage(img: HTMLImageElement, shapes: Shape[], name: string)
   return new File([out], markedName(name, format), { type: format.mime });
 }
 
-type Draft = Shape | null;
+/** A note or callout being typed; `index` is the mark being retyped, null for a new one. */
+type TextEdit = { kind: "text" | "callout"; at: Point; tip?: Point; index: number | null; color: string; fontPx: number };
+
+type Drag =
+  | { mode: "draw"; from: Point }
+  | { mode: "callout"; tip: Point }
+  | { mode: "move"; index: number; from: Point; start: Shape }
+  | { mode: "resize"; index: number; handle: Handle; start: Shape }
+  | { mode: "pan"; client: Point; scroll: Point };
+
+const hasText = (s: Shape | undefined): s is Extract<Shape, { kind: "text" | "step" | "callout" }> => s?.kind === "text" || s?.kind === "step" || s?.kind === "callout";
+
+/** How close a click must be to a line or a handle, in screen pixels. */
+const GRAB_PX = 8;
 
 export function MarkupEditor({ file, position, onDone }: { file: File | null; position: { index: number; total: number } | null; onDone: (r: MarkupResult) => void }) {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [tool, setTool] = useState<Tool>("box");
   const [color, setColor] = useState<string>(DEFAULT_MARK_COLOR);
-  const [history, setHistory] = useState<History<Shape>>(emptyHistory);
-  const [draft, setDraft] = useState<Draft>(null);
-  const [textAt, setTextAt] = useState<Point | null>(null);
-  const [text, setText] = useState("");
   const [textSize, setTextSize] = useState<TextSize>(DEFAULT_TEXT_SIZE);
+  const [history, setHistory] = useState<History<Shape>>(emptyHistory);
+  const [draft, setDraft] = useState<Shape | null>(null);
+  /** A mark being moved or resized, shown in place of the saved one until the drag ends. */
+  const [live, setLive] = useState<{ index: number; shape: Shape } | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [edit, setEdit] = useState<TextEdit | null>(null);
+  const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState({ scale: 1, w: 0, h: 0 });
+  const [fit, setFit] = useState(0);
+  const [scale, setScale] = useState(0);
+  const [stageH, setStageH] = useState(360);
+  const [help, setHelp] = useState(false);
+  const [spaceHeld, setSpaceHeld] = useState(false);
   const stage = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const textInput = useRef<HTMLInputElement>(null);
-  const start = useRef<Point | null>(null);
+  const drag = useRef<Drag | null>(null);
+  const pendingScroll = useRef<Point | null>(null);
+  const measureRef = useRef<Measure | null>(null);
 
-  // A new text box takes the typing at once. Done here rather than with autoFocus, which the dialog's own focus handling
-  // can override; the box doesn't depend on keeping focus anyway (see commitText).
+  const W = img?.naturalWidth ?? 1;
+  const present = history.present;
+  const measure: Measure = (t, px) => (measureRef.current ??= canvasMeasure(document.createElement("canvas").getContext("2d")!))(t, px);
+  const presetPx = textFontSize(W, textSize);
+
   const focusText = () => requestAnimationFrame(() => textInput.current?.focus());
   useEffect(() => {
-    if (textAt) focusText();
-  }, [textAt]);
+    if (edit) focusText();
+  }, [edit]);
 
   // A new image starts a clean editor.
   useEffect(() => {
@@ -135,7 +119,11 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
       setImg(image);
       setHistory(emptyHistory());
       setDraft(null);
-      setTextAt(null);
+      setLive(null);
+      setSelected(null);
+      setEdit(null);
+      setText("");
+      setScale(0);
       setError(null);
       setSaving(false);
     };
@@ -144,120 +132,309 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  // Fit the image into the stage, never larger than it really is.
-  const fit = useCallback(() => {
+  // Fit the image into the stage, never larger than it really is. Zoomed views keep their zoom when the window resizes.
+  const measureFit = useCallback(() => {
     const el = stage.current;
     if (!el || !img) return;
-    const maxW = el.clientWidth;
-    const maxH = Math.max(240, window.innerHeight * 0.62);
-    const scale = Math.min(1, maxW / img.naturalWidth, maxH / img.naturalHeight);
-    setView({ scale, w: Math.round(img.naturalWidth * scale), h: Math.round(img.naturalHeight * scale) });
+    const h = Math.round(Math.max(240, window.innerHeight * 0.62));
+    const f = Math.min(1, el.clientWidth / img.naturalWidth, h / img.naturalHeight);
+    setStageH(h);
+    setFit((old) => {
+      setScale((s) => (s === 0 || s === old ? f : clampZoom(s, f, img.naturalWidth, window.devicePixelRatio || 1)));
+      return f;
+    });
   }, [img]);
 
   useEffect(() => {
     if (!img) return;
     const el = stage.current;
     // The dialog animates in; measure once it has a size, and again whenever it changes.
-    const ro = el ? new ResizeObserver(fit) : null;
+    const ro = el ? new ResizeObserver(measureFit) : null;
     if (el) ro?.observe(el);
     return () => ro?.disconnect();
-  }, [img, fit]);
+  }, [img, measureFit]);
 
-  // Redraw: the image, the marks (hidden areas on top) and, while editing, the crop as a dimmed frame.
+  // After a zoom, scroll so the point under the cursor stays put (see zoomAt).
+  useLayoutEffect(() => {
+    const el = stage.current;
+    const to = pendingScroll.current;
+    if (!el || !to) return;
+    el.scrollLeft = to.x;
+    el.scrollTop = to.y;
+    pendingScroll.current = null;
+  }, [scale]);
+
+  function zoomTo(target: number, cursor?: Point) {
+    const el = stage.current;
+    if (!el || !img || !scale) return;
+    const next = clampZoom(target, fit, img.naturalWidth, window.devicePixelRatio || 1);
+    if (Math.abs(next - scale) < 1e-4) return;
+    pendingScroll.current = zoomAt({
+      scale,
+      next,
+      image: { w: img.naturalWidth, h: img.naturalHeight },
+      stage: { w: el.clientWidth, h: el.clientHeight },
+      scroll: { x: el.scrollLeft, y: el.scrollTop },
+      cursor: cursor ?? { x: el.clientWidth / 2, y: el.clientHeight / 2 },
+    });
+    setScale(next);
+  }
+  // The wheel listener below is added once; these let it reach the current zoom.
+  const zoomRef = useRef(zoomTo);
+  const currentScale = useRef(scale);
+  useEffect(() => {
+    zoomRef.current = zoomTo;
+    currentScale.current = scale;
+  });
+
+  // Ctrl + wheel (and a laptop pinch, which arrives as Ctrl + wheel) zooms the screenshot, not the page. React's wheel
+  // listener is passive and can't stop the page zoom, so this one is added by hand.
+  useEffect(() => {
+    const el = stage.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      const factor = Math.exp(-e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.002));
+      zoomRef.current(currentScale.current * factor, { x: e.clientX - r.left, y: e.clientY - r.top });
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [img]);
+
+  /** What's on screen: the saved marks with a drag in progress applied, without the one being retyped, plus a draft. */
+  const shown = (): Shape[] => {
+    const list = present.map((s, i) => (live && live.index === i ? live.shape : s)).filter((_, i) => !(edit && edit.index === i));
+    return draft ? [...list, draft] : list;
+  };
+
+  // Redraw: the image, the marks (highlights under, hidden areas on top), the crop as a dimmed frame, the selection.
   useEffect(() => {
     const c = canvas.current;
-    if (!c || !img || !view.w) return;
+    if (!c || !img || !scale) return;
     const dpr = window.devicePixelRatio || 1;
-    c.width = Math.round(view.w * dpr);
-    c.height = Math.round(view.h * dpr);
+    c.width = Math.round(img.naturalWidth * scale * dpr);
+    c.height = Math.round(img.naturalHeight * scale * dpr);
     const ctx = c.getContext("2d")!;
-    ctx.setTransform(view.scale * dpr, 0, 0, view.scale * dpr, 0, 0);
+    ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
     ctx.drawImage(img, 0, 0);
     const size = { w: img.naturalWidth, h: img.naturalHeight };
-    const shapes = draft ? [...history.present, draft] : history.present;
-    for (const s of drawOrder(shapes)) drawShape(ctx, s, strokeFor(size.w), size.w);
+    const shapes = shown();
+    const m = canvasMeasure(ctx);
+    for (const s of drawOrder(shapes)) drawShape(ctx, s, size.w, m);
     const crop = cropOf(shapes, size);
     if (crop.w < size.w || crop.h < size.h) {
+      const sw = strokeFor(size.w);
       ctx.fillStyle = CROP_DIM;
       ctx.beginPath();
       ctx.rect(0, 0, size.w, size.h);
       ctx.rect(crop.x, crop.y, crop.w, crop.h);
       ctx.fill("evenodd");
-      ctx.setLineDash([strokeFor(size.w) * 3, strokeFor(size.w) * 2]);
-      ctx.lineWidth = Math.max(1, strokeFor(size.w) / 2);
+      ctx.setLineDash([sw * 3, sw * 2]);
+      ctx.lineWidth = Math.max(1, sw / 2);
       ctx.strokeStyle = CROP_LINE;
       ctx.strokeRect(crop.x, crop.y, crop.w, crop.h);
       ctx.setLineDash([]);
     }
-  }, [img, view, history, draft]);
+    const sel = selected !== null && edit?.index !== selected ? (live?.index === selected ? live.shape : present[selected]) : undefined;
+    if (sel) drawSelection(ctx, sel, size.w, scale, m);
+    // shown() reads the same state as the dependencies below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [img, scale, history, draft, live, selected, edit]);
 
-  const toImage = (e: React.PointerEvent): Point => {
+  const toImage = (e: { clientX: number; clientY: number }): Point => {
     const r = canvas.current!.getBoundingClientRect();
-    return { x: (e.clientX - r.left) / view.scale, y: (e.clientY - r.top) / view.scale };
+    return { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale };
   };
 
-  const commit = (s: Shape) => {
+  // ── Changing the marks; each call is one Undo step ──
+  const add = (s: Shape) => {
     if (!isTiny(s)) setHistory((h) => push(h, [...h.present, s]));
   };
+  const replaceAt = (i: number, s: Shape) => setHistory((h) => push(h, h.present.map((x, j) => (j === i ? s : x))));
+  const removeAt = (i: number) => setHistory((h) => push(h, h.present.filter((_, j) => j !== i)));
+  const changeHistory = (f: (h: History<Shape>) => History<Shape>) => {
+    setSelected(null);
+    setLive(null);
+    setHistory(f);
+  };
 
-  /** The note being typed, if it has any text. */
-  const typedText = (): Shape | null => (textAt && text.trim() ? { kind: "text", at: textAt, text: text.trim(), color, size: textSize } : null);
+  /** The note being typed as a mark, or null while it's empty. */
+  const typed = (): Shape | null => {
+    if (!edit || !text.trim()) return null;
+    const base = { at: edit.at, text: text.trim(), color: edit.color, fontPx: edit.fontPx };
+    return edit.kind === "callout" ? { kind: "callout", tip: edit.tip!, ...base } : { kind: "text", ...base };
+  };
 
-  /**
-   * Puts the typed note on the image: on Enter, a click elsewhere on the image, another tool, or Use image. Never on
-   * blur: the dialog moves focus around on clicks, and that used to close the box as soon as it opened.
-   */
-  function commitText() {
-    const s = typedText();
-    if (s) commit(s);
-    setTextAt(null);
+  /** Puts the note on the image (or retypes the mark). Empty text removes a retyped mark and drops a new one. */
+  function commitEdit() {
+    if (!edit) return;
+    const s = typed();
+    if (edit.index !== null) {
+      if (s) replaceAt(edit.index, s);
+      else removeAt(edit.index);
+    } else if (s) add(s);
+    setEdit(null);
     setText("");
   }
 
+  function retype(i: number) {
+    const s = present[i];
+    if (s?.kind !== "text" && s?.kind !== "callout") return;
+    setSelected(null);
+    setEdit({ kind: s.kind, at: s.at, tip: s.kind === "callout" ? s.tip : undefined, index: i, color: s.color, fontPx: fontOf(s, W) });
+    setText(s.text);
+  }
+
   function pickTool(t: Tool) {
-    if (textAt) commitText();
+    if (edit) commitEdit();
+    if (t !== "select") setSelected(null);
     setTool(t);
   }
 
+  function pickColor(c: string) {
+    setColor(c);
+    if (edit) {
+      setEdit({ ...edit, color: c });
+      focusText();
+    } else if (selected !== null) {
+      const s = present[selected];
+      if (s && "color" in s) replaceAt(selected, { ...s, color: c });
+    }
+  }
+
+  /** Text size from a size button. */
+  function pickSize(id: TextSize) {
+    setTextSize(id);
+    applyFont(textFontSize(W, id));
+  }
+
+  function applyFont(px: number) {
+    if (edit) {
+      setEdit({ ...edit, fontPx: clampFont(px) });
+      focusText();
+    } else if (selected !== null && hasText(present[selected])) {
+      replaceAt(selected, { ...present[selected], fontPx: clampFont(px) } as Shape);
+    }
+  }
+
+  /** [ and ]: the selected or typed text a step smaller or bigger; otherwise the size for the next one. */
+  function bumpSize(dir: 1 | -1) {
+    const sel = selected !== null ? present[selected] : undefined;
+    if (edit) applyFont(edit.fontPx * (dir > 0 ? 1.2 : 1 / 1.2));
+    else if (hasText(sel)) applyFont(fontOf(sel, W) * (dir > 0 ? 1.2 : 1 / 1.2));
+    else {
+      const i = TEXT_SIZES.findIndex((s) => s.id === textSize);
+      setTextSize(TEXT_SIZES[Math.min(TEXT_SIZES.length - 1, Math.max(0, i + dir))].id);
+    }
+  }
+
+  // ── Pointer ──
   function onPointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
-    if (!img || saving || e.button !== 0) return;
+    if (!img || saving) return;
+    const el = stage.current!;
+    if (e.button === 1 || (e.button === 0 && spaceHeld)) {
+      e.preventDefault();
+      e.currentTarget.setPointerCapture(e.pointerId);
+      drag.current = { mode: "pan", client: { x: e.clientX, y: e.clientY }, scroll: { x: el.scrollLeft, y: el.scrollTop } };
+      return;
+    }
+    if (e.button !== 0) return;
     const p = toImage(e);
+    const tol = GRAB_PX / scale;
+    if (edit) commitEdit();
+
+    if (tool === "select") {
+      const sel = selected !== null ? present[selected] : undefined;
+      const handle = sel ? handleAt(sel, p, W, tol, measure) : null;
+      if (sel && handle) {
+        drag.current = { mode: "resize", index: selected!, handle, start: sel };
+      } else {
+        const i = hitTest(present, p, W, tol, measure);
+        setSelected(i >= 0 ? i : null);
+        if (i >= 0) drag.current = { mode: "move", index: i, from: p, start: present[i] };
+      }
+      if (drag.current) e.currentTarget.setPointerCapture(e.pointerId);
+      return;
+    }
     if (tool === "text") {
       e.preventDefault();
-      if (textAt) commitText();
-      setTextAt(p);
+      const i = hitTest(present, p, W, tol, measure);
+      if (i >= 0 && present[i].kind === "text") retype(i);
+      else setEdit({ kind: "text", at: p, index: null, color, fontPx: presetPx });
+      setText("");
+      return;
+    }
+    if (tool === "step") {
+      add({ kind: "step", at: p, n: nextStep(present), color, fontPx: presetPx });
       return;
     }
     e.currentTarget.setPointerCapture(e.pointerId);
-    start.current = p;
+    if (tool === "callout") {
+      drag.current = { mode: "callout", tip: p };
+      return;
+    }
+    drag.current = { mode: "draw", from: p };
     setDraft(tool === "pen" ? { kind: "pen", points: [p], color } : null);
   }
 
   function onPointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
-    const from = start.current;
-    if (!from) return;
+    const d = drag.current;
+    if (!d) return;
+    if (d.mode === "pan") {
+      const el = stage.current!;
+      el.scrollLeft = d.scroll.x - (e.clientX - d.client.x);
+      el.scrollTop = d.scroll.y - (e.clientY - d.client.y);
+      return;
+    }
     const p = toImage(e);
-    if (tool === "pen") setDraft((d) => (d?.kind === "pen" ? { ...d, points: [...d.points, p] } : d));
-    else if (tool === "arrow") setDraft({ kind: "arrow", from, to: p, color });
-    else if (tool === "box") setDraft({ kind: "box", rect: normalizeRect(from, p), color });
-    else if (tool === "hide") setDraft({ kind: "hide", rect: normalizeRect(from, p) });
-    else if (tool === "crop") setDraft({ kind: "crop", rect: normalizeRect(from, p) });
+    if (d.mode === "move") setLive({ index: d.index, shape: move(d.start, p.x - d.from.x, p.y - d.from.y) });
+    else if (d.mode === "resize") setLive({ index: d.index, shape: resize(d.start, d.handle, p, W, measure) });
+    else if (d.mode === "callout") setDraft({ kind: "arrow", from: p, to: d.tip, color });
+    else if (tool === "pen") setDraft((s) => (s?.kind === "pen" ? { ...s, points: [...s.points, p] } : s));
+    else if (tool === "arrow") setDraft({ kind: "arrow", from: d.from, to: p, color });
+    else if (tool === "box" || tool === "ellipse") setDraft({ kind: tool, rect: normalizeRect(d.from, p), color });
+    else if (tool === "highlight" || tool === "hide" || tool === "crop") setDraft({ kind: tool, rect: normalizeRect(d.from, p) });
   }
 
-  function onPointerUp() {
-    if (draft) commit(draft);
-    start.current = null;
+  function onPointerUp(e: React.PointerEvent<HTMLCanvasElement>) {
+    const d = drag.current;
+    drag.current = null;
+    if (!d || d.mode === "pan") return;
+    if (d.mode === "move" || d.mode === "resize") {
+      if (live) replaceAt(d.index, live.shape);
+      setLive(null);
+      return;
+    }
+    if (d.mode === "callout") {
+      setDraft(null);
+      const p = toImage(e);
+      // A click without a drag puts the note a little below and to the right of the point.
+      const at = Math.hypot(p.x - d.tip.x, p.y - d.tip.y) > 12 / scale ? p : { x: d.tip.x + presetPx * 2, y: d.tip.y + presetPx * 1.5 };
+      setEdit({ kind: "callout", tip: d.tip, at, index: null, color, fontPx: presetPx });
+      setText("");
+      return;
+    }
+    if (draft) add(draft);
     setDraft(null);
-    // Releasing the button can pull focus back to the dialog; hand it to the text box again.
-    if (tool === "text" && textAt) focusText();
+  }
+
+  function onDoubleClick(e: React.MouseEvent<HTMLCanvasElement>) {
+    if (tool !== "select" || !img) return;
+    const i = hitTest(present, toImage(e), W, GRAB_PX / scale, measure);
+    if (i >= 0) retype(i);
   }
 
   async function saveImage() {
     if (!img || !file) return;
     // Read the typed note directly: committing it only updates history on the next render.
-    const typed = typedText();
-    const shapes = typed ? [...history.present, typed] : history.present;
-    if (textAt) commitText();
+    const t = typed();
+    let shapes = present;
+    if (edit?.index != null) shapes = t ? present.map((s, j) => (j === edit.index ? t : s)) : present.filter((_, j) => j !== edit.index);
+    else if (t) shapes = [...present, t];
+    if (edit) commitEdit();
+    setSelected(null);
     setSaving(true);
     setError(null);
     try {
@@ -270,40 +447,76 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
     }
   }
 
+  // ── Keyboard (see shortcuts.ts) ──
   function onKeyDown(e: React.KeyboardEvent) {
     if ((e.target as HTMLElement).tagName === "INPUT") return;
-    const k = e.key.toLowerCase();
-    if ((e.ctrlKey || e.metaKey) && k === "z") {
+    const k = e.key;
+    const ctrl = e.ctrlKey || e.metaKey;
+    if (ctrl) {
+      const lower = k.toLowerCase();
+      if (lower === "z") changeHistory(e.shiftKey ? redo : undo);
+      else if (lower === "y") changeHistory(redo);
+      else if (k === "Enter") void saveImage();
+      else if (k === "=" || k === "+") zoomTo(scale * ZOOM_STEP);
+      else if (k === "-" || k === "_") zoomTo(scale / ZOOM_STEP);
+      else if (k === "0") zoomTo(fit);
+      else return;
       e.preventDefault();
-      setHistory((h) => (e.shiftKey ? redo(h) : undo(h)));
-    } else if ((e.ctrlKey || e.metaKey) && k === "y") {
+      return;
+    }
+    if (e.altKey) return;
+    if (k === " ") {
       e.preventDefault();
-      setHistory(redo);
-    } else if (!e.ctrlKey && !e.metaKey && !e.altKey) {
-      const t = TOOL_BUTTONS.find((b) => b.key.toLowerCase() === k);
-      if (t) {
-        e.preventDefault();
-        pickTool(t.tool);
-      }
+      setSpaceHeld(true);
+      return;
+    }
+    if (k === "?") return setHelp((h) => !h);
+    const sel = selected !== null ? present[selected] : undefined;
+    if ((k === "Delete" || k === "Backspace") && sel) {
+      e.preventDefault();
+      removeAt(selected!);
+      setSelected(null);
+      return;
+    }
+    if (k.startsWith("Arrow") && sel) {
+      e.preventDefault();
+      const step = e.shiftKey ? 10 : 1;
+      const dx = k === "ArrowLeft" ? -step : k === "ArrowRight" ? step : 0;
+      const dy = k === "ArrowUp" ? -step : k === "ArrowDown" ? step : 0;
+      replaceAt(selected!, move(sel, dx, dy));
+      return;
+    }
+    if (k === "[" || k === "]") return bumpSize(k === "]" ? 1 : -1);
+    if (/^[1-4]$/.test(k)) return pickColor(MARK_COLORS[Number(k) - 1].value);
+    const t = toolForKey(k);
+    if (t) {
+      e.preventDefault();
+      pickTool(t);
     }
   }
 
   const open = file !== null;
-  const drawing = !!draft || !!textAt;
+  const busy = !!draft || !!edit || !!live;
+  const sel = selected !== null ? present[selected] : undefined;
+  const textFor = edit ? edit.fontPx : hasText(sel) ? fontOf(sel, W) : null;
+  const sizeShown = textFor === null ? textSize : (TEXT_SIZES.find((s) => textFontSize(W, s.id) === textFor)?.id ?? null);
+  const dpr = typeof window === "undefined" ? 1 : window.devicePixelRatio || 1;
 
   return (
     <Dialog
       open={open}
       onOpenChange={(next, details) => {
         if (next) return;
-        // Esc first cancels what is being drawn; Esc and a click outside never throw the markup away.
+        // Esc first cancels what is being drawn or typed, then the selection; Esc and a click outside never throw the
+        // markup away.
         if (details.reason === "escape-key" || details.reason === "outside-press") {
-          if (drawing) {
+          if (busy) {
             setDraft(null);
-            setTextAt(null);
+            setLive(null);
+            setEdit(null);
             setText("");
-            start.current = null;
-          }
+            drag.current = null;
+          } else setSelected(null);
           details.cancel();
           return;
         }
@@ -312,7 +525,7 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
     >
       {open ? (
         // No corner X: it would drop the image like Remove does, with no warning. Remove is in the footer.
-        <DialogContent className="sm:max-w-6xl" showCloseButton={false} onKeyDown={onKeyDown}>
+        <DialogContent className="sm:max-w-6xl" showCloseButton={false} onKeyDown={onKeyDown} onKeyUp={(e) => e.key === " " && setSpaceHeld(false)}>
           <DialogHeader>
             <DialogTitle className="truncate" title={file.name}>
               {file.name}
@@ -323,133 +536,53 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
             </DialogDescription>
           </DialogHeader>
 
-          <div role="toolbar" aria-label="Markup tools" className="flex flex-wrap items-center gap-1.5">
-            {TOOL_BUTTONS.map(({ tool: t, label, key, icon: Icon, hint }) => (
-              <Button
-                key={t}
-                type="button"
-                size="sm"
-                variant={tool === t ? "soft" : "ghost"}
-                aria-pressed={tool === t}
-                title={`${hint ?? label} (${key})`}
-                onClick={() => pickTool(t)}
-              >
-                <Icon /> {label}
-              </Button>
-            ))}
-            <span className="mx-1 h-6 w-px bg-line2" aria-hidden />
-            <div role="group" aria-label="Colour" className="flex items-center gap-1.5">
-              {MARK_COLORS.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  aria-pressed={color === c.value}
-                  aria-label={c.name}
-                  title={c.name}
-                  onClick={() => {
-                    setColor(c.value);
-                    if (textAt) focusText();
-                  }}
-                  className={cn(
-                    "size-7 cursor-pointer rounded-full border-2 border-card shadow-[0_0_0_1px_var(--line)] focus-visible:ring-3 focus-visible:ring-acc/30 focus-visible:outline-none",
-                    color === c.value && "shadow-[0_0_0_2px_var(--acc)]",
-                  )}
-                  style={{ backgroundColor: c.value }}
-                />
-              ))}
-            </div>
-            {tool === "text" ? (
-              <>
-                <span className="mx-1 h-6 w-px bg-line2" aria-hidden />
-                <div role="group" aria-label="Text size" className="flex items-center gap-0.5">
-                  {TEXT_SIZES.map((s) => (
-                    <Button
-                      key={s.id}
-                      type="button"
-                      size="sm"
-                      variant={textSize === s.id ? "soft" : "ghost"}
-                      aria-pressed={textSize === s.id}
-                      aria-label={`${s.label} text`}
-                      title={`${s.label} text`}
-                      className="min-w-9 px-2"
-                      onClick={() => {
-                        setTextSize(s.id);
-                        if (textAt) focusText();
-                      }}
-                    >
-                      {s.id}
-                    </Button>
-                  ))}
-                </div>
-              </>
-            ) : null}
-            <span className="mx-1 h-6 w-px bg-line2" aria-hidden />
-            <Button type="button" variant="ghost" size="icon-sm" aria-label="Undo (Ctrl+Z)" title="Undo (Ctrl+Z)" disabled={!canUndo(history)} focusableWhenDisabled onClick={() => setHistory(undo)}>
-              <Undo2Icon />
-            </Button>
-            <Button type="button" variant="ghost" size="icon-sm" aria-label="Redo (Ctrl+Y)" title="Redo (Ctrl+Y)" disabled={!canRedo(history)} focusableWhenDisabled onClick={() => setHistory(redo)}>
-              <Redo2Icon />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Clear all marks"
-              title="Clear all marks"
-              disabled={!history.present.length}
-              focusableWhenDisabled
-              onClick={() => setHistory((h) => push(h, []))}
-            >
-              <Trash2Icon />
-            </Button>
-          </div>
+          <MarkupToolbar
+            tool={tool}
+            onTool={pickTool}
+            color={edit?.color ?? (sel && "color" in sel ? sel.color : color)}
+            onColor={pickColor}
+            showSize={tool === "text" || tool === "step" || tool === "callout" || !!edit || hasText(sel)}
+            textSize={sizeShown}
+            onTextSize={pickSize}
+            canUndo={canUndo(history)}
+            canRedo={canRedo(history)}
+            onUndo={() => changeHistory(undo)}
+            onRedo={() => changeHistory(redo)}
+            canClear={!!present.length}
+            onClear={() => changeHistory((h) => push(h, []))}
+            zoomPercent={Math.round(scale * 100)}
+            canZoomIn={!!img && clampZoom(scale * ZOOM_STEP, fit, W, dpr) > scale + 1e-4}
+            canZoomOut={scale > fit + 1e-4}
+            onZoomIn={() => zoomTo(scale * ZOOM_STEP)}
+            onZoomOut={() => zoomTo(scale / ZOOM_STEP)}
+            onFit={() => zoomTo(fit)}
+            help={help}
+            onHelp={() => setHelp((h) => !h)}
+          />
 
-          <div ref={stage} className="relative flex min-h-48 items-center justify-center overflow-hidden rounded-lg border border-line bg-black">
-            {img && view.w ? (
-              <div className="relative" style={{ width: view.w, height: view.h }}>
+          <div ref={stage} className="relative flex overflow-auto rounded-lg border border-line bg-black" style={{ height: stageH }}>
+            {img && scale ? (
+              <div className="relative m-auto shrink-0" style={{ width: img.naturalWidth * scale, height: img.naturalHeight * scale }}>
                 <canvas
                   ref={canvas}
                   aria-label="Screenshot being marked up"
-                  className={cn("block touch-none", tool === "text" ? "cursor-text" : "cursor-crosshair")}
-                  style={{ width: view.w, height: view.h }}
+                  className={cn(
+                    "block touch-none",
+                    spaceHeld ? "cursor-grab active:cursor-grabbing" : tool === "select" ? "cursor-default" : tool === "text" ? "cursor-text" : "cursor-crosshair",
+                  )}
+                  style={{ width: img.naturalWidth * scale, height: img.naturalHeight * scale }}
                   onPointerDown={onPointerDown}
                   onPointerMove={onPointerMove}
                   onPointerUp={onPointerUp}
                   onPointerCancel={onPointerUp}
-                  // The click that places a text box would otherwise move focus to the dialog right after the box opens,
-                  // which blurs it, saves it empty and closes it at once.
-                  onMouseDown={(e) => tool === "text" && e.preventDefault()}
+                  onDoubleClick={onDoubleClick}
+                  // The click that places a text box would otherwise move focus to the dialog right after the box opens.
+                  onMouseDown={(e) => (tool === "text" || tool === "callout") && e.preventDefault()}
                 />
-                {textAt ? (
-                  <input
-                    ref={textInput}
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        commitText();
-                      }
-                    }}
-                    aria-label="Text to add"
-                    placeholder="Type, then Enter"
-                    maxLength={200}
-                    // Shown where it will be drawn, in its colour and size, so what you type is what lands on the image.
-                    className="absolute rounded-sm border border-dashed border-acc bg-black/25 p-0 leading-[1.15] font-semibold outline-none placeholder:font-normal placeholder:text-white/70"
-                    style={{
-                      left: textAt.x * view.scale,
-                      top: textAt.y * view.scale - 1,
-                      color,
-                      fontSize: Math.max(16, (img ? textFontSize(img.naturalWidth, textSize) : 16) * view.scale),
-                      width: `${Math.max(text.length, 14) + 1}ch`,
-                      maxWidth: Math.max(80, view.w - textAt.x * view.scale),
-                      textShadow: `0 0 2px ${TEXT_OUTLINE}, 0 0 2px ${TEXT_OUTLINE}`,
-                    }}
-                  />
-                ) : null}
+                {edit ? <TextBox edit={edit} text={text} onText={setText} scale={scale} inputRef={textInput} onCommit={commitEdit} /> : null}
               </div>
             ) : (
-              <p role={error ? "alert" : "status"} className="p-6 text-sm text-white/70">
+              <p role={error ? "alert" : "status"} className="m-auto p-6 text-sm text-white/70">
                 {error ?? "Opening the image…"}
               </p>
             )}
@@ -469,7 +602,7 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
               <Button type="button" variant="outline" onClick={() => onDone({ action: "original" })} disabled={saving}>
                 Use original
               </Button>
-              <Button type="button" onClick={saveImage} disabled={saving || !img}>
+              <Button type="button" onClick={saveImage} disabled={saving || !img} title="Use image (Ctrl+Enter)">
                 {saving ? "Saving…" : "Use image"}
               </Button>
             </div>
@@ -477,5 +610,43 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
         </DialogContent>
       ) : null}
     </Dialog>
+  );
+}
+
+/**
+ * The box you type a note or callout into, sitting exactly where it will be drawn, in its colour and size. It's placed
+ * on Enter, a click elsewhere, another tool or Use image, never on blur: the dialog moves focus around on clicks.
+ */
+function TextBox({ edit, text, onText, scale, inputRef, onCommit }: { edit: TextEdit; text: string; onText: (t: string) => void; scale: number; inputRef: React.RefObject<HTMLInputElement | null>; onCommit: () => void }) {
+  const px = edit.fontPx * scale;
+  const callout = edit.kind === "callout";
+  const pad = callout ? edit.fontPx * 0.45 * scale : 0;
+  return (
+    <input
+      ref={inputRef}
+      value={text}
+      onChange={(e) => onText(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          onCommit();
+        }
+      }}
+      aria-label={callout ? "Callout text" : "Text to add"}
+      placeholder="Type, then Enter"
+      maxLength={200}
+      className={cn("absolute rounded-sm border border-dashed border-acc font-semibold outline-none placeholder:font-normal", callout ? "placeholder:text-white/80" : "bg-black/25 placeholder:text-white/70")}
+      style={{
+        left: edit.at.x * scale,
+        top: edit.at.y * scale - 1,
+        padding: pad,
+        font: FONT(Math.max(16, px)),
+        lineHeight: LINE,
+        color: callout ? ON_MARK : edit.color,
+        backgroundColor: callout ? edit.color : undefined,
+        width: `${Math.max(text.length, 14) + 1}ch`,
+        textShadow: callout ? undefined : `0 0 2px ${TEXT_OUTLINE}, 0 0 2px ${TEXT_OUTLINE}`,
+      }}
+    />
   );
 }
