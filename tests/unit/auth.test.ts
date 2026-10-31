@@ -66,7 +66,17 @@ describe("permissions", () => {
     "workspace.manage": ["ADMIN"],
     "dar.use": ["QA", "ADMIN"],
     "dar.template": ["ADMIN"],
+    "designs.create": [],
+    "designs.viewAll": ["ADMIN"],
   };
+
+  it("lets the Designer tick-box send designs on top of any role, and nothing else", () => {
+    for (const role of ROLES) {
+      expect(can({ role, designer: true }, "designs.create")).toBe(true);
+      expect(can({ role, designer: false }, "designs.create")).toBe(false);
+      for (const a of ACTIONS.filter((x) => x !== "designs.create")) expect(can({ role, designer: true }, a)).toBe(can({ role }, a));
+    }
+  });
 
   it("covers every action in the matrix", () => {
     expect([...ACTIONS].sort()).toEqual(Object.keys(expected).sort());

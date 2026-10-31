@@ -13,6 +13,7 @@ import { requireAction } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { formatDateTime, timeAgo } from "@/lib/format";
 import { ApprovalHost, PendingActions, ResetRequestActions } from "./pending-actions";
+import { DeleteUserDialog } from "./delete-user-dialog";
 import { ResetPasswordButton, UserDialog } from "./user-dialog";
 
 export const metadata: Metadata = { title: "Users" };
@@ -47,6 +48,7 @@ async function UsersBody() {
       name: true,
       email: true,
       role: true,
+      designer: true,
       active: true,
       mustChangePassword: true,
       areas: { select: { isLead: true, area: { select: { name: true, parent: { select: { name: true } } } } } },
@@ -120,7 +122,7 @@ async function UsersBody() {
                 <TableHead>Role</TableHead>
                 <TableHead>Modules</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="w-24"><span className="sr-only">Actions</span></TableHead>
+                <TableHead className="w-32"><span className="sr-only">Actions</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -131,7 +133,12 @@ async function UsersBody() {
                     {u.id === me.id ? <span className="ml-1.5 text-[12.5px] font-normal text-muted-foreground">(you)</span> : null}
                   </TableCell>
                   <TableCell className="font-mono text-[13px]">{u.email}</TableCell>
-                  <TableCell><Badge variant="outline">{ROLE_LABELS[u.role as Role]}</Badge></TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="outline">{ROLE_LABELS[u.role as Role]}</Badge>
+                      {u.designer ? <Badge variant="outline">Designer</Badge> : null}
+                    </div>
+                  </TableCell>
                   <TableCell className="max-w-xs whitespace-normal text-[13px] text-ink2">
                     {u.areas.length ? (
                       u.areas.map((a) => `${a.area.parent ? `${a.area.parent.name} › ` : ""}${a.area.name}${a.isLead ? " (lead)" : ""}`).join(", ")
@@ -150,8 +157,9 @@ async function UsersBody() {
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-0.5">
-                      <UserDialog user={{ id: u.id, name: u.name, email: u.email, role: u.role as Role, active: u.active }} isSelf={u.id === me.id} />
+                      <UserDialog user={{ id: u.id, name: u.name, email: u.email, role: u.role as Role, designer: u.designer, active: u.active }} isSelf={u.id === me.id} />
                       {u.id !== me.id ? <ResetPasswordButton id={u.id} name={u.name} /> : null}
+                      {u.id !== me.id ? <DeleteUserDialog user={{ id: u.id, name: u.name, email: u.email }} /> : null}
                     </div>
                   </TableCell>
                 </TableRow>

@@ -15,7 +15,7 @@ import { initialFormState } from "@/lib/form";
 import { NICKNAME_MAX } from "@/lib/schemas/user";
 import { createUser, resetPassword, updateUser, type UserFormState } from "./actions";
 
-type UserValues = { id: string; name: string; email: string; role: Role; active: boolean };
+type UserValues = { id: string; name: string; email: string; role: Role; designer: boolean; active: boolean };
 
 export function UserDialog({ user, isSelf }: { user?: UserValues; isSelf?: boolean }) {
   return (
@@ -67,6 +67,13 @@ function UserForm({ user, isSelf, onDone }: { user?: UserValues; isSelf?: boolea
           ))}
         </select>
       </Field>
+      <label className="flex items-start gap-2.5 text-sm">
+        <input type="checkbox" name="designer" defaultChecked={user?.designer} className="mt-0.5 size-4 accent-acc" />
+        <span>
+          Designer
+          <span className="block text-[12.5px] text-muted-foreground">Can send UI/UX designs for approval in Design reviews, on top of the role.</span>
+        </span>
+      </label>
       {user ? (
         <label className="flex items-center gap-2.5 text-sm">
           <input type="checkbox" name="active" defaultChecked={user.active} disabled={isSelf} className="size-4 accent-acc" />

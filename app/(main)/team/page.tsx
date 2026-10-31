@@ -23,7 +23,7 @@ import { AreaDialog, MembersDialog, type AreaValues, type PersonOption } from ".
 export const metadata: Metadata = { title: "Team & modules" };
 
 type SearchParams = Record<string, string | string[] | undefined>;
-type Member = { userId: string; name: string; role: Role; isLead: boolean };
+type Member = { userId: string; name: string; role: Role; designer: boolean; isLead: boolean };
 
 export default function TeamPage({ searchParams }: PageProps<"/team">) {
   return (
@@ -49,10 +49,10 @@ async function TeamBody({ searchParams }: { searchParams: Promise<SearchParams> 
         code: true,
         sortOrder: true,
         active: true,
-        members: { where: { user: { active: true } }, select: { isLead: true, user: { select: { id: true, name: true, role: true } } } },
+        members: { where: { user: { active: true } }, select: { isLead: true, user: { select: { id: true, name: true, role: true, designer: true } } } },
       },
     }),
-    db.user.findMany({ where: { active: true }, orderBy: { name: "asc" }, select: { id: true, name: true, role: true } }),
+    db.user.findMany({ where: { active: true }, orderBy: { name: "asc" }, select: { id: true, name: true, role: true, designer: true } }),
   ]);
 
   const people: PersonOption[] = users.map((u) => ({ id: u.id, name: u.name, role: u.role as Role }));
@@ -60,7 +60,7 @@ async function TeamBody({ searchParams }: { searchParams: Promise<SearchParams> 
     .filter((a) => admin || a.active)
     .map((a) => ({
       ...a,
-      members: a.members.map((m): Member => ({ userId: m.user.id, name: m.user.name, role: m.user.role as Role, isLead: m.isLead })),
+      members: a.members.map((m): Member => ({ userId: m.user.id, name: m.user.name, role: m.user.role as Role, designer: m.user.designer, isLead: m.isLead })),
     }));
   const tree = buildTree(rows).filter(
     (mod) => !person || mod.members.some((m) => m.userId === person) || mod.children.some((c) => c.members.some((m) => m.userId === person)),
@@ -89,7 +89,7 @@ async function TeamBody({ searchParams }: { searchParams: Promise<SearchParams> 
         <select id="person" name="person" defaultValue={person} className={cn(nativeSelectClass, "h-9 w-64 text-sm")}>
           <option value="">Everyone</option>
           {users.map((u) => (
-            <option key={u.id} value={u.id}>{u.name} · {ROLE_LABELS[u.role as Role]}</option>
+            <option key={u.id} value={u.id}>{u.name} · {ROLE_LABELS[u.role as Role]}{u.designer ? " · Designer" : ""}</option>
           ))}
         </select>
         <Button type="submit" variant="outline" size="sm">Show</Button>
@@ -205,8 +205,10 @@ function People({ list, person }: { list: Member[]; person: string }) {
         <span
           key={m.userId}
           className={cn("rounded-md px-2 py-0.5 text-[13px]", m.userId === person ? "bg-acc text-primary-foreground" : "bg-surface3 text-foreground")}
+          title={m.designer ? `${m.name} · Designer` : undefined}
         >
           {m.name}
+          {m.designer ? <span className="ml-1 text-[11px] font-semibold opacity-70">Designer</span> : null}
         </span>
       ))}
     </span>

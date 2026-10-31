@@ -74,10 +74,14 @@ export async function objectReader(storedName: string): Promise<ReadAt> {
   };
 }
 
-/** Deletes objects. Missing ones are ignored. */
+/** Storage takes a limited number of names per delete request. */
+const REMOVE_BATCH = 100;
+
+/** Deletes objects, in batches. Missing ones are ignored. */
 export async function removeObjects(storedNames: string[]): Promise<void> {
   const names = storedNames.filter(isStoredName);
-  if (!names.length) return;
-  const { error } = await bucket().remove(names);
-  if (error) throw new Error(`Storage couldn't delete files: ${error.message}`);
+  for (let i = 0; i < names.length; i += REMOVE_BATCH) {
+    const { error } = await bucket().remove(names.slice(i, i + REMOVE_BATCH));
+    if (error) throw new Error(`Storage couldn't delete files: ${error.message}`);
+  }
 }

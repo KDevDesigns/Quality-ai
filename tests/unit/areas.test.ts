@@ -86,7 +86,7 @@ describe("nextSortOrder", () => {
 
 describe("user schemas", () => {
   it("lower-cases emails and validates roles", () => {
-    expect(userInput.parse({ name: " Ana ", email: " Ana@Davao-Water.GOV.PH ", role: "QA" })).toEqual({ name: "Ana", email: "ana@davao-water.gov.ph", role: "QA" });
+    expect(userInput.parse({ name: " Ana ", email: " Ana@Davao-Water.GOV.PH ", role: "QA" })).toEqual({ name: "Ana", email: "ana@davao-water.gov.ph", role: "QA", designer: false });
     expect(userInput.safeParse({ name: "Ana", email: "not-an-email", role: "QA" }).success).toBe(false);
     expect(userInput.safeParse({ name: "Ana", email: "a@davao-water.gov.ph", role: "OWNER" }).success).toBe(false);
   });
