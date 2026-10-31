@@ -73,7 +73,7 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
 
   return (
     <>
-      <MarkRead ticketId={t.id} lastActivityAt={t.lastActivityAt.toISOString()} />
+      <MarkRead ticketId={t.id} number={t.number} lastActivityAt={t.lastActivityAt.toISOString()} />
       <div className="grid gap-3">
         <Link href="/tickets" className="inline-flex w-fit items-center gap-1.5 text-[13.5px] text-muted-foreground hover:text-acc">
           <ArrowLeftIcon className="size-3.5" aria-hidden /> {me.role === "ADMIN" ? "All tickets" : "My tickets"}

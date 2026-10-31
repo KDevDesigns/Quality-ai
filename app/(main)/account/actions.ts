@@ -1,9 +1,23 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth, currentToken, getCurrentUser } from "@/lib/auth/session";
+import { auth, currentToken, getCurrentUser, requireUser } from "@/lib/auth/session";
+import { db } from "@/lib/db";
 import { fromZodError, text, type FormState } from "@/lib/form";
+import { deviceLabel } from "@/lib/push/device";
+import { TEST_MESSAGE } from "@/lib/push/message";
+import { sendTo } from "@/lib/push/send";
+import { pushStore } from "@/lib/push/store";
+import { webPushSender } from "@/lib/push/web-push";
+import { pushSubscriptionInput, workHoursInput } from "@/lib/schemas/push";
+import { checkTone } from "@/lib/uploads/audio";
+import { newStoredName, UploadError } from "@/lib/uploads/files";
+import { putObject, removeObjects } from "@/lib/uploads/storage";
 import { passwordChangeInput } from "@/lib/schemas/user";
+
+const push = pushStore(db);
 
 export async function changePassword(_prev: FormState, fd: FormData): Promise<FormState> {
   // getCurrentUser, not requireUser: people with a temporary password must be able to reach this action.
@@ -19,4 +33,104 @@ export async function changePassword(_prev: FormState, fd: FormData): Promise<Fo
   await auth.setPassword(user.id, parsed.data.next, false);
   await auth.deleteUserSessions(user.id, await currentToken());
   redirect("/");
+}
+
+// ── Device notifications (Web Push). Each person manages only their own devices: the user id comes from the session. ──
+
+/** Whether the server still has this browser's subscription for the signed-in person. */
+export async function pushStatus(endpoint: string): Promise<boolean> {
+  const me = await requireUser();
+  return push.has(me.id, endpoint);
+}
+
+/** "Turn on": saves the subscription the browser just made. */
+export async function savePushSubscription(sub: unknown): Promise<FormState> {
+  const me = await requireUser();
+  const parsed = pushSubscriptionInput.safeParse(sub);
+  if (!parsed.success) return { ok: false, message: "This browser gave an address QA Hub can't use. Try Chrome, Edge, Firefox or Safari." };
+  await push.subscribe(me.id, parsed.data, deviceLabel((await headers()).get("user-agent") ?? ""));
+  return { ok: true };
+}
+
+/** "Turn off" on this device. */
+export async function removePushSubscription(endpoint: string): Promise<void> {
+  const me = await requireUser();
+  await push.unsubscribe(me.id, endpoint);
+}
+
+/** "Send test": one notification to this device only. */
+export async function sendTestPush(endpoint: string): Promise<FormState> {
+  const me = await requireUser();
+  const send = webPushSender();
+  if (!send) return { ok: false, message: "Device notifications aren't set up on the server yet." };
+  const sub = await db.pushSubscription.findFirst({ where: { userId: me.id, endpoint }, select: { id: true, endpoint: true, p256dh: true, auth: true } });
+  if (!sub) return { ok: false, message: "This device is off. Turn it on first." };
+  const r = await sendTo(db, send, [sub], { ...TEST_MESSAGE, tone: (await push.tone(me.id)).tone });
+  if (r.removed) return { ok: false, message: "The browser no longer accepts notifications for this device. Turn it on again." };
+  return r.sent ? { ok: true, message: "Sent. It should appear in a few seconds. (Tests ignore work hours.)" } : { ok: false, message: "Couldn't reach the push service. Check the internet connection and try again." };
+}
+
+export async function saveWorkHours(_prev: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireUser();
+  const parsed = workHoursInput.safeParse({
+    pushWorkHoursOnly: fd.get("pushWorkHoursOnly") === "on",
+    workStartMin: text(fd, "workStart"),
+    workEndMin: text(fd, "workEnd"),
+    days: fd.getAll("days").map(Number),
+  });
+  if (!parsed.success) return fromZodError(parsed.error);
+  await push.setWorkHours(me.id, parsed.data);
+  revalidatePath("/account");
+  return { ok: true, message: "Saved." };
+}
+
+// ── Notification sound ──
+
+/** Their sound choice, for the sign-in prompt. */
+export async function myTone(): Promise<{ tone: string; hasCustom: boolean }> {
+  const me = await requireUser();
+  return push.tone(me.id);
+}
+
+export async function saveTone(tone: string): Promise<FormState> {
+  const me = await requireUser();
+  if (!(await push.setTone(me.id, tone))) return { ok: false, message: "Pick one of the sounds in the list." };
+  revalidatePath("/account");
+  return { ok: true, message: "Saved." };
+}
+
+/** "Show message previews": ticket title, message and photo in notifications, or only the short form. */
+export async function savePreviews(on: boolean): Promise<void> {
+  const me = await requireUser();
+  await push.setPreviews(me.id, on === true);
+  revalidatePath("/account");
+}
+
+/** Their own tone: checked for real type, size and length, then stored under a generated name (CLAUDE.md rule 4). */
+export async function uploadTone(_prev: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireUser();
+  const file = fd.get("tone");
+  if (!(file instanceof File) || !file.size) return { ok: false, message: "Choose a sound file." };
+  // Don't read a huge file into memory just to refuse it.
+  if (file.size > 1024 * 1024) return { ok: false, message: "The sound is too big: at most 500 KB." };
+  try {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const type = checkTone(bytes);
+    const storedName = newStoredName(new Date(), type.ext);
+    await putObject(storedName, bytes, type.mime);
+    const old = await push.setCustomTone(me.id, storedName);
+    if (old) await removeObjects([old]).catch((e) => console.error("[tones] couldn't remove the old tone:", e instanceof Error ? e.message : e));
+  } catch (e) {
+    if (e instanceof UploadError) return { ok: false, message: e.message };
+    throw e;
+  }
+  revalidatePath("/account");
+  return { ok: true, message: "Uploaded and picked." };
+}
+
+export async function removeTone(): Promise<void> {
+  const me = await requireUser();
+  const old = await push.clearCustomTone(me.id);
+  if (old) await removeObjects([old]).catch((e) => console.error("[tones] couldn't remove the tone:", e instanceof Error ? e.message : e));
+  revalidatePath("/account");
 }

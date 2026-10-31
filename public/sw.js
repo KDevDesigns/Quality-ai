@@ -1,0 +1,82 @@
+// QA Hub's service worker: shows device notifications (Web Push) even when no QA Hub tab is open.
+// The server sends { title, body, url, tag, tone, image?, stack? } (see lib/push/message.ts). With the person's
+// "Show message previews" off, it holds no ticket text and no photo.
+//
+// Sound: a service worker can't play audio, and browsers can't attach a custom sound to a notification. So when a QA
+// Hub tab is open, it's asked to play the person's tone and the notification is shown silently; when no tab can play
+// it (closed, or never clicked: browsers block sound until then), the device's own notification sound plays instead.
+
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+
+/** Asks one tab to play the tone; true if it did. Gives up after 1.5 s so the notification is never held back long. */
+function askToPlay(client, tone) {
+  return new Promise((resolve) => {
+    const channel = new MessageChannel();
+    const timer = setTimeout(() => resolve(false), 1500);
+    channel.port1.onmessage = (e) => {
+      clearTimeout(timer);
+      resolve(e.data === true);
+    };
+    client.postMessage({ type: "qa-hub:play-tone", tone }, [channel.port2]);
+  });
+}
+
+async function playInATab(tone) {
+  const tabs = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+  // The tab the person is looking at first, so only one tab plays.
+  tabs.sort((a, b) => Number(b.focused) - Number(a.focused) || Number(b.visibilityState === "visible") - Number(a.visibilityState === "visible"));
+  for (const tab of tabs) if (await askToPlay(tab, tone)) return true;
+  return false;
+}
+
+self.addEventListener("push", (event) => {
+  let msg = { title: "QA Hub", body: "Something new in QA Hub", url: "/", tag: "qa-hub", tone: "" };
+  try {
+    msg = { ...msg, ...event.data.json() };
+  } catch {
+    // An empty or unreadable push still shows the plain message above.
+  }
+  event.waitUntil(
+    (async () => {
+      // Replies on a ticket whose notification is still showing stack into one: the newest message, then
+      // "3 new replies · Module: Billing". Opening the ticket closes it (see mark-read.tsx), so the count is what's unread.
+      let replies = 0;
+      let body = msg.body;
+      if (msg.stack) {
+        const [shown] = await self.registration.getNotifications({ tag: msg.tag });
+        replies = (shown?.data?.replies ?? 0) + 1;
+        if (replies > 1) body = `${msg.stack.line}\n${replies} new replies · ${msg.stack.detail}`;
+      }
+      const silent = msg.tone === "silent" || (!!msg.tone && (await playInATab(msg.tone)));
+      await self.registration.showNotification(msg.title, {
+        body,
+        tag: msg.tag,
+        renotify: true,
+        silent,
+        icon: "/dcwd-seal.png",
+        badge: "/dcwd-seal.png",
+        // The reply's first photo, through a link that expires after 10 minutes (Windows and Android show it).
+        ...(msg.image ? { image: msg.image } : {}),
+        data: { url: msg.url, replies },
+      });
+    })(),
+  );
+});
+
+// Clicking it opens the ticket: in a QA Hub tab that's already open if there is one, otherwise a new one.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url ?? "/", self.location.origin).href;
+  event.waitUntil(
+    (async () => {
+      const tabs = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      const tab = tabs.find((c) => new URL(c.url).origin === self.location.origin);
+      if (tab) {
+        await tab.focus();
+        return tab.navigate(url).catch(() => self.clients.openWindow(url));
+      }
+      return self.clients.openWindow(url);
+    })(),
+  );
+});

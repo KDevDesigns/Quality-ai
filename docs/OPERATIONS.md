@@ -21,6 +21,9 @@ The same names go in `.env.local` on a developer's PC and in Vercel → Project 
 | `SUPABASE_URL` | Supabase → Project Settings → **Data API** (`https://<ref>.supabase.co`) | no |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → **API Keys** → the `sb_secret_…` key | **yes, full access**; never `NEXT_PUBLIC_` |
 | `CRON_SECRET` | Any random text of 32+ characters you make up (e.g. a password manager's generator) | yes |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Run `npx web-push generate-vapid-keys` once; the **Public Key** line. Device notifications are off while any of the three VAPID settings is empty | no, public by design |
+| `VAPID_PRIVATE_KEY` | The same command's **Private Key** line. Make the pair once and keep it: a new pair turns notifications off on every device until each person turns them on again | **yes**; never `NEXT_PUBLIC_` |
+| `VAPID_SUBJECT` | `mailto:` and an admin's email, e.g. `mailto:you@davao-water.gov.ph` | no |
 | `NEXT_PUBLIC_VIDEO_MAX_MB` | Optional. Leave unset on the free plan (50). Raise it only together with the bucket's file size limit | no |
 | `BACKUP_DIR` | Optional, laptop only. Default is `Documents\QA Hub Backups` | no |
 
@@ -137,6 +140,58 @@ missed*, so a night with the laptop off is caught up the next morning. Check `ba
 - Opening a ticket marks it read. **Mark all as read** in the bell clears everything.
 - The app checks every 30 seconds while the tab is open, and lists and tickets update by themselves; no reload needed.
   Nothing is checked while the tab is in the background, and it checks at once when you come back.
+
+### Device notifications (Windows, Mac, Android, iPhone)
+
+- After signing in on a device where they're off, QA Hub asks **Turn on notifications?** Click **Turn on**, then
+  **Allow** when the browser asks. **Not now** hides the question on that device for 14 days. (Browsers only show their
+  Allow question after a click, so QA Hub can't skip this step.)
+- Any time: **My account → Notifications on this device**: **Turn on**, **Send test** (checks it works) and **Turn off**
+  (that device only).
+- **No Allow question appears?** An ad blocker (e.g. Adblock Plus) can hide it: pause it for QA Hub and try again.
+- **Brave:** push is off by default. Open `brave://settings/privacy`, turn on **Use Google services for push
+  messaging**, restart Brave, then Turn on again.
+- **Sound** (My account → Notification sound, or in the sign-in question): Tone 1 to 11 (Tone 1 is the default),
+  **Silent**, or **your own** MP3/WAV (at most 5 s and 500 KB; only you hear it). ▶ plays it.
+  - The tone plays when QA Hub is **open in a tab you've clicked in** (it can be in the background); the Windows/phone
+    notification is then silent, so it doesn't ring twice. With QA Hub **closed**, the device's own notification sound
+    plays: browsers can't give a web notification its own sound. **Silent** mutes both.
+  - The presets are in `public/sounds/` (from Pixabay, free to use). Own tones are in the private bucket and are
+    included in the nightly backup.
+- They come for the same things as the bell: a new or assigned ticket, a reply, a status change, an edit. Your own
+  actions never notify you. Clicking one opens the ticket.
+- They lead with the message (the device adds the time):
+  ```
+  #12 · Bill shows the wrong total
+  Ana: Can you check the total again? 📷 Photo
+  Module: Billing
+  [the first photo, on Windows and Android]
+  ```
+  More replies on the same ticket stack into one (the newest message, then **3 new replies**). Opening the ticket
+  clears it. The photo comes through a private link that stops working after 10 minutes.
+- ⚠️ **Customer data on screens:** previews show ticket titles, messages and screenshots, so they can show customer
+  names and amounts. Each person can turn off **Show message previews** (My account → Sound and previews) to get only
+  `#12 · Bug / New reply from Ana / Module: Billing`. Everyone should also hide previews while the device is locked:
+  - **iPhone:** Settings → Notifications → **Show Previews → When Unlocked**.
+  - **Android:** Settings → Notifications → **Notifications on lock screen → Hide sensitive content** (or don't show).
+  - **Windows:** Settings → System → Notifications → untick **Show notifications on the lock screen**.
+- **Work hours** (My account): with *Only notify me during work hours*, devices stay quiet outside the chosen hours
+  and days (Philippine time). Nothing is lost: the bell and My inbox still show it. The device's own Do Not Disturb or
+  Focus also mutes them.
+- **When they arrive with QA Hub closed:**
+
+  | Device | Needs |
+  |---|---|
+  | Windows | The browser running in the background. Edge does by default; Chrome: Settings → System → *Continue running background apps when Google Chrome is closed* |
+  | Mac | Chrome or Edge still open (no windows is fine). Safari works even when closed (macOS 13+) |
+  | Android | Nothing more (Chrome) |
+  | iPhone / iPad | iOS 16.4+, and QA Hub **added to the Home Screen** (Share → Add to Home Screen), then turned on from that icon. Not possible in a normal Safari tab |
+
+- Delivery is best-effort: usually seconds, but phone battery savers can delay it, and a notification older than
+  12 hours is dropped.
+- **Blocked by mistake?** Click the icon left of the address bar → Notifications → Allow, and reload.
+- **Office network:** the firewall must allow `fcm.googleapis.com`, `*.push.apple.com`,
+  `updates.push.services.mozilla.com` and `*.notify.windows.com`. If tests work at home but not at the office, ask IT.
 
 ## 6. Daily Accomplishment Reports (My DAR)
 

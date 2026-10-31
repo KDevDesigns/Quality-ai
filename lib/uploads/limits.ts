@@ -20,6 +20,10 @@ export const VIDEO_MAX_BYTES = VIDEO_MAX_MB * 1024 * 1024;
 /** Uploads one person may have waiting (picked but not yet sent with a ticket or reply). */
 export const MAX_PENDING_PER_USER = 20;
 
+/** A notification tone people upload for themselves (lib/uploads/audio.ts). */
+export const TONE_MAX_BYTES = 500 * 1024;
+export const TONE_MAX_SECONDS = 5;
+
 export const maxBytes = (kind: UploadKind) => (kind === "IMAGE" ? IMAGE_MAX_BYTES : VIDEO_MAX_BYTES);
 export const acceptedTypes = (kind: UploadKind) => (kind === "IMAGE" ? IMAGE_TYPES : VIDEO_TYPES);
 

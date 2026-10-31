@@ -6,6 +6,9 @@ import { LoadingBlock, PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ROLE_LABELS } from "@/lib/auth/permissions";
 import { getCurrentUser } from "@/lib/auth/session";
+import { db } from "@/lib/db";
+import { pushStore } from "@/lib/push/store";
+import { DeviceNotificationsCard, ToneCard, WorkHoursCard } from "./notifications-card";
 import { PasswordForm } from "./password-form";
 
 export const metadata: Metadata = { title: "My account" };
@@ -24,6 +27,8 @@ export default function AccountPage() {
 async function AccountBody() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  const push = pushStore(db);
+  const [workHours, tone, previews] = await Promise.all([push.workHours(user.id), push.tone(user.id), push.previews(user.id)]);
 
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start">
@@ -47,6 +52,9 @@ async function AccountBody() {
           <PasswordForm />
         </CardContent>
       </Card>
+      <DeviceNotificationsCard />
+      <WorkHoursCard initial={workHours} />
+      <ToneCard initial={{ ...tone, previews }} />
     </div>
   );
 }

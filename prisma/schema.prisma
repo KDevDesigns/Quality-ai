@@ -47,31 +47,61 @@ enum UserRole {
 }
 
 model User {
-  id                 String          @id @default(cuid())
+  id                 String             @id @default(cuid())
   name               String
-  email              String          @unique // stored lower-case
+  email              String             @unique // stored lower-case
   passwordHash       String
   role               UserRole
-  active             Boolean         @default(true)
+  active             Boolean            @default(true)
   /// Signed up on the sign-in page and waiting for an admin. Pending accounts are also inactive, so they can't sign in.
-  pending            Boolean         @default(false)
-  mustChangePassword Boolean         @default(true)
+  pending            Boolean            @default(false)
+  mustChangePassword Boolean            @default(true)
   /// Set when they asked for a new password on the sign-in page; cleared when an admin resets or dismisses it.
   resetRequestedAt   DateTime?
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  /// Device notifications only between workStartMin and workEndMin (minutes after midnight, Asia/Manila) on workDays.
+  pushWorkHoursOnly  Boolean            @default(false)
+  workStartMin       Int                @default(420)
+  workEndMin         Int                @default(1080)
+  /// Bitmask of weekdays, bit 0 = Sunday … bit 6 = Saturday. 62 = Monday to Friday.
+  workDays           Int                @default(62)
+  /// The sound an open QA Hub tab plays for a device notification: "tone-1"…"tone-11", "custom" or "silent".
+  notifyTone         String             @default("tone-1")
+  /// Their own uploaded tone in the Storage bucket (YYYY/MM/<random>.mp3|wav), if any.
+  customTone         String?
+  /// Device notifications show the ticket title, the message and the first photo. Off: only "#12 · New reply from Ana".
+  pushPreviews       Boolean            @default(true)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
   sessions           Session[]
   areas              AreaMember[]
-  reported           Ticket[]        @relation("TicketReporter")
-  assigned           Ticket[]        @relation("TicketAssignee")
+  reported           Ticket[]           @relation("TicketReporter")
+  assigned           Ticket[]           @relation("TicketAssignee")
   comments           TicketComment[]
   ticketEvents       TicketEvent[]
   attachments        Attachment[]
   pendingUploads     PendingUpload[]
   darProfile         DarProfile?
   darReports         DarReport[]
-  lastActed          Ticket[]        @relation("TicketLastActivityBy")
+  lastActed          Ticket[]           @relation("TicketLastActivityBy")
   ticketReads        TicketRead[]
+  pushSubscriptions  PushSubscription[]
+}
+
+/// A browser or phone that turned on device notifications (Web Push). One row per device; gone when it's turned off
+/// or the push service says the address no longer exists.
+model PushSubscription {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint   String    @unique
+  p256dh     String
+  auth       String
+  /// A short label such as "Chrome on Windows", so people can tell their devices apart.
+  device     String
+  createdAt  DateTime  @default(now())
+  lastSentAt DateTime?
+
+  @@index([userId])
 }
 
 model Session {
