@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { JPEG, markedName, PNG, pickFormat } from "@/lib/markup/export";
 import { canRedo, canUndo, emptyHistory, push, redo, undo } from "@/lib/markup/history";
-import { arrowHead, clampRect, cropOf, drawOrder, isTiny, normalizeRect, strokeFor, type Shape } from "@/lib/markup/shapes";
+import { arrowHead, clampRect, cropOf, DEFAULT_TEXT_SIZE, drawOrder, fontSizeFor, isTiny, normalizeRect, strokeFor, TEXT_SIZES, textFontSize, type Shape } from "@/lib/markup/shapes";
 
 const size = { w: 1000, h: 600 };
 
@@ -18,6 +18,16 @@ describe("markup shapes", () => {
   it("scales lines with the image width", () => {
     expect(strokeFor(800)).toBe(3);
     expect(strokeFor(3840)).toBe(10);
+  });
+
+  it("sizes text from the image width and the picked size, Medium by default", () => {
+    expect(DEFAULT_TEXT_SIZE).toBe("M");
+    expect(textFontSize(2560, "S")).toBe(fontSizeFor(2560));
+    expect(textFontSize(2560, "M")).toBe(59);
+    expect(textFontSize(2560, "XL")).toBeGreaterThan(textFontSize(2560, "L"));
+    // Notes drawn before sizes existed keep their old size.
+    expect(textFontSize(2560, undefined)).toBe(fontSizeFor(2560));
+    expect(TEXT_SIZES.map((s) => s.id)).toEqual(["S", "M", "L", "XL"]);
   });
 
   it("points the arrow head back along the line", () => {

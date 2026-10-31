@@ -11,7 +11,7 @@ export type Shape =
   | { kind: "box"; rect: Rect; color: string }
   | { kind: "arrow"; from: Point; to: Point; color: string }
   | { kind: "pen"; points: Point[]; color: string }
-  | { kind: "text"; at: Point; text: string; color: string }
+  | { kind: "text"; at: Point; text: string; color: string; size?: TextSize }
   /** A solid black box. Never a blur: blurred or pixelated text can be read back by de-pixelation tools. */
   | { kind: "hide"; rect: Rect }
   | { kind: "crop"; rect: Rect };
@@ -35,9 +35,25 @@ export function strokeFor(imageWidth: number): number {
   return Math.max(3, Math.round(imageWidth / 400));
 }
 
-/** Text size that goes with strokeFor. */
+/** Text size that goes with strokeFor (the Small size). */
 export function fontSizeFor(imageWidth: number): number {
   return Math.max(16, Math.round(imageWidth / 70));
+}
+
+/** Text sizes to pick from, as a multiple of fontSizeFor. Medium is the default. */
+export const TEXT_SIZES = [
+  { id: "S", label: "Small", factor: 1 },
+  { id: "M", label: "Medium", factor: 1.6 },
+  { id: "L", label: "Large", factor: 2.4 },
+  { id: "XL", label: "Extra large", factor: 3.4 },
+] as const;
+export type TextSize = (typeof TEXT_SIZES)[number]["id"];
+export const DEFAULT_TEXT_SIZE: TextSize = "M";
+
+/** The text's height in image pixels. Notes saved before sizes existed have none and keep the Small size. */
+export function textFontSize(imageWidth: number, size: TextSize | undefined): number {
+  const factor = TEXT_SIZES.find((s) => s.id === size)?.factor ?? 1;
+  return Math.round(fontSizeFor(imageWidth) * factor);
 }
 
 /** The two back corners of an arrow head at `to`, pointing away from `from`. */

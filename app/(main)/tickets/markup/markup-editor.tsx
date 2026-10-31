@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { CROP_DIM, CROP_LINE, DEFAULT_MARK_COLOR, HIDE_COLOR, MARK_COLORS, TEXT_OUTLINE } from "@/lib/markup/colors";
 import { JPEG, JPEG_QUALITY, markedName, pickFormat, PNG } from "@/lib/markup/export";
 import { canRedo, canUndo, emptyHistory, push, redo, undo, type History } from "@/lib/markup/history";
-import { arrowHead, cropOf, drawOrder, fontSizeFor, isTiny, normalizeRect, strokeFor, type Point, type Shape, type Tool } from "@/lib/markup/shapes";
+import { arrowHead, cropOf, DEFAULT_TEXT_SIZE, drawOrder, isTiny, normalizeRect, strokeFor, TEXT_SIZES, textFontSize, type Point, type Shape, type TextSize, type Tool } from "@/lib/markup/shapes";
 import { IMAGE_MAX_BYTES } from "@/lib/uploads/limits";
 import { cn } from "@/lib/utils";
 
@@ -26,8 +26,8 @@ const TOOL_BUTTONS: { tool: Tool; label: string; key: string; icon: LucideIcon; 
   { tool: "crop", label: "Crop", key: "C", icon: CropIcon },
 ];
 
-/** Draws one mark at image scale. `sw` is the line width and `fs` the text size for this image. */
-function drawShape(ctx: CanvasRenderingContext2D, s: Shape, sw: number, fs: number) {
+/** Draws one mark at image scale. `sw` is the line width for this image; text is sized from the image width. */
+function drawShape(ctx: CanvasRenderingContext2D, s: Shape, sw: number, imageWidth: number) {
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   ctx.lineWidth = sw;
@@ -58,7 +58,8 @@ function drawShape(ctx: CanvasRenderingContext2D, s: Shape, sw: number, fs: numb
       s.points.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
       ctx.stroke();
       break;
-    case "text":
+    case "text": {
+      const fs = textFontSize(imageWidth, s.size);
       ctx.font = `600 ${fs}px system-ui, sans-serif`;
       ctx.textBaseline = "top";
       // A white outline keeps the note readable on any background.
@@ -68,6 +69,7 @@ function drawShape(ctx: CanvasRenderingContext2D, s: Shape, sw: number, fs: numb
       ctx.fillStyle = s.color;
       ctx.fillText(s.text, s.at.x, s.at.y);
       break;
+    }
     case "hide":
       ctx.fillStyle = HIDE_COLOR;
       ctx.fillRect(s.rect.x, s.rect.y, s.rect.w, s.rect.h);
@@ -87,7 +89,7 @@ async function exportImage(img: HTMLImageElement, shapes: Shape[], name: string)
   const ctx = canvas.getContext("2d")!;
   ctx.translate(-crop.x, -crop.y);
   ctx.drawImage(img, 0, 0);
-  for (const s of drawOrder(shapes)) drawShape(ctx, s, strokeFor(size.w), fontSizeFor(size.w));
+  for (const s of drawOrder(shapes)) drawShape(ctx, s, strokeFor(size.w), size.w);
 
   const blob = (type: string, quality?: number) =>
     new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("The image couldn't be saved."))), type, quality));
@@ -108,6 +110,7 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
   const [draft, setDraft] = useState<Draft>(null);
   const [textAt, setTextAt] = useState<Point | null>(null);
   const [text, setText] = useState("");
+  const [textSize, setTextSize] = useState<TextSize>(DEFAULT_TEXT_SIZE);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState({ scale: 1, w: 0, h: 0 });
@@ -117,9 +120,10 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
   const start = useRef<Point | null>(null);
 
   // A new text box takes the typing at once. Done here rather than with autoFocus, which the dialog's own focus handling
-  // can override.
+  // can override; the box doesn't depend on keeping focus anyway (see commitText).
+  const focusText = () => requestAnimationFrame(() => textInput.current?.focus());
   useEffect(() => {
-    if (textAt) textInput.current?.focus();
+    if (textAt) focusText();
   }, [textAt]);
 
   // A new image starts a clean editor.
@@ -171,7 +175,7 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
     ctx.drawImage(img, 0, 0);
     const size = { w: img.naturalWidth, h: img.naturalHeight };
     const shapes = draft ? [...history.present, draft] : history.present;
-    for (const s of drawOrder(shapes)) drawShape(ctx, s, strokeFor(size.w), fontSizeFor(size.w));
+    for (const s of drawOrder(shapes)) drawShape(ctx, s, strokeFor(size.w), size.w);
     const crop = cropOf(shapes, size);
     if (crop.w < size.w || crop.h < size.h) {
       ctx.fillStyle = CROP_DIM;
@@ -196,16 +200,30 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
     if (!isTiny(s)) setHistory((h) => push(h, [...h.present, s]));
   };
 
+  /** The note being typed, if it has any text. */
+  const typedText = (): Shape | null => (textAt && text.trim() ? { kind: "text", at: textAt, text: text.trim(), color, size: textSize } : null);
+
+  /**
+   * Puts the typed note on the image: on Enter, a click elsewhere on the image, another tool, or Use image. Never on
+   * blur: the dialog moves focus around on clicks, and that used to close the box as soon as it opened.
+   */
   function commitText() {
-    if (textAt) commit({ kind: "text", at: textAt, text: text.trim(), color });
+    const s = typedText();
+    if (s) commit(s);
     setTextAt(null);
     setText("");
+  }
+
+  function pickTool(t: Tool) {
+    if (textAt) commitText();
+    setTool(t);
   }
 
   function onPointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
     if (!img || saving || e.button !== 0) return;
     const p = toImage(e);
     if (tool === "text") {
+      e.preventDefault();
       if (textAt) commitText();
       setTextAt(p);
       return;
@@ -230,17 +248,22 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
     if (draft) commit(draft);
     start.current = null;
     setDraft(null);
+    // Releasing the button can pull focus back to the dialog; hand it to the text box again.
+    if (tool === "text" && textAt) focusText();
   }
 
   async function saveImage() {
     if (!img || !file) return;
+    // Read the typed note directly: committing it only updates history on the next render.
+    const typed = typedText();
+    const shapes = typed ? [...history.present, typed] : history.present;
     if (textAt) commitText();
     setSaving(true);
     setError(null);
     try {
       // Nothing drawn: the original goes as it is, with its own name.
-      if (!history.present.length) return onDone({ action: "original" });
-      onDone({ action: "use", file: await exportImage(img, history.present, file.name) });
+      if (!shapes.length) return onDone({ action: "original" });
+      onDone({ action: "use", file: await exportImage(img, shapes, file.name) });
     } catch (e) {
       setError(e instanceof Error ? e.message : "The image couldn't be saved.");
       setSaving(false);
@@ -260,7 +283,7 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
       const t = TOOL_BUTTONS.find((b) => b.key.toLowerCase() === k);
       if (t) {
         e.preventDefault();
-        setTool(t.tool);
+        pickTool(t.tool);
       }
     }
   }
@@ -309,7 +332,7 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
                 variant={tool === t ? "soft" : "ghost"}
                 aria-pressed={tool === t}
                 title={`${hint ?? label} (${key})`}
-                onClick={() => setTool(t)}
+                onClick={() => pickTool(t)}
               >
                 <Icon /> {label}
               </Button>
@@ -323,7 +346,10 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
                   aria-pressed={color === c.value}
                   aria-label={c.name}
                   title={c.name}
-                  onClick={() => setColor(c.value)}
+                  onClick={() => {
+                    setColor(c.value);
+                    if (textAt) focusText();
+                  }}
                   className={cn(
                     "size-7 cursor-pointer rounded-full border-2 border-card shadow-[0_0_0_1px_var(--line)] focus-visible:ring-3 focus-visible:ring-acc/30 focus-visible:outline-none",
                     color === c.value && "shadow-[0_0_0_2px_var(--acc)]",
@@ -332,6 +358,31 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
                 />
               ))}
             </div>
+            {tool === "text" ? (
+              <>
+                <span className="mx-1 h-6 w-px bg-line2" aria-hidden />
+                <div role="group" aria-label="Text size" className="flex items-center gap-0.5">
+                  {TEXT_SIZES.map((s) => (
+                    <Button
+                      key={s.id}
+                      type="button"
+                      size="sm"
+                      variant={textSize === s.id ? "soft" : "ghost"}
+                      aria-pressed={textSize === s.id}
+                      aria-label={`${s.label} text`}
+                      title={`${s.label} text`}
+                      className="min-w-9 px-2"
+                      onClick={() => {
+                        setTextSize(s.id);
+                        if (textAt) focusText();
+                      }}
+                    >
+                      {s.id}
+                    </Button>
+                  ))}
+                </div>
+              </>
+            ) : null}
             <span className="mx-1 h-6 w-px bg-line2" aria-hidden />
             <Button type="button" variant="ghost" size="icon-sm" aria-label="Undo (Ctrl+Z)" title="Undo (Ctrl+Z)" disabled={!canUndo(history)} focusableWhenDisabled onClick={() => setHistory(undo)}>
               <Undo2Icon />
@@ -374,7 +425,6 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
                     ref={textInput}
                     value={text}
                     onChange={(e) => setText(e.target.value)}
-                    onBlur={commitText}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -384,8 +434,17 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
                     aria-label="Text to add"
                     placeholder="Type, then Enter"
                     maxLength={200}
-                    className="absolute h-8 min-w-40 rounded-md border border-acc bg-card px-2 text-sm text-foreground shadow-md outline-none focus-visible:ring-3 focus-visible:ring-acc/30"
-                    style={{ left: Math.min(textAt.x * view.scale, view.w - 160), top: Math.min(textAt.y * view.scale, view.h - 32) }}
+                    // Shown where it will be drawn, in its colour and size, so what you type is what lands on the image.
+                    className="absolute rounded-sm border border-dashed border-acc bg-black/25 p-0 leading-[1.15] font-semibold outline-none placeholder:font-normal placeholder:text-white/70"
+                    style={{
+                      left: textAt.x * view.scale,
+                      top: textAt.y * view.scale - 1,
+                      color,
+                      fontSize: Math.max(16, (img ? textFontSize(img.naturalWidth, textSize) : 16) * view.scale),
+                      width: `${Math.max(text.length, 14) + 1}ch`,
+                      maxWidth: Math.max(80, view.w - textAt.x * view.scale),
+                      textShadow: `0 0 2px ${TEXT_OUTLINE}, 0 0 2px ${TEXT_OUTLINE}`,
+                    }}
                   />
                 ) : null}
               </div>
