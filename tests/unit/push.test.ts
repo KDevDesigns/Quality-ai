@@ -211,20 +211,13 @@ describe("pushStore and notifyTicket", () => {
     expect(await s.workHours(dev.id)).toEqual({ pushWorkHoursOnly: true, workStartMin: 480, workEndMin: 1020, workDays: 62 });
   });
 
-  it("keeps each person's sound, and their own only while it exists", async () => {
+  it("keeps each person's sound, from the list only", async () => {
     const s = pushStore(db);
-    expect(await s.tone(dev.id)).toEqual({ tone: "tone-1", hasCustom: false });
+    expect(await s.tone(dev.id)).toEqual({ tone: "tone-1" });
     expect(await s.setTone(dev.id, "custom")).toBe(false);
     expect(await s.setTone(dev.id, "tone-5")).toBe(true);
-    expect((await s.tone(dev.id)).tone).toBe("tone-5");
-
-    expect(await s.setCustomTone(dev.id, "2026/10/aaa.mp3")).toBeNull();
-    expect(await s.tone(dev.id)).toEqual({ tone: "custom", hasCustom: true });
-    expect(await s.setCustomTone(dev.id, "2026/11/bbb.mp3")).toBe("2026/10/aaa.mp3"); // the old file, to delete
-    expect(await s.customToneName(dev.id)).toBe("2026/11/bbb.mp3");
-
-    expect(await s.clearCustomTone(dev.id)).toBe("2026/11/bbb.mp3");
-    expect(await s.tone(dev.id)).toEqual({ tone: "tone-1", hasCustom: false });
+    expect(await s.tone(dev.id)).toEqual({ tone: "tone-5" });
+    expect(await s.setTone(dev.id, "silent")).toBe(true);
   });
 
   const newTicket = (over: Partial<Parameters<ReturnType<typeof ticketStore>["create"]>[1]> = {}) =>
@@ -263,7 +256,7 @@ describe("pushStore and notifyTicket", () => {
     expect((await db.pushSubscription.findFirstOrThrow({ where: { userId: dev.id } })).lastSentAt).toEqual(at);
   });
 
-  it("shows a reply's message and first photo with previews on, and nothing of either with previews off", async () => {
+  it("shows a reply's message with previews on (never a photo), and none of it with previews off", async () => {
     const s = pushStore(db);
     await s.subscribe(dev.id, sub("dev"), "x");
     await s.subscribe(admin.id, sub("admin"), "x");
@@ -275,29 +268,13 @@ describe("pushStore and notifyTicket", () => {
     }
 
     const f = fakeSender();
-    const linked: string[] = [];
-    const photoLink = async (name: string) => (linked.push(name), `https://storage.example/${name}?token=x`);
-    await notifyTicket(db, f.send, { ticketId: id, actorId: qa.id, event: { kind: "reply", commentId } }, { now: at, photoLink });
+    await notifyTicket(db, f.send, { ticketId: id, actorId: qa.id, event: { kind: "reply", commentId } }, { now: at });
 
     const byEnd = Object.fromEntries(f.sent.map((x) => [x.endpoint.split("/").pop(), JSON.parse(x.payload)]));
     expect(byEnd.dev.body).toBe("Ana QA: Juan Dela Cruz again 📷 2 photos\nModule: none");
-    expect(byEnd.dev.image).toBe("https://storage.example/2026/10/a.png?token=x");
-    expect(linked).toEqual(["2026/10/a.png"]); // one link, for the first photo only
-    expect(byEnd.admin.image).toBeUndefined();
+    expect(byEnd.dev).not.toHaveProperty("image");
+    expect(f.sent.map((x) => x.payload).join()).not.toMatch(/2026\/10\/[ab]\.png/);
     expect(JSON.stringify(byEnd.admin)).not.toMatch(/0123-45|Juan|wrong total/);
-  });
-
-  it("makes no photo link when nobody sees previews", async () => {
-    const s = pushStore(db);
-    await s.subscribe(dev.id, sub("dev"), "x");
-    await db.user.update({ where: { id: dev.id }, data: { pushPreviews: false } });
-    const { id } = await newTicket();
-    const commentId = await ticketStore(db).comment(qa, id, "see photo");
-    await db.attachment.create({ data: { ticketId: id, commentId, uploaderId: qa.id, kind: "IMAGE", storedName: "2026/10/c.png", originalName: "x.png", mime: "image/png", size: 1 } });
-
-    let calls = 0;
-    await notifyTicket(db, fakeSender().send, { ticketId: id, actorId: qa.id, event: { kind: "reply", commentId } }, { now: at, photoLink: async () => (calls++, "x") });
-    expect(calls).toBe(0);
   });
 
   it("drops devices the push service no longer knows, and survives other failures", async () => {
@@ -324,24 +301,22 @@ describe("pushStore and notifyTicket", () => {
 
 describe("tones", () => {
   it("knows the valid choices", () => {
-    expect(isTone("tone-1", false)).toBe(true);
-    expect(isTone("tone-11", false)).toBe(true);
-    expect(isTone("tone-12", false)).toBe(false);
-    expect(isTone("silent", false)).toBe(true);
-    expect(isTone("custom", false)).toBe(false);
-    expect(isTone("custom", true)).toBe(true);
+    expect(isTone("tone-1")).toBe(true);
+    expect(isTone("tone-11")).toBe(true);
+    expect(isTone("tone-12")).toBe(false);
+    expect(isTone("silent")).toBe(true);
+    expect(isTone("custom")).toBe(false);
   });
 
-  it("plays presets from /sounds and their own through the checked route", () => {
+  it("plays presets from /sounds", () => {
     expect(toneSrc("tone-3")).toBe("/sounds/tone-3.mp3");
-    expect(toneSrc("custom")).toBe("/tones/mine");
+    expect(toneSrc("custom")).toBeNull();
     expect(toneSrc("silent")).toBeNull();
     expect(toneSrc("../../etc/passwd")).toBeNull();
   });
 
-  it("falls back to the default when their own sound is gone", () => {
-    expect(effectiveTone({ notifyTone: "custom", customTone: null })).toBe(DEFAULT_TONE);
-    expect(effectiveTone({ notifyTone: "custom", customTone: "2026/10/x.mp3" })).toBe("custom");
-    expect(effectiveTone({ notifyTone: "tone-4", customTone: null })).toBe("tone-4");
+  it("falls back to the default for anything that isn't in the list", () => {
+    expect(effectiveTone({ notifyTone: "custom" })).toBe(DEFAULT_TONE);
+    expect(effectiveTone({ notifyTone: "tone-4" })).toBe("tone-4");
   });
 });

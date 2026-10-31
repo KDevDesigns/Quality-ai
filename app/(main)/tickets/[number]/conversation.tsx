@@ -19,8 +19,9 @@ export function Attachments({ files }: { files: FileRow[] }) {
     <div className="grid gap-3">
       {videos.map((f) => (
         <figure key={f.id} className="grid max-w-2xl gap-1">
-          {/* Streams from the auth-checked /files route; seeking uses Range requests. */}
-          <video src={`/files/${f.id}`} controls preload="metadata" playsInline className="max-h-[420px] w-full rounded-lg border border-line bg-black" />
+          {/* Streams from the auth-checked /files route; seeking uses Range requests. Nothing loads until Play: even
+              "metadata" made browsers fetch most of a phone recording on every visit, the biggest Storage download cost. */}
+          <video src={`/files/${f.id}`} controls preload="none" playsInline className="max-h-[420px] w-full rounded-lg border border-line bg-black" />
           <figcaption className="truncate text-[11.5px] text-muted-foreground" title={f.originalName}>
             <a href={`/files/${f.id}`} target="_blank" rel="noopener" className="hover:text-acc">
               {f.originalName}

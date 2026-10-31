@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ImagePlusIcon, MonitorIcon, PencilIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { shrinkImage } from "@/lib/markup/encode";
 import { discardUpload, UploadCancelled, uploadFile, type UploadHandle } from "@/lib/uploads/client";
 import { IMAGE_MAX_BYTES, IMAGE_TYPES, MAX_IMAGES_PER_POST } from "@/lib/uploads/limits";
 import { formatBytes } from "@/lib/format";
@@ -76,8 +77,10 @@ export function useImageAttachments() {
   useEffect(() => {
     live.current = items;
   }, [items]);
-  // Images still in the editor count as busy too: the post can't go without them.
-  const busy = items.some((i) => !i.id) || queue.length > 0;
+  // Screenshots being converted to a smaller file before upload (lib/markup/encode.ts).
+  const [converting, setConverting] = useState(0);
+  // Images still in the editor or being converted count as busy too: the post can't go without them.
+  const busy = items.some((i) => !i.id) || queue.length > 0 || converting > 0;
 
   // Leaving the page mid-upload would throw the upload away; let the browser ask first.
   useEffect(() => {
@@ -169,8 +172,13 @@ export function useImageAttachments() {
       return;
     }
     if (result.action === "original") {
-      // Editing an added image and keeping it as it was: nothing to redo.
-      if (head.replaceKey === undefined) start(head.file);
+      // Editing an added image and keeping it as it was: nothing to redo. A new one is saved smaller, same size.
+      if (head.replaceKey === undefined) {
+        setConverting((n) => n + 1);
+        void shrinkImage(head.file)
+          .then(start)
+          .finally(() => setConverting((n) => n - 1));
+      }
       return;
     }
     if (result.file.size > IMAGE_MAX_BYTES) {

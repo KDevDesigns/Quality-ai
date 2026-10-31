@@ -63,14 +63,9 @@ export function parseSnapshot(value: unknown): Snapshot {
   return s as Snapshot;
 }
 
-/** The stored names of every attachment and uploaded notification tone in the snapshot: the Storage objects that belong with it. */
+/** The stored names of every attachment in the snapshot: the Storage objects that belong with it. */
 export function snapshotFiles(s: Snapshot): { storedName: string; mime: string; size: number }[] {
-  const files = s.tables.attachment.map((a) => ({ storedName: String(a.storedName), mime: String(a.mime), size: Number(a.size) }));
-  for (const u of s.tables.user) {
-    // Older backups have no customTone column.
-    if (typeof u.customTone === "string") files.push({ storedName: u.customTone, mime: u.customTone.endsWith(".wav") ? "audio/wav" : "audio/mpeg", size: 0 });
-  }
-  return files;
+  return s.tables.attachment.map((a) => ({ storedName: String(a.storedName), mime: String(a.mime), size: Number(a.size) }));
 }
 
 const CHUNK = 500;
@@ -86,6 +81,13 @@ export async function restoreSnapshot(db: PrismaClient, s: Snapshot): Promise<Re
   }
 
   const t = s.tables;
+  // Backups from before 2026-11-01 still carry the removed own-tone column; anyone who had picked theirs gets Tone 1.
+  const user = t.user.map((row) => {
+    const u = { ...row };
+    delete u.customTone;
+    if (u.notifyTone === "custom") u.notifyTone = "tone-1";
+    return u;
+  });
   // Prisma wants DbNull, not null, for an empty optional Json column.
   const darProfile = t.darProfile.map((p) => ({
     ...p,
@@ -101,7 +103,7 @@ export async function restoreSnapshot(db: PrismaClient, s: Snapshot): Promise<Re
       const insert = async <T>(rows: T[], createMany: (data: T[]) => Promise<unknown>) => {
         for (let i = 0; i < rows.length; i += CHUNK) await createMany(rows.slice(i, i + CHUNK));
       };
-      await insert(t.user, (data) => tx.user.createMany({ data: data as Prisma.UserCreateManyInput[] }));
+      await insert(user, (data) => tx.user.createMany({ data: data as Prisma.UserCreateManyInput[] }));
       // Parents before children, one level of the module tree at a time.
       for (const level of areaLevels(t.erpArea)) await insert(level, (data) => tx.erpArea.createMany({ data: data as Prisma.ErpAreaCreateManyInput[] }));
       await insert(t.areaMember, (data) => tx.areaMember.createMany({ data: data as Prisma.AreaMemberCreateManyInput[] }));

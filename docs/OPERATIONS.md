@@ -139,7 +139,7 @@ missed*, so a night with the laptop off is caught up the next morning. Check `ba
   own; admins: all): a new ticket, a reply, a status change, a reassignment or an edit. Your own actions never notify you.
 - Opening a ticket marks it read. **Mark all as read** in the bell clears everything.
 - Lists and tickets update by themselves; no reload needed. With device notifications on, an open tab updates the
-  moment one arrives; otherwise it checks every 15 seconds while the tab is open. Nothing is checked while the tab is
+  moment one arrives; otherwise it checks every 30 seconds while the tab is open. Nothing is checked while the tab is
   in the background, and it checks at once when you come back.
 
 ### Device notifications (Windows, Mac, Android, iPhone)
@@ -153,15 +153,14 @@ missed*, so a night with the laptop off is caught up the next morning. Check `ba
 - **Brave:** push is off by default. Open `brave://settings/privacy`, turn on **Use Google services for push
   messaging**, restart Brave, then Turn on again.
 - **Sound** (My account → Notification sound, or in the sign-in question): Tone 1 to 11 (Tone 1 is the default),
-  **Silent**, or **your own** MP3/WAV (at most 5 s and 500 KB; only you hear it). ▶ plays it.
+  or **Silent**. ▶ plays it.
   - The tone plays when QA Hub is **on screen in a tab you've clicked in**; the Windows/phone notification is then
     silent, so it doesn't ring twice. With QA Hub **closed or behind other windows**, the device's own notification
     sound plays: browsers can't give a web notification its own sound. **Silent** mutes both.
   - **No sound at all?** Windows Focus / Do Not Disturb (or the phone's) mutes the device sound, and so does turning
     off sounds for the browser in Windows Settings → System → Notifications.
   - Your own messages never notify **any** of your devices: replying from your phone doesn't ring your PC.
-  - The presets are in `public/sounds/` (from Pixabay, free to use). Own tones are in the private bucket and are
-    included in the nightly backup.
+  - The tones are in `public/sounds/` (from Pixabay, free to use).
 - They come for the same things as the bell: a new or assigned ticket, a reply, a status change, an edit. Your own
   actions never notify you. Clicking one opens the ticket.
 - They lead with the message (the device adds the time):
@@ -169,11 +168,10 @@ missed*, so a night with the laptop off is caught up the next morning. Check `ba
   #12 · Bill shows the wrong total
   Ana: Can you check the total again? 📷 Photo
   Module: Billing
-  [the first photo, on Windows and Android]
   ```
   More replies on the same ticket stack into one (the newest message, then **3 new replies**). Opening the ticket
-  clears it. The photo comes through a private link that stops working after 10 minutes.
-- ⚠️ **Customer data on screens:** previews show ticket titles, messages and screenshots, so they can show customer
+  clears it. Photos are never shown in a notification (they'd be downloaded by every device); open the ticket.
+- ⚠️ **Customer data on screens:** previews show ticket titles and messages, so they can show customer
   names and amounts. Each person can turn off **Show message previews** (My account → Sound and previews) to get only
   `#12 · Bug / New reply from Ana / Module: Billing`. Everyone should also hide previews while the device is locked:
   - **iPhone:** Settings → Notifications → **Show Previews → When Unlocked**.
@@ -220,7 +218,7 @@ missed*, so a night with the laptop off is caught up the next morning. Check `ba
 |---|---|---|
 | Storage 1 GB | Uploads start failing. At 50 MB a video, about 20 long videos fill it | Supabase Pro |
 | 50 MB per file | Longer or sharper videos are refused before upload | Pro, then raise the bucket limit and `NEXT_PUBLIC_VIDEO_MAX_MB` |
-| Egress (downloads) 5 GB / month | Watching videos uses it up; Supabase warns by email | Pro |
+| Egress (downloads) 5 GB / month | Watching videos uses it up; Supabase warns by email. To keep it low, videos load only when someone presses Play, the browser reuses a file for 5 minutes, and screenshots are saved as WebP at full size before upload | Pro |
 | Database 500 MB | Text only, so this lasts a long time | Pro |
 | No Supabase backups | The laptop's nightly backup is the only copy | Pro adds daily backups |
 | Vercel Hobby is for non-commercial use | Ask IT whether this counts; otherwise Vercel Pro | Vercel Pro |

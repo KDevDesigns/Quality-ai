@@ -64,11 +64,9 @@ model User {
   workEndMin         Int                @default(1080)
   /// Bitmask of weekdays, bit 0 = Sunday … bit 6 = Saturday. 62 = Monday to Friday.
   workDays           Int                @default(62)
-  /// The sound an open QA Hub tab plays for a device notification: "tone-1"…"tone-11", "custom" or "silent".
+  /// The sound an open QA Hub tab plays for a device notification: "tone-1"…"tone-11" or "silent".
   notifyTone         String             @default("tone-1")
-  /// Their own uploaded tone in the Storage bucket (YYYY/MM/<random>.mp3|wav), if any.
-  customTone         String?
-  /// Device notifications show the ticket title, the message and the first photo. Off: only "#12 · New reply from Ana".
+  /// Device notifications show the ticket title and the message. Off: only "#12 · New reply from Ana".
   pushPreviews       Boolean            @default(true)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt

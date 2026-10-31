@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { JPEG, markedName, PNG, pickFormat } from "@/lib/markup/export";
+import { CONVERT_ABOVE_BYTES, convertedName, JPEG, markedName, pickSmallest, PNG, WEBP, worthReplacing } from "@/lib/markup/export";
 import { canRedo, canUndo, emptyHistory, push, redo, undo } from "@/lib/markup/history";
 import { arrowHead, clampRect, cropOf, DEFAULT_TEXT_SIZE, drawOrder, fontSizeFor, isTiny, normalizeRect, strokeFor, TEXT_SIZES, textFontSize, type Shape } from "@/lib/markup/shapes";
 
@@ -76,14 +76,27 @@ describe("markup history", () => {
 });
 
 describe("markup export", () => {
-  it("keeps PNG unless it would be over the upload limit", () => {
-    expect(pickFormat(2_000_000, 10_000_000)).toBe(PNG);
-    expect(pickFormat(12_000_000, 10_000_000)).toBe(JPEG);
+  it("picks the smallest encoding that fits the upload limit", () => {
+    const webp = { format: WEBP, size: 400_000 };
+    const png = { format: PNG, size: 2_600_000 };
+    expect(pickSmallest([webp, png], 10_000_000)).toBe(webp);
+    // A plain, mostly empty screen can come out smaller as PNG.
+    expect(pickSmallest([{ format: WEBP, size: 90_000 }, { format: PNG, size: 60_000 }], 10_000_000)?.format).toBe(PNG);
+    expect(pickSmallest([{ format: JPEG, size: 11_000_000 }, { format: PNG, size: 30_000_000 }], 10_000_000)).toBeNull();
   });
 
-  it("names the marked-up file after the original", () => {
-    expect(markedName("screenshot-2026-10-31.png", PNG)).toBe("screenshot-2026-10-31-marked.png");
+  it("replaces the person's file only for a real saving", () => {
+    expect(worthReplacing(2_600_000, 400_000)).toBe(true);
+    expect(worthReplacing(300_000, 290_000)).toBe(false);
+    expect(CONVERT_ABOVE_BYTES).toBeGreaterThan(0);
+  });
+
+  it("names the marked-up and converted files after the original", () => {
+    expect(markedName("screenshot-2026-10-31.png", WEBP)).toBe("screenshot-2026-10-31-marked.webp");
     expect(markedName("shot-marked.png", JPEG)).toBe("shot-marked.jpg");
     expect(markedName(".png", PNG)).toBe("screenshot-marked.png");
+    expect(convertedName("screenshot-2026-10-31.png", WEBP)).toBe("screenshot-2026-10-31.webp");
+    expect(convertedName("IMG_0042.JPG", JPEG)).toBe("IMG_0042.jpg");
+    expect(convertedName(".png", WEBP)).toBe("screenshot.webp");
   });
 });

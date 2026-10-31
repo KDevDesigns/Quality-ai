@@ -14,6 +14,27 @@
   under **Shortcuts** or **?**.
 - Code: `lib/markup/` (`shapes`, `geometry`, `draw`, `view`, tested) and `app/(main)/tickets/markup/`.
 
+## Lighter on the free plan (2026-11-01)
+
+Supabase's logs showed about 945 MB of file downloads in one day, almost all from one video loaded again on every
+visit. The free plan allows 5 GB a month.
+- **Videos load only when someone presses Play.** Before, browsers fetched most of a phone recording each time a
+  ticket opened.
+- **Screenshots are saved smaller before upload:** same size (2560×1440 stays 2560×1440, so ERP text stays readable),
+  as WebP at high quality, or JPEG in browsers that can't write WebP. PNG is kept when it's smaller, and small images
+  and GIFs are left alone. Typically a 2–3 MB PNG becomes a few hundred KB. Marked-up screenshots are saved the same
+  way.
+- **Files are reused for 5 minutes:** going back to a ticket takes its screenshots from the browser instead of
+  downloading them again.
+- **The new-activity check is every 30 seconds again** (it was briefly 15); notifications refresh pages at once
+  anyway.
+- **Removed:** uploading your own notification sound (anyone using theirs is back on Tone 1; Tone 1–11 and Silent
+  stay), and the photo inside device notifications (every device downloaded it; the 📷 count stays in the text).
+- **Setup:** migration `drop_custom_tone` (`npm run db:deploy`). Restoring an older backup still works: the removed
+  column is skipped.
+- Code: `lib/markup/export.ts` and `lib/markup/encode.ts` (conversion), `app/(main)/tickets/[number]/conversation.tsx`,
+  `app/(main)/files/[id]/route.ts`, `lib/push/`, `lib/backup.ts`.
+
 ## Notification sound and live updates fixed (2026-10-31)
 
 - **Pages update the moment a notification arrives:** the bell, the sidebar counts, My inbox and an open ticket no
