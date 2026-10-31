@@ -306,7 +306,7 @@ shows every step.
 The AI workbench is being dropped. Testers' own ChatGPT Plus/Pro plans **cannot** power QA Hub: they include no API
 access, driving the ChatGPT website from a server breaks OpenAI's terms, and ticket data must never reach an LLM
 (rule 12). Testers may use **Codex** ("Sign in with ChatGPT") on their own laptops to tidy Playwright specs against
-staging with `QA-` data, outside QA Hub. Paid SaaS tools (mabl, Testim) are cloud-hosted and don't fit LAN-only.
+staging with `QA-` data, outside QA Hub. Paid SaaS tools (mabl, Testim) would send ERP screens to another vendor's cloud.
 Phase A comes first: Phase B automates the cases Phase A writes down.
 
 - **3.6a — Test library + manual test runs** (no coding for testers):
@@ -332,8 +332,9 @@ Phase A comes first: Phase B automates the cases Phase A writes down.
     with `npx playwright codegen <dev URL>` and attach the spec to a test case (`tests/generated/` until approved).
   - The dev URL goes in the Environment allowlist; QA logins go in `.env.local`. Never the live portal.
   - Ask the ERP developers to turn off CAPTCHA/OTP for the QA accounts on dev and to add `data-testid` to key buttons.
-  - The runner starts Playwright as a child process (JSON reporter, queued, progress in the DB) and shows screenshots
-    and traces from `runs/<runId>/`. A failure opens a draft ticket. Amounts are checked by `lib/oracles/` with
+  - Vercel can't run browsers, so the runner is a small worker on the QA laptop: it picks queued runs from the DB,
+    starts Playwright as a child process (JSON reporter), saves progress to the DB and uploads screenshots and traces
+    to Storage for the run page. A failure opens a draft ticket. Amounts are checked by `lib/oracles/` with
     `decimal.js`. Start with stable `smoke` flows only.
   - The Investigator mobile app: Playwright mobile mode if it is a web app/PWA, **Maestro** if it is native Android.
     Keep its steps manual at first (map, photos, GPS) and start CSMS tests from a completed investigation.
@@ -344,6 +345,47 @@ Phase A comes first: Phase B automates the cases Phase A writes down.
 **Done when:** a tester imports the leak-adjustment cases from Excel, runs them as a checklist, fails BCA-110, files
 the prefilled ticket, sees the case's history and that day's DAR entry; then a recorded CS31 spec replays from the hub
 against dev with screenshots, and a non-allowlisted URL is refused.
+
+### Phase 3.7 — QA Hub on phones (mobile ticket filing)
+QA testers test the Investigator app and other mobile apps on their own or company phones. They should file the bug
+**on the same phone**, right after it happens, instead of sending the screenshot to a laptop first. Since the cloud
+move QA Hub is reachable from any phone over HTTPS, so this is about making it work well on a small touch screen.
+Can be built before 3.6, because tickets already exist.
+
+- **Layout on phones** (≤ 640 px wide): the sidebar is already a slide-out drawer; check every page for it.
+  - Tables (ticket list, team, admin) turn into stacked cards; filters go into a "Filter" sheet.
+  - Dialogs open as full-screen sheets, with the main button kept at the bottom above the keyboard.
+  - Touch targets at least 44 px; form inputs at 16 px text so iPhones don't zoom in.
+  - A floating **+ New ticket** button on the ticket pages.
+- **Filing a ticket from the phone:**
+  - **Take photo** / **Choose from gallery** for screenshots. Check that iPhone HEIC photos arrive as JPEG; convert in
+    the browser if not.
+  - **Phone screen recordings:** Android records MP4 (works today). iPhone records `.mov`, which is refused today.
+    Decide: accept H.264 `.mov` and check it plays in Chrome on Windows, or show a clear "how to share as MP4" tip.
+  - **Device details** box for mobile-app bugs: phone model, Android/iOS version, app name and version, Wi-Fi or
+    mobile data. Remembered per user ("My phones") so it's one tap next time.
+  - **Draft autosave** on the device, because testers switch to the app under test to take more screenshots, and the
+    phone may unload the page. Plain browser storage, cleared when the ticket is filed.
+  - Uploads over mobile data: a progress bar, a clear retry when the signal drops, and a warning before a big video
+    on mobile data. Same 50 MB limit and server-side checks as now.
+  - The screenshot markup tool (3.5b slice 3) works with a finger: pointer events, pinch to zoom, big tool buttons.
+- **Install as an app (PWA):** a web manifest and icon (the DCWD seal) so testers can **Add to Home Screen** and open
+  QA Hub full-screen like an app. On Android, **Share → QA Hub** from the gallery opens a new ticket with the
+  screenshot attached (Web Share Target; iPhone doesn't support it, so iPhone users pick from Photos). No offline
+  copy of ticket data is kept on the phone.
+- **Notifications on the phone** (optional, later): web push when a developer replies or marks a ticket fixed.
+  Android works in the browser; iPhone needs the installed app (iOS 16.4+).
+- **Test runs on the phone** (3.6a): the checklist works on a phone, but while testing an app on the same phone the
+  tester keeps switching apps. Suggest the laptop for the checklist and the phone for the app; **Fail** still files
+  from either.
+- **Phones and sensitive data:** screenshots stay in the phone's gallery after upload. Add a reminder after filing
+  ("Delete the screenshot from your gallery"), keep a "Sign out" button easy to reach on shared company phones, and
+  let an admin end a user's sessions if a phone is lost.
+
+**Done when:** on a real Android phone and an iPhone, a tester logs in, takes a screenshot of the Investigator app,
+shares or picks it into a new ticket, marks it up with a finger, adds a phone screen recording and device details,
+loses signal mid-upload and retries, files the ticket, and a developer on a laptop sees it all. Every page works at
+375 px wide with no sideways scrolling.
 
 ### Phase 4 — Test data and oracles
 `lib/oracles/*` with unit tests from the signed-off examples. Fixture builders that create referentially intact test records on staging through the ERP API or UI (customer + meter + reading; supplier + item + PR; employee + attendance). Read-only DB connector and `lib/recon` checks (balanced journals, subledger = GL, OR gaps, duplicate bills, negative stock). A Data page that lists the checks and runs them on demand.
