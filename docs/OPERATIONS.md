@@ -1,132 +1,156 @@
-# Running QA Hub on the office LAN
+# Running QA Hub
 
-QA Hub runs on one Windows machine (currently the QA laptop). Everyone else opens it in a browser at that machine's
-address. These steps are for whoever runs that machine.
+QA Hub runs on **Vercel** (the website, with HTTPS) and **Supabase** (the database and the uploaded screenshots and
+videos). Both are in Singapore. Nobody's laptop needs to stay on. The QA laptop only runs the nightly backup.
 
-## 1. First-time setup
+| Where | What is there |
+|---|---|
+| Supabase project **Quality-ai** (ap-southeast-1) | Postgres database (all tables, RLS on, no policies); Storage bucket `attachments` (private, 50 MB per file, images and videos only) |
+| Vercel project (region `sin1`) | The app, built from GitHub; the daily clean-up cron |
+| QA laptop | `.env.local`, the nightly backup in **Documents\QA Hub Backups** |
 
-1. Pull the code and install dependencies: `npm install`.
-2. Create or upgrade the database: `npx prisma migrate deploy`, then `npm run db:seed`.
-   The seed loads the module list from `data/erp-areas.json`, but only when the module directory is empty.
-3. Add these settings to `.env.local`:
+## 1. Settings (environment variables)
+
+The same names go in `.env.local` on a developer's PC and in Vercel → Project → **Settings → Environment Variables**.
+`.env.example` lists them without values. Never paste the values in chat, tickets or git.
+
+| Name | Where to find it | Secret? |
+|---|---|---|
+| `DATABASE_URL` | Supabase → **Connect → ORM** tab, the first line (port 6543, ends `?pgbouncer=true`) | yes, holds the DB password |
+| `DIRECT_URL` | Same tab, the second line (port 5432). Used only by migrations | yes |
+| `SUPABASE_URL` | Supabase → Project Settings → **Data API** (`https://<ref>.supabase.co`) | no |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → **API Keys** → the `sb_secret_…` key | **yes, full access**; never `NEXT_PUBLIC_` |
+| `CRON_SECRET` | Any random text of 32+ characters you make up (e.g. a password manager's generator) | yes |
+| `NEXT_PUBLIC_VIDEO_MAX_MB` | Optional. Leave unset on the free plan (50). Raise it only together with the bucket's file size limit | no |
+| `BACKUP_DIR` | Optional, laptop only. Default is `Documents\QA Hub Backups` | no |
+
+If the database password or the secret key ever leaks, reset it in Supabase, then update `.env.local` **and** Vercel,
+and redeploy.
+
+## 2. Working on the code (developer PC)
+
+1. `npm install`
+2. Fill `.env.local` (section 1).
+3. `npm run dev` and open http://localhost:3000. This uses the real Supabase project, so test tickets you file are
+   real. Delete them afterwards.
+
+**Changing the database** (a new column or table): edit `prisma/schema.prisma`, then
+`npx prisma migrate dev --create-only --name <what-changed>`, check the SQL (a new table also needs
+`ALTER TABLE "<Name>" ENABLE ROW LEVEL SECURITY;`), and apply it with `npm run db:deploy`. Do this **before** pushing
+code that needs the change, so the live site never runs against a database without it.
+
+## 3. Deploying
+
+- Pushing to the `master` branch on GitHub deploys to production automatically. Pushing any other branch makes a
+  **preview** deployment with its own URL, using the same database.
+- Watch a deploy in Vercel → **Deployments**. If the site breaks after a deploy, open the previous good deployment
+  and choose **Promote to Production** (instant rollback); then fix the code.
+- Vercel → **Cron Jobs** shows the daily clean-up (`/api/cron/daily`, 02:00 Manila). It deletes uploads nobody sent
+  within a day, expired sessions and old sign-in counters. Its daily query also stops the free Supabase project from
+  pausing after a week with no use.
+
+### First-time setup of a new Supabase project
+Only needed if QA Hub moves to a new project (or after a disaster, see section 4).
+1. Create the project in **Southeast Asia (Singapore)**.
+2. Storage → **New bucket** `attachments`: private, file size limit 50 MB, allowed types
+   `image/png, image/jpeg, image/webp, image/gif, video/mp4, video/webm`.
+3. Fill `.env.local` with the new project's values, then `npm run db:deploy` (creates the tables with RLS).
+4. Either load a backup (section 4), **or** start empty: `npm run db:seed` (the module list) and create the first admin:
    ```
-   UPLOAD_DIR=D:\qa-hub\uploads      # ticket screenshots and videos; put it on the 1 TB HDD
-   BACKUP_DIR=E:\qa-hub-backups      # ideally a different disk or a network share
+   npx tsx scripts/create-user.ts --admin --name "Your nickname" --email you@davao-water.gov.ph
    ```
-   `UPLOAD_DIR` is required for tickets. Without it, filing a ticket with images shows an error. The folder is created
-   on the first upload. Never point it inside the repo or `public/`.
-   Videos can be up to 150 MB each, so keep an eye on free space on that drive. A video that was uploaded but never
-   sent with a ticket or reply is deleted after 24 hours.
-4. Create the first admin. This prints a one-time temporary password:
-   ```
-   npm run user:create -- --admin --name "Your nickname" --email you@davao-water.gov.ph
-   ```
-   Sign in, choose your own password, then add everyone else under **Admin → Users**.
-
-## 2. Start the server
-
-```
-npm run build
-npm run serve          # listens on port 3000 on every network interface
-```
-
-- Use `serve` (production mode) for the team. `npm run dev` only listens on this machine.
-- `npm run lan:dev` is for testing changes from another device. It needs `LAN_ORIGINS=<this machine's IP>` in `.env.local`.
-- To restart after pulling new code: stop the server, then run `npm install`, `npx prisma migrate deploy`, `npm run build` and `npm run serve`.
-
-## 3a. Pilot with a few selected testers first
-
-The safest way to pilot is to combine two controls: only create accounts for the pilot testers, and only open the port
-to their PCs.
-
-1. **Try it alone first, with no network changes.** Create a test QA account and a test developer account. Sign in as
-   one in a normal browser window and as the other in an InPrivate/Incognito window, or in a second browser. This
-   lets you play both sides of a ticket on one laptop.
-2. **Then open the port to the pilot PCs only.** Ask each tester for their IP address (`ipconfig` on their PC), then
-   run this in an admin PowerShell:
-   ```
-   New-NetFirewallRule -DisplayName "QA Hub pilot (3000)" -Direction Inbound -Protocol TCP -LocalPort 3000 -Action Allow -Profile Domain -RemoteAddress 10.100.154.20,10.100.154.31
-   ```
-   - Replace the example addresses with theirs. Every other PC is still refused.
-   - To add someone later: `Set-NetFirewallRule -DisplayName "QA Hub pilot (3000)" -RemoteAddress <full new list>`.
-   - To end the pilot: `Remove-NetFirewallRule -DisplayName "QA Hub pilot (3000)"`.
-   - Their IPs come from DHCP too, so if a tester suddenly can't connect, check whether their address changed.
-3. Don't use tunnelling services such as ngrok, Cloudflare Tunnel or Tailscale Funnel to skip the firewall. They put
-   ticket data, including customer details in screenshots, on an outside service.
-
-## 3b. Open it to the whole office (after the pilot)
-
-1. **Windows Firewall:** allow port 3000 on the office network only.
-   - DCWD PCs join the `dcwd.gov.ph` domain, so Windows treats the office network as **Domain**, not Private.
-   - Run this in an **admin** PowerShell:
-     ```
-     New-NetFirewallRule -DisplayName "QA Hub (3000)" -Direction Inbound -Protocol TCP -LocalPort 3000 -Action Allow -Profile Domain
-     ```
-   - Check the profile first with `Get-NetConnectionProfile`. The rule must match its `NetworkCategory`; never use `-Profile Any`.
-   - On domain PCs, IT's Group Policy can override local firewall rules. If other PCs still can't connect, ask IT to allow inbound TCP 3000 to this machine.
-2. **A fixed address:** ask IT to reserve this machine's IP address in DHCP, or to give it a DNS name such as
-   `qa-hub.dcwd.local`. Otherwise the address changes and people's bookmarks break.
-3. Share the address with the team, e.g. `http://192.168.1.25:3000`.
-4. **Never** forward the port on the router or expose the app to the internet.
+   It prints a one-time temporary password. Run it yourself, in your own terminal.
+5. Update the variables in Vercel and redeploy.
 
 ## 4. Backups
 
+Supabase's free plan has **no backups**, so the QA laptop makes them:
+
 ```
-npm run backup                 # DB snapshot + new uploads → BACKUP_DIR, keeps the last 14 snapshots
+npm run backup
 ```
 
-To run it every night, open **Task Scheduler**, choose **Create Basic Task** and set it to run daily at 12:30 AM. The action is:
+It writes to **Documents\QA Hub Backups** (or `BACKUP_DIR`):
+- `Database\QA Hub database <date> <time>.json`: every account, ticket, reply, timeline entry, attachment record,
+  module, DAR and setting. The last 14 are kept.
+- `Files\`: every screenshot and video, in the same `YYYY\MM\` folders as in Storage. Only new files are downloaded.
+- `READ ME.txt`: what the folders are.
 
+The backup holds ticket data (customer names, account numbers, amounts). Keep it on the laptop or an office drive;
+never upload it anywhere.
+
+**Every night, with Task Scheduler:** open Task Scheduler → **Create Basic Task** → name *QA Hub backup* → **Daily**,
+12:30 AM → **Start a program**:
 - **Program:** `cmd.exe`
-- **Arguments:** `/c cd /d "C:\VS Code\quality-ai" && npm run backup >> backup.log 2>&1`
+- **Arguments:** `/c cd /d "C:\Users\VYKE\Documents\VS Code Projects\Quality-ai" && npm run backup >> "%USERPROFILE%\Documents\QA Hub Backups\backup.log" 2>&1`
 
-To restore:
-1. Stop the server.
-2. Copy a snapshot from `BACKUP_DIR\db\` over `prisma\dev.db`.
-3. Copy `BACKUP_DIR\uploads\` back to `UPLOAD_DIR`.
-4. Start the server again.
+Then open the task's **Properties → Settings** and tick *Run task as soon as possible after a scheduled start is
+missed*, so a night with the laptop off is caught up the next morning. Check `backup.log` now and then.
+
+**Restore** (into a new, empty Supabase project only; it refuses a database that has data):
+1. Do steps 1–3 of *First-time setup* (section 3), but **not** the seed.
+2. Run, with the backup you want:
+   ```
+   npx tsx scripts/restore.ts --file "C:\Users\VYKE\Documents\QA Hub Backups\Database\QA Hub database 2026-10-31 0030.json"
+   ```
+   It loads the database in one go (all or nothing), then uploads the files from the `Files` folder next to it.
+3. Update Vercel's variables, redeploy. Everyone signs in again; passwords are unchanged.
 
 ## 5. Accounts
 
 - **Office emails only:** every account must use an `@davao-water.gov.ph` address.
 - **Can't remember an account's email?** Admin → Users lists every account with its email, role and status.
   Passwords are never stored in readable form, so nobody can look one up: use the key icon to reset it.
-- **Sign-up requests:** people can request an account from the sign-in page as a QA tester or developer.
+- **Sign-up requests:** people can request an account from the sign-in page as a QA tester or developer. The sign-in
+  page is on the internet now, so the admin approval is the gate.
   - Requests wait in **Admin → Users → Waiting for approval**, and the dashboard shows how many are waiting.
   - Approve only people you know are on the team, because approved users can see every ticket.
   - **Approve** shows a one-time temporary password. Give it to the person in person or by office chat, together
     with their email. They choose their own password at first sign-in. If you lose it, use the key icon (Reset password).
-  - Reject deletes the request.
-  - During the pilot, the firewall rule (section 3a) still limits who can even reach the sign-up page.
-
-- **Forgotten password:** an admin opens Admin → Users → the key icon to reset it. The user gets a new temporary password and is signed out everywhere.
-- **Someone leaves:** edit the user and untick *Account is active*. They are signed out at once, and their tickets and comments stay.
+  - Reject deletes the request. At most 20 sign-up requests per hour are accepted.
+- **Forgotten password:** an admin opens Admin → Users → the key icon to reset it. The user gets a new temporary
+  password and is signed out everywhere.
+- **The only admin is locked out:** on a PC with `.env.local`, run
+  `npx tsx scripts/reset-password.ts --email you@davao-water.gov.ph`. It prints a temporary password once.
+- **Someone leaves:** edit the user and untick *Account is active*. They are signed out at once, and their tickets and
+  comments stay.
 - **Failed sign-ins:** after 5 failed sign-ins in 15 minutes, that email is locked out for the rest of the window.
 - **Lock-out protection:** at least one active admin must always remain. The app refuses changes that would remove the last one.
 
-## 5a. Daily Accomplishment Reports (My DAR)
+## 6. Daily Accomplishment Reports (My DAR)
 
 - **Set up once (admin):**
-  - **Admin → DAR template:** department, unit, default position, the Confirmed by and Noted by signatories, and the core and support duties with their MFOs.
+  - **Admin → DAR template:** department, unit, default position, the Confirmed by and Noted by signatories, and the
+    core and support duties with their MFOs.
   - Tick **Fill this row's days from my ticket work** on the rows that should get the day entries.
-- **Module Codes:** set them in **Team & modules** (e.g. `BCA`, `CRM`, `HR-RSP`, `HR201`). The DAR writes a day as
+- **Module codes:** set them in **Team & modules** (e.g. `BCA`, `CRM`, `HR-RSP`, `HR201`). The DAR writes a day as
   "QA - BCA / CRM" from those codes. A sub-module with no code uses its module's code, then its name.
 - **Each QA tester:**
   - Opens **My DAR** and adds their full name once under **My details**, since the account only holds a nickname.
   - Picks the period (1–15 or 16 to the end of the month) and checks the days.
   - A day with no ticket work is **REST DAY**. They type over it for work done outside QA Hub, such as HR201 or encoding.
-  - Then saves and downloads **Excel** or **PDF**.
+  - Then saves and either downloads **Excel** or uses **Print** (choose *Save as PDF* in the print dialog for a PDF).
 - **Privacy:** each tester sees only their own DARs. Admins and developers can't open them.
-- **PDF:** made with Playwright's Chromium on this machine. If it says PDF isn't available, run `npx playwright install chromium` once. Excel always works.
 
-## 6. Known limits and next steps
+## 7. Free-plan limits and when to upgrade
 
-- **Plain HTTP:** passwords and session cookies travel unencrypted on the office network. This is acceptable on a
-  trusted LAN for now. The follow-up is HTTPS, using a certificate from IT or a reverse proxy (e.g. Caddy) in front of
-  port 3000. Once that's in place, set `COOKIE_SECURE=1` in `.env.local`.
-- **One machine:** if the laptop is off or asleep, nobody can reach QA Hub. Turn off sleep while plugged in, or move it
-  to an always-on PC later. Moving it means copying the repo, `.env.local`, `prisma\dev.db` and `UPLOAD_DIR`.
-- **In-browser screen recording** needs HTTPS. Until then, QA records with **Snipping Tool (Win+Shift+R)** or Xbox Game Bar
-  (Win+Alt+R) and uploads the MP4 with **Add video** (MP4 or WebM, up to 3 min / 150 MB). iPhone `.mov` files are refused;
-  share them as MP4 ("Most Compatible") instead.
+| Limit (free) | What happens | Upgrade |
+|---|---|---|
+| Storage 1 GB | Uploads start failing. At 50 MB a video, about 20 long videos fill it | Supabase Pro |
+| 50 MB per file | Longer or sharper videos are refused before upload | Pro, then raise the bucket limit and `NEXT_PUBLIC_VIDEO_MAX_MB` |
+| Egress (downloads) 5 GB / month | Watching videos uses it up; Supabase warns by email | Pro |
+| Database 500 MB | Text only, so this lasts a long time | Pro |
+| No Supabase backups | The laptop's nightly backup is the only copy | Pro adds daily backups |
+| Vercel Hobby is for non-commercial use | Ask IT whether this counts; otherwise Vercel Pro | Vercel Pro |
+| One cron run per day | Fine for the clean-up | — |
+
+Check usage in Supabase → **Organization → Usage** about once a month.
+
+## 8. Good to know
+
+- **Videos:** QA records with **Snipping Tool (Win+Shift+R)** or Xbox Game Bar (Win+Alt+R) and uploads the MP4 with
+  **Add video** (MP4 or WebM, up to 3 min / 50 MB). iPhone `.mov` files are refused; share them as MP4 ("Most
+  Compatible") instead.
 - **Ticket data is sensitive** (customer names, account numbers, amounts) and is never sent to any AI model.
+- **Supabase's own API** (the publishable key) can't read anything: every table has RLS on with no policies, and the
+  bucket is private. Only QA Hub's server, with the secret key, reaches the data.

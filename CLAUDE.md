@@ -1,74 +1,57 @@
 # QA Hub — project rules for Claude Code
 
-**Current focus: the QA ticket hub.** 5 QA testers and the developers file and discuss ERP bugs, suggestions and
-improvements here (marked-up screenshots, videos, a conversation per ticket, and a who's-who directory of module
-owners) instead of Messenger. It runs on the office LAN behind login. Operations are in `docs/OPERATIONS.md`.
+**QA Hub is the ticket hub for the DCWD ERP.** 5 QA testers and the developers file and discuss ERP bugs, suggestions
+and improvements here (marked-up screenshots, videos, a conversation per ticket, and a who's-who directory of module
+owners) instead of Messenger. QA testers also make their Daily Accomplishment Report (My DAR) here.
 
-Behind an admin toggle sits the original **AI QA workbench** for testing our **in-house web ERP** (Billing & Collection,
-Procurement & Inventory, Finance & Accounting, HR & Payroll) through its UI, API and read-only DB. It is paused for a
-major revision. Both run on one Windows 11 laptop
-(i5-9300H, 16 GB RAM, RTX 2060 6 GB, 256 GB SSD + 1 TB HDD). The full roadmap is in `docs/PLAN.md`.
-Domain terms are in `docs/glossary.md` and role permissions in `docs/roles.md`.
+It runs on **Vercel** (hosting, HTTPS, region `sin1`) with **Supabase** (Postgres database and Storage for files,
+region `ap-southeast-1`), behind QA Hub's own login. Operations are in `docs/OPERATIONS.md`, the roadmap in
+`docs/PLAN.md`, domain terms in `docs/glossary.md`.
 Build **one phase at a time**, start in plan mode, and stop for review at the end of each phase.
 
 ## Stack (do not swap without asking)
-- Next.js 16 App Router, React 19, TypeScript strict, Tailwind 4. No `src/` dir; code lives in `app/` and `lib/`.
-- AI: Vercel AI SDK (`ai`). Cloud = `@ai-sdk/anthropic`. Local = Ollama through `@ai-sdk/openai-compatible`
-  at `http://127.0.0.1:11434/v1`. Check the current docs before using any SDK API, since these packages change fast.
-- Validation: `zod`. Use structured output (`generateObject`) for anything the UI parses.
-- DB: Prisma + SQLite (`prisma/dev.db`). Avoid native modules that need Visual Studio build tools.
-- Test execution: `@playwright/test`, run as a **child process** with the JSON reporter, never in the request thread.
-- Package manager: npm.
+- Next.js 16 App Router (Cache Components on), React 19, TypeScript strict, Tailwind 4. No `src/` dir; code lives in
+  `app/` and `lib/`.
+- DB: Prisma 7 + Supabase Postgres through `@prisma/adapter-pg`. Every client comes from `lib/db-client.ts`.
+  - `DATABASE_URL`: the transaction pooler (port 6543, `?pgbouncer=true`), used by the app and scripts.
+  - `DIRECT_URL`: the session pooler (port 5432), used by `prisma migrate` (`prisma.config.ts`).
+  - Never run `npx prisma init` or paste the Supabase dashboard's Prisma snippets; they overwrite this setup.
+- Files: a private Supabase Storage bucket (`attachments`), reached only with the service-role key on the server
+  (`lib/uploads/storage.ts`). Browsers upload straight to it with a signed URL, because Vercel caps request bodies at 4.5 MB.
+- Tests: Vitest on PGlite (`tests/unit/helpers/test-db.ts`), an in-memory Postgres; tests never touch Supabase.
+- Validation: `zod`. Package manager: npm.
 
 ## Hard rules
-1. **Hybrid privacy routing.** Every LLM call goes through `lib/ai/router.ts`. Never import a provider directly in
-   feature code. Data flagged `sensitive` (customer names, account numbers, addresses, billing amounts, credentials,
-   raw DB rows, production logs) goes to the **local** model only, or through `lib/ai/redact.ts` before it goes to the cloud.
-   Log every cloud call (task, model, tokens, redaction applied) to the `AuditLog` table.
-2. **Never test production.** Targets come from the `Environment` table, which has an allowlist of base URLs.
-   The runner and the explorer agent must refuse any URL outside the selected environment's allowlist.
-3. Secrets live only in `.env.local` (git-ignored). Never hard-code or log them.
-4. Long jobs (test runs, explorations) are queued. They save progress to the DB, and the UI polls or streams progress.
-5. All server code that spawns processes or touches the filesystem uses the Node runtime (`export const runtime = "nodejs"`).
-6. **Office LAN only, behind login.** The app serves the QA team and developers on the office network
-   (`npm run build && npm run serve`), never the internet. Every page, Server Action and route handler checks the
-   session through `lib/auth/session.ts` (`requireUser`, `requireAction`, `getCurrentUser`). `proxy.ts` is only an
-   optimistic redirect. Permissions live in one matrix in `lib/auth/permissions.ts`.
-7. Keep generated Playwright specs in `tests/generated/` and run artifacts (screenshots, traces) in `runs/<runId>/`.
-   Both are git-ignored. AI-generated specs move into `tests/` only after human approval.
-8. **Money is checked by code, not AI.** Amounts, quantities and balances are asserted with the oracles in
-   `lib/oracles/` and the recon queries in `lib/recon/`. Use `decimal.js` and never floating point.
-   Tariff, tax and contribution rates are data files and are never hard-coded.
-9. ERP DB access is **read-only** (a dedicated staging user). Never write to the ERP DB directly. Create test data through
-   the ERP UI or API with a `QA-` prefix.
-10. The healer may change locators and waits only, never assertions or expected values.
-11. The explorer agent's denylist (delete, post, approve, pay, close period) stays on unless the user enables an action for a session.
-12. **Ticket data never goes to an LLM.** Ticket text, screenshots and videos show customer names, account numbers and
-    amounts. A future AI feature on tickets must go through `lib/ai/router.ts` and use the local model only.
-13. **Uploads live outside the repo** in `UPLOAD_DIR` (on the HDD). They are served only through an auth-checked route,
-    never from `public/`, and stored under generated names, never the uploader's file name.
-14. The AI workbench (`app/(main)/(ai)/`) is hidden unless an admin turns it on in Admin → Workspace. Its pages, actions
-    and routes call `requireAiWorkbench()` / `aiWorkbenchAllowed()` from `lib/workspace.ts`.
-
-## Model routing defaults
-| Task | Model |
-|---|---|
-| Sensitive data, quick classification, redaction checks | local (`OLLAMA_MODEL`, a 7–8B coder model in Q4) |
-| Test case generation from non-sensitive requirements | cloud `claude-sonnet-5-5` |
-| Playwright/API test code generation, code review | cloud `claude-sonnet-5-5` |
-| Exploratory agent (tool use, multi-step) | cloud `claude-sonnet-5-5`, with a step budget |
-| Cheap bulk tasks (summaries, dedupe bugs) | cloud `claude-haiku-5-5` or local |
-
-The user can override the model per task in Settings. If Ollama is down, show a clear error and **never** fall back
-to the cloud for sensitive data.
+1. **Ticket data never goes to an LLM.** Ticket text, screenshots and videos show customer names, account numbers and
+   amounts. No AI feature reads tickets unless the user approves a local-only design first.
+2. **Behind login.** Every page, Server Action and route handler checks the session through `lib/auth/session.ts`
+   (`requireUser`, `requireAction`, `getCurrentUser`). `proxy.ts` is only an optimistic redirect. Permissions live in
+   one matrix in `lib/auth/permissions.ts`. Accounts are QA Hub's own (not Supabase Auth), only `@davao-water.gov.ph`
+   emails, and sign-ups wait for an admin's approval.
+3. **Secrets live only in `.env.local`** (git-ignored) and in Vercel's project settings. Never hard-code, log or paste
+   them in chat. `SUPABASE_SERVICE_ROLE_KEY` is server-only and never gets a `NEXT_PUBLIC_` prefix.
+4. **Uploads** go to the private bucket under generated names (`YYYY/MM/<random>.<ext>`), never the uploader's file
+   name. Their real type, size and video length are checked after upload. They are served only through
+   `app/(main)/files/[id]`, which checks the session and ticket scope and then redirects to a short-lived signed URL.
+5. Server code that touches Node APIs uses the Node.js runtime (with Cache Components that is the default; don't add a
+   `runtime` export).
+6. **RLS stays on** for every table, with no policies, so Supabase's public API can read nothing. Only Prisma (the
+   table owner) reaches the data. A new table's migration must enable RLS too.
+7. **Free-tier limits** (until the plan is upgraded): 50 MB per file (`NEXT_PUBLIC_VIDEO_MAX_MB`), 1 GB of Storage,
+   500 MB of database, one Vercel cron run per day. Supabase Free has no backups: `npm run backup` runs nightly on the
+   QA laptop.
 
 ## Conventions
-- `lib/` holds framework-free logic (ai, auth, areas, tickets, runner, db, redact). `app/` holds UI and route handlers only.
-- Route groups: `app/login` (no chrome), `app/(main)` (sidebar; tickets, team, admin), `app/(main)/(ai)` (AI workbench).
+- `lib/` holds framework-free logic (auth, areas, tickets, uploads, dar, backup, cron). `app/` holds UI and route
+  handlers only.
+- Route groups: `app/login` (no chrome), `app/(main)` (sidebar; tickets, team, DAR, admin).
 - With Cache Components on, read the session only inside a `<Suspense>` boundary. Put a page's header inside its guarded
   component when the whole page is role-restricted.
-- Server Actions for form mutations. Route handlers for streaming and job endpoints.
-- Write a Vitest unit test for every `lib/` module, especially `redact.ts` and the URL allowlist guard.
-- Commands: `npm run dev`, `npm run lint`, `npx tsc --noEmit`, `npx vitest run`, `npx playwright test`,
-  `npm run user:create -- --admin --name "…" --email …`, `npm run serve` (LAN), `npm run backup`.
-  Before saying a phase is done, run lint, the type check and the tests.
+- Server Actions for form mutations. Route handlers for uploads, file redirects, exports and the cron job.
+- The daily clean-up is `GET /api/cron/daily` (`vercel.json`), protected by `CRON_SECRET`.
+- Write a Vitest unit test for every `lib/` module.
+- Commands: `npm run dev`, `npm run lint`, `npx tsc --noEmit`, `npx vitest run`, `npm run db:deploy` (apply
+  migrations), `npm run backup`, `npm run restore`.
+  - In PowerShell, `npm run x -- --flag` loses the `--`, so run scripts with flags directly:
+    `npx tsx scripts/create-user.ts --admin --name "…" --email …`, `npx tsx scripts/reset-password.ts --email …`.
+  - Before saying a phase is done, run lint, the type check and the tests.

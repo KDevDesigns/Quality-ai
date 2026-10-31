@@ -50,3 +50,6 @@ next-env.d.ts
 /prisma/*.db-wal
 /prisma/*.db-shm
 /lib/generated/
+
+# but share the list of setting names
+!.env.example

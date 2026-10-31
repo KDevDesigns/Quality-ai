@@ -1,5 +1,16 @@
 # Changelog
 
+## QA Hub moves to Vercel + Supabase (2026-10-31)
+
+- **Hosting:** QA Hub now runs on Vercel (HTTPS, region `sin1`) with a Supabase database and Storage in Singapore, so it no longer depends on the QA laptop being on. IT/DPO approved putting ticket data in the cloud.
+- **Removed:** the paused AI workbench (pages, `lib/ai` and the other workbench code, its tables and packages), the DAR **PDF** download (Print and Excel stay; *Save as PDF* in the print dialog still makes a PDF), the LAN scripts and the old SQLite database (`prisma/dev.db`). We started fresh in Supabase; no old data was copied.
+- **Database:** Postgres through Prisma's `adapter-pg` (`lib/db-client.ts`). Row Level Security is on for every table with no policies, so Supabase's public API reads nothing. Sign-in limits are counted in the database (`RateLimitHit`), because serverless functions share no memory. Tests run on PGlite, an in-memory Postgres.
+- **Uploads:** the browser uploads straight to the private `attachments` bucket with a signed URL (Vercel caps requests at 4.5 MB). The server then checks the real type, size and video length before a ticket can use the file. Files open through `/files/[id]`, which checks access and redirects to a 1-hour signed URL. Videos: up to 3 min / **50 MB** on the free plan.
+- **Daily clean-up:** `/api/cron/daily` (02:00 Manila, protected by `CRON_SECRET`) removes unsent uploads, expired sessions and old sign-in counters.
+- **Backups:** `npm run backup` now pulls from Supabase into **Documents\QA Hub Backups** (`Database\QA Hub database <date> <time>.json`, last 14 kept, plus `Files\`). New `npm run restore` loads one into an empty project. Logic in `lib/backup.ts`, with a round-trip test.
+- **Also:** an image gallery on tickets (← → keys and buttons across every image on the ticket), the sign-in page's brand panel in dark mode, a sidebar fix for narrow windows, and `scripts/reset-password.ts` for a locked-out admin.
+- **Docs:** `CLAUDE.md` rules rewritten for the cloud, `docs/OPERATIONS.md` rewritten, `.env.example` added.
+
 ## DAR on long bond paper, in the form's own colours (2026-10-29)
 
 - **8.5 × 13 in (long bond), landscape, one page:** Print, the PDF and the Excel download all use the office's long bond paper.

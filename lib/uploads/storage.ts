@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { isStoredName, UploadError } from "./files";
 import type { ReadAt } from "./video-meta";
 
-// The private Supabase Storage bucket that holds ticket attachments (CLAUDE.md rule 13). Only the server talks to it,
+// The private Supabase Storage bucket that holds ticket attachments (CLAUDE.md rule 4). Only the server talks to it,
 // with the service-role key; browsers get one signed URL at a time, after the session and ticket checks.
 
 export const BUCKET = process.env.SUPABASE_BUCKET || "attachments";

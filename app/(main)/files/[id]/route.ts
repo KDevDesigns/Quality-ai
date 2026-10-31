@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { ticketStore } from "@/lib/tickets/store";
 import { signedReadUrl } from "@/lib/uploads/storage";
 
-// Ticket attachments are only ever reached through here, after a session and ticket-scope check (CLAUDE.md rule 13).
+// Ticket attachments are only ever reached through here, after a session and ticket-scope check (CLAUDE.md rule 4).
 // The answer is a redirect to a short-lived signed Storage URL, so files never pass through a Vercel function, and
 // Storage answers the Range requests that let a video be scrubbed.
 

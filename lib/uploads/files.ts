@@ -1,4 +1,4 @@
-// Ticket attachments (CLAUDE.md rule 13): stored in the private Storage bucket under generated names only.
+// Ticket attachments (CLAUDE.md rule 4): stored in the private Storage bucket under generated names only.
 // The browser uploads straight to Storage; checkUploaded then decides the type from the file's first bytes, never from
 // the browser's MIME type or the file name, and deletes anything that isn't what it claimed to be.
 
