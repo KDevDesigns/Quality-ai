@@ -23,8 +23,9 @@
 - **Sized for big screens:** the whole interface is in rem and grows with the screen past 1920 px wide, so a
   2560 × 1440 monitor shows it at the same proportions as 1920 × 1080 (up to twice the size on 4K). Phones and laptops
   are unchanged. The sign-in and preloader waves now loop without a gap at any width.
-- **A ticket's conversation scrolls in its own pane** (opened at the newest message, the reply box right below), so a
-  long conversation no longer stretches the whole page.
+- **A ticket's conversation keeps its look but stops growing:** past a set height the messages scroll on their own,
+  opened at the newest one like Messenger, so the reply box, Add images and Send stay in place. The **Activity log**
+  works the same way: oldest at the top, newest at the bottom, opened at the newest.
 - **Reassign:** on a ticket, Developer shows who has it and a **Reassign** button: pick another developer and, if you
   like, a reason ("Ben is on leave"). The timeline reads "reassigned it from Ben to Cy" with the reason, and the new
   developer's notification includes it (when previews are on). This also fixes the developer picker, which had

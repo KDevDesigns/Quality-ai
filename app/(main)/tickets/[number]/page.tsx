@@ -143,12 +143,13 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
 
             <section aria-label="Conversation and history" className="grid gap-3">
               <h2 className="text-xs font-semibold tracking-[0.06em] text-ink2 uppercase">Conversation</h2>
-              {/* A long conversation scrolls in its own pane, opened at the newest message, with the reply box right below. */}
+              {/* Messenger-style: past a set height the messages scroll on their own, opened at the newest one, so the
+                  reply box below never moves down. */}
               <div
                 id="ticket-thread"
                 tabIndex={0}
                 aria-label="Messages and history"
-                className="max-h-[min(62svh,40rem)] overflow-y-auto overscroll-contain rounded-xl border border-line2 bg-surface2 p-3 outline-none [scrollbar-gutter:stable] focus-visible:ring-3 focus-visible:ring-acc/20 sm:p-4"
+                className="-mr-2 max-h-[min(55svh,36rem)] overflow-y-auto overscroll-contain pr-2 outline-none [scrollbar-gutter:stable] focus-visible:ring-3 focus-visible:ring-acc/20"
               >
                 <Thread t={t} meId={me.id} now={now} />
               </div>
@@ -212,8 +213,9 @@ function ActivityLog({ entries }: { entries: LogEntry[] }) {
           <HistoryIcon className="size-4 text-acc" aria-hidden /> Activity log
         </CardTitle>
       </CardHeader>
-      <ol className="max-h-[26.25rem] overflow-y-auto" aria-label="Activity log, newest first">
-        {[...entries].reverse().map((e) => {
+      {/* Like the conversation: oldest at the top, newest at the bottom, opened scrolled to the newest. */}
+      <ol id="activity-log" className="max-h-[26.25rem] overflow-y-auto overscroll-contain" aria-label="Activity log, newest last">
+        {entries.map((e) => {
           const Icon = LOG_ICON[e.kind];
           return (
             <li key={`${e.kind}-${e.id}`} className="flex gap-2.5 border-t border-line2 px-5 py-2.5 first:border-t-0">
@@ -231,6 +233,7 @@ function ActivityLog({ entries }: { entries: LogEntry[] }) {
           );
         })}
       </ol>
+      <ScrollToLatest targetId="activity-log" version={`${entries.length}`} />
     </Card>
   );
 }
