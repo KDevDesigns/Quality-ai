@@ -9,6 +9,7 @@
 - **Forgot password:** a **Forgot your password?** link on the sign-in page sends a request to **Admin → Users → Password reset requests** (no email is sent). The admin resets it there and hands over the temporary password, or dismisses it. Limited to 5 per email and 30 in total per hour. Admins also see a count on **Users** in the sidebar and on the dashboard.
 - **Sign-up:** an email that already has an account, or a request waiting for approval, now says so instead of pretending to send a new request.
 - **Admin's own DAR:** admins have **My DAR** too, with buttons to switch between it and the DAR template. Each person still sees only their own DAR.
+- **Dashboard per role:** developers and QA testers see only their own work: their three ticket counts, their tickets and **My modules** (full width). The team counts and **Not in any module** are now for admins only.
 - **Replies send on Enter:** in a ticket's reply box, Enter sends and Shift+Enter starts a new line (it was Ctrl+Enter). Enter waits while an image or video is still uploading.
 
 ## QA Hub moves to Vercel + Supabase (2026-10-31)

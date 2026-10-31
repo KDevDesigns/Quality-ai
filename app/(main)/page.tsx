@@ -43,26 +43,17 @@ async function Overview() {
   await connection();
   const me = await requireUser();
   // Ticket numbers cover only what this person sees: their own tickets (QA), their assignments (DEV), or all (admin).
-  const [counts, recent, qa, devs, modules, subModules, unassigned, myAreas] = await Promise.all([
+  // Team numbers and people without a module are for whoever manages the directory; everyone else sees only their own work.
+  const manager = can(me, "areas.manage");
+  const [counts, recent, myAreas] = await Promise.all([
     tickets.counts(me),
     tickets.recent(me),
-    db.user.count({ where: { active: true, role: "QA" } }),
-    db.user.count({ where: { active: true, role: "DEV" } }),
-    db.erpArea.count({ where: { parentId: null, active: true } }),
-    db.erpArea.count({ where: { parentId: { not: null }, active: true } }),
-    db.user.findMany({ where: { active: true, role: { in: ["DEV", "QA"] }, areas: { none: {} } }, orderBy: { name: "asc" }, select: { id: true, name: true, role: true } }),
     db.areaMember.findMany({
       where: { userId: me.id },
       select: { isLead: true, area: { select: { name: true, parent: { select: { name: true } } } } },
     }),
   ]);
-
   const ticketStats = TICKET_STATS[me.role](counts);
-  const teamStats = [
-    { label: "QA testers", value: qa, href: "/team", icon: FlaskConicalIcon },
-    { label: "Developers", value: devs, href: "/team", icon: CodeIcon },
-    { label: "Modules", value: modules, href: "/team", icon: BoxesIcon, note: `${subModules} sub-modules` },
-  ];
 
   const { signUps, resets } = can(me, "users.manage") ? await auth.adminRequests() : { signUps: 0, resets: 0 };
   const unread = await notifications.unreadIds(me, recent.map((t) => t.id));
@@ -83,13 +74,13 @@ async function Overview() {
       ) : null}
       <StatRow stats={ticketStats} />
       <RecentTickets rows={recent} role={me.role} unread={unread} />
-      <StatRow stats={teamStats} />
+      {manager ? <TeamStats /> : null}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className={cn("grid gap-6", manager && "lg:grid-cols-2")}>
         <Card>
           <CardHeader>
             <CardTitle>My modules</CardTitle>
-            <CardDescription>Where you’ll receive or file tickets</CardDescription>
+            <CardDescription>{MODULES_TEXT[me.role]}</CardDescription>
             <CardAction>
               <Link href={`/team?person=${me.id}`} className="text-sm font-medium text-acc hover:underline">View in directory</Link>
             </CardAction>
@@ -108,33 +99,68 @@ async function Overview() {
           )}
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserXIcon className="size-4 text-warn-ink" aria-hidden /> Not in any module
-            </CardTitle>
-            <CardDescription>Developers and QA with no module, so nobody knows to send them tickets</CardDescription>
-            {can(me, "areas.manage") ? (
-              <CardAction>
-                <Link href="/team" className="text-sm font-medium text-acc hover:underline">Assign</Link>
-              </CardAction>
-            ) : null}
-          </CardHeader>
-          {unassigned.length === 0 ? (
-            <CardContent><p className="text-sm text-muted-foreground">Everyone has a module.</p></CardContent>
-          ) : (
-            <ul>
-              {unassigned.map((u) => (
-                <li key={u.id} className="flex items-center justify-between gap-3 border-t border-line2 px-5 py-3 text-[14.5px] first:border-t-0">
-                  <span className="truncate font-medium">{u.name}</span>
-                  <span className="text-[12.5px] text-muted-foreground">{ROLE_LABELS[u.role as Role]}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
+        {manager ? <NotInAnyModule /> : null}
       </div>
     </>
+  );
+}
+
+const MODULES_TEXT: Record<Role, string> = {
+  ADMIN: "Where you’ll receive or file tickets",
+  QA: "The modules you test and file tickets for",
+  DEV: "The modules you fix tickets for",
+};
+
+/** Admin only: how big the team and the module directory are. */
+async function TeamStats() {
+  const [qa, devs, modules, subModules] = await Promise.all([
+    db.user.count({ where: { active: true, role: "QA" } }),
+    db.user.count({ where: { active: true, role: "DEV" } }),
+    db.erpArea.count({ where: { parentId: null, active: true } }),
+    db.erpArea.count({ where: { parentId: { not: null }, active: true } }),
+  ]);
+  return (
+    <StatRow
+      stats={[
+        { label: "QA testers", value: qa, href: "/team", icon: FlaskConicalIcon },
+        { label: "Developers", value: devs, href: "/team", icon: CodeIcon },
+        { label: "Modules", value: modules, href: "/team", icon: BoxesIcon, note: `${subModules} sub-modules` },
+      ]}
+    />
+  );
+}
+
+/** Admin only: people nobody can send tickets to yet, with a link to fix it. */
+async function NotInAnyModule() {
+  const unassigned = await db.user.findMany({
+    where: { active: true, role: { in: ["DEV", "QA"] }, areas: { none: {} } },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, role: true },
+  });
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <UserXIcon className="size-4 text-warn-ink" aria-hidden /> Not in any module
+        </CardTitle>
+        <CardDescription>Developers and QA with no module, so nobody knows to send them tickets</CardDescription>
+        <CardAction>
+          <Link href="/team" className="text-sm font-medium text-acc hover:underline">Assign</Link>
+        </CardAction>
+      </CardHeader>
+      {unassigned.length === 0 ? (
+        <CardContent><p className="text-sm text-muted-foreground">Everyone has a module.</p></CardContent>
+      ) : (
+        <ul>
+          {unassigned.map((u) => (
+            <li key={u.id} className="flex items-center justify-between gap-3 border-t border-line2 px-5 py-3 text-[14.5px] first:border-t-0">
+              <span className="truncate font-medium">{u.name}</span>
+              <span className="text-[12.5px] text-muted-foreground">{ROLE_LABELS[u.role as Role]}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
   );
 }
 
