@@ -271,7 +271,7 @@ Install Prisma, zod, vitest, shadcn/ui and decimal.js. Create the schema above a
 Requirement input (paste, or upload .md/.docx/.pdf) with a sensitive toggle → AI drafts test cases (`TestCaseDraft[]`) with technique, priority, process link and open questions → editable grid → approve. **Traceability matrix** (requirement → cases → latest result → defects). Import the §6.4 seed catalog. Export to XLSX/CSV.
 **Done when:** one billing requirement produces at least 15 labeled cases including boundaries and negatives, the traceability matrix renders, and the export opens in Excel.
 
-### Phase 3.5 — QA Ticket Hub ★ current focus
+### Phase 3.5 — QA Ticket Hub ✅
 QA and developers stop using Messenger for bugs. Runs behind login, now on Vercel + Supabase.
 - **3.5a — Foundation:**
   - Local accounts (Admin / QA / Developer) with scrypt password hashing and DB sessions, using a hashed token in an httpOnly cookie.
@@ -284,9 +284,9 @@ QA and developers stop using Messenger for bugs. Runs behind login, now on Verce
      (plus `REOPENED`, `NEED_INFO`, `REJECTED`, `DUPLICATE`, `WONT_FIX`). QA picks the developer. A conversation
      thread with image attachments (paste, pick or drop) and a timeline of every change.
   2. ✅ Videos up to 3 min / 50 MB (free plan) in Supabase Storage, served through an auth-checked route.
-  3. A built-in screenshot markup tool (box, arrow, pen, text, blur).
+  3. ✅ A built-in screenshot markup tool (box, arrow, pen, text) on attached and pasted images.
   4. ✅ Unread badges: a notification bell, sidebar counts and red dots, live without reloading (2026-10-31).
-     Still to do: CSV/XLSX export of tickets.
+     CSV/XLSX export of tickets: dropped, not needed (2026-10-31).
   - Extra, done: ✅ **My DAR**, the QA testers' half-month Daily Accomplishment Report, filled from ticket work and
     downloaded as Excel or printed (admin template under Admin → DAR template).
 
@@ -302,7 +302,62 @@ shows every step.
 - Direct-to-Storage uploads with server-side checks, a daily cron clean-up, nightly backups to the QA laptop with a restore script.
 - Details: `docs/CHANGELOG.md` (2026-10-31) and `docs/OPERATIONS.md`.
 
-### Phase 3.6 — Test library, manual runs, then record & replay ★ next
+### Phase 3.7 — QA Hub on phones (mobile ticket filing) ★ next
+QA testers test the Investigator app and other mobile apps on their own or company phones. They should file the bug
+**on the same phone**, right after it happens, instead of sending the screenshot to a laptop first. Since the cloud
+move QA Hub is reachable from any phone over HTTPS, so this is about making it work well on a small touch screen.
+Can be built before 3.6, because tickets already exist.
+
+- **Layout on phones** (≤ 640 px wide): the sidebar is already a slide-out drawer; check every page for it.
+  - Tables (ticket list, team, admin) turn into stacked cards; filters go into a "Filter" sheet.
+  - Dialogs open as full-screen sheets, with the main button kept at the bottom above the keyboard.
+  - Touch targets at least 44 px; form inputs at 16 px text so iPhones don't zoom in.
+  - A floating **+ New ticket** button on the ticket pages.
+- **Filing a ticket from the phone:**
+  - **Take photo** / **Choose from gallery** for screenshots. Check that iPhone HEIC photos arrive as JPEG; convert in
+    the browser if not.
+  - **Phone screen recordings:** Android records MP4 (works today). iPhone records `.mov`, which is refused today.
+    Decide: accept H.264 `.mov` and check it plays in Chrome on Windows, or show a clear "how to share as MP4" tip.
+  - **Device details** box for mobile-app bugs: phone model, Android/iOS version, app name and version, Wi-Fi or
+    mobile data. Remembered per user ("My phones") so it's one tap next time.
+  - **Draft autosave** on the device, because testers switch to the app under test to take more screenshots, and the
+    phone may unload the page. Plain browser storage, cleared when the ticket is filed.
+  - Uploads over mobile data: a progress bar, a clear retry when the signal drops, and a warning before a big video
+    on mobile data. Same 50 MB limit and server-side checks as now.
+  - The screenshot markup tool (3.5b slice 3) works with a finger: pointer events, pinch to zoom, big tool buttons.
+- **Install as an app (PWA):** a web manifest and icon (the DCWD seal) so testers can **Add to Home Screen** and open
+  QA Hub full-screen like an app. On Android, **Share → QA Hub** from the gallery opens a new ticket with the
+  screenshot attached (Web Share Target; iPhone doesn't support it, so iPhone users pick from Photos). No offline
+  copy of ticket data is kept on the phone.
+- **Notifications on the phone** (optional, later): web push when a developer replies or marks a ticket fixed.
+  Android works in the browser; iPhone needs the installed app (iOS 16.4+).
+- **Test runs on the phone** (3.6a): the checklist works on a phone, but while testing an app on the same phone the
+  tester keeps switching apps. Suggest the laptop for the checklist and the phone for the app; **Fail** still files
+  from either.
+- **Phones and sensitive data:** screenshots stay in the phone's gallery after upload. Add a reminder after filing
+  ("Delete the screenshot from your gallery"), keep a "Sign out" button easy to reach on shared company phones, and
+  let an admin end a user's sessions if a phone is lost.
+
+**Done when:** on a real Android phone and an iPhone, a tester logs in, takes a screenshot of the Investigator app,
+shares or picks it into a new ticket, marks it up with a finger, adds a phone screen recording and device details,
+loses signal mid-upload and retries, files the ticket, and a developer on a laptop sees it all. Every page works at
+375 px wide with no sideways scrolling.
+
+### Phase 3.8c — Device notifications (Web Push) ✅ (2026-10-31, awaiting device tests)
+Testers and developers asked for notifications outside the browser tab. Web Push: a service worker (`public/sw.js`),
+one `PushSubscription` row per device, VAPID-signed pushes sent after each ticket action (`lib/push/`).
+- Text: ticket title, `Ana: <message>`, module and the first photo (10-minute link); replies stack. Per-person
+  "Show message previews" switch (off: no ticket text) plus a lock-screen guide. Same recipients as the bell.
+- Mute: on/off per device, and per-person work hours (Philippine time). The device's Do Not Disturb also applies.
+- Sound: Tone 1–11, Silent or their own upload, played by an open tab (the service worker asks it); closed → device sound.
+- Limits: Windows/Mac need the browser running; iPhone needs iOS 16.4+ and Add to Home Screen; best-effort delivery;
+  the office firewall must allow the push services (`docs/OPERATIONS.md` §5b).
+
+**Done when:** on Windows, Android and an iPhone, a person turns it on, closes QA Hub, and gets a notification within
+seconds when someone else replies; clicking opens the ticket; outside their work hours nothing arrives.
+
+### Phase 3.6 — Test library, manual runs, then record & replay ★ last
+**Built last**, after 3.7 and 3.8c: the design still has open questions to settle first (2026-10-31).
 The AI workbench is being dropped. Testers' own ChatGPT Plus/Pro plans **cannot** power QA Hub: they include no API
 access, driving the ChatGPT website from a server breaks OpenAI's terms, and ticket data must never reach an LLM
 (rule 12). Testers may use **Codex** ("Sign in with ChatGPT") on their own laptops to tidy Playwright specs against
@@ -345,60 +400,6 @@ Phase A comes first: Phase B automates the cases Phase A writes down.
 **Done when:** a tester imports the leak-adjustment cases from Excel, runs them as a checklist, fails BCA-110, files
 the prefilled ticket, sees the case's history and that day's DAR entry; then a recorded CS31 spec replays from the hub
 against dev with screenshots, and a non-allowlisted URL is refused.
-
-### Phase 3.7 — QA Hub on phones (mobile ticket filing)
-QA testers test the Investigator app and other mobile apps on their own or company phones. They should file the bug
-**on the same phone**, right after it happens, instead of sending the screenshot to a laptop first. Since the cloud
-move QA Hub is reachable from any phone over HTTPS, so this is about making it work well on a small touch screen.
-Can be built before 3.6, because tickets already exist.
-
-- **Layout on phones** (≤ 640 px wide): the sidebar is already a slide-out drawer; check every page for it.
-  - Tables (ticket list, team, admin) turn into stacked cards; filters go into a "Filter" sheet.
-  - Dialogs open as full-screen sheets, with the main button kept at the bottom above the keyboard.
-  - Touch targets at least 44 px; form inputs at 16 px text so iPhones don't zoom in.
-  - A floating **+ New ticket** button on the ticket pages.
-- **Filing a ticket from the phone:**
-  - **Take photo** / **Choose from gallery** for screenshots. Check that iPhone HEIC photos arrive as JPEG; convert in
-    the browser if not.
-  - **Phone screen recordings:** Android records MP4 (works today). iPhone records `.mov`, which is refused today.
-    Decide: accept H.264 `.mov` and check it plays in Chrome on Windows, or show a clear "how to share as MP4" tip.
-  - **Device details** box for mobile-app bugs: phone model, Android/iOS version, app name and version, Wi-Fi or
-    mobile data. Remembered per user ("My phones") so it's one tap next time.
-  - **Draft autosave** on the device, because testers switch to the app under test to take more screenshots, and the
-    phone may unload the page. Plain browser storage, cleared when the ticket is filed.
-  - Uploads over mobile data: a progress bar, a clear retry when the signal drops, and a warning before a big video
-    on mobile data. Same 50 MB limit and server-side checks as now.
-  - The screenshot markup tool (3.5b slice 3) works with a finger: pointer events, pinch to zoom, big tool buttons.
-- **Install as an app (PWA):** a web manifest and icon (the DCWD seal) so testers can **Add to Home Screen** and open
-  QA Hub full-screen like an app. On Android, **Share → QA Hub** from the gallery opens a new ticket with the
-  screenshot attached (Web Share Target; iPhone doesn't support it, so iPhone users pick from Photos). No offline
-  copy of ticket data is kept on the phone.
-- **Notifications on the phone** (optional, later): web push when a developer replies or marks a ticket fixed.
-  Android works in the browser; iPhone needs the installed app (iOS 16.4+).
-- **Test runs on the phone** (3.6a): the checklist works on a phone, but while testing an app on the same phone the
-  tester keeps switching apps. Suggest the laptop for the checklist and the phone for the app; **Fail** still files
-  from either.
-- **Phones and sensitive data:** screenshots stay in the phone's gallery after upload. Add a reminder after filing
-  ("Delete the screenshot from your gallery"), keep a "Sign out" button easy to reach on shared company phones, and
-  let an admin end a user's sessions if a phone is lost.
-
-**Done when:** on a real Android phone and an iPhone, a tester logs in, takes a screenshot of the Investigator app,
-shares or picks it into a new ticket, marks it up with a finger, adds a phone screen recording and device details,
-loses signal mid-upload and retries, files the ticket, and a developer on a laptop sees it all. Every page works at
-375 px wide with no sideways scrolling.
-
-### Phase 3.8c — Device notifications (Web Push)
-Testers and developers asked for notifications outside the browser tab. Web Push: a service worker (`public/sw.js`),
-one `PushSubscription` row per device, VAPID-signed pushes sent after each ticket action (`lib/push/`).
-- Text: ticket title, `Ana: <message>`, module and the first photo (10-minute link); replies stack. Per-person
-  "Show message previews" switch (off: no ticket text) plus a lock-screen guide. Same recipients as the bell.
-- Mute: on/off per device, and per-person work hours (Philippine time). The device's Do Not Disturb also applies.
-- Sound: Tone 1–11, Silent or their own upload, played by an open tab (the service worker asks it); closed → device sound.
-- Limits: Windows/Mac need the browser running; iPhone needs iOS 16.4+ and Add to Home Screen; best-effort delivery;
-  the office firewall must allow the push services (`docs/OPERATIONS.md` §5b).
-
-**Done when:** on Windows, Android and an iPhone, a person turns it on, closes QA Hub, and gets a notification within
-seconds when someone else replies; clicking opens the ticket; outside their work hours nothing arrives.
 
 ### Phase 4 — Test data and oracles
 `lib/oracles/*` with unit tests from the signed-off examples. Fixture builders that create referentially intact test records on staging through the ERP API or UI (customer + meter + reading; supplier + item + PR; employee + attendance). Read-only DB connector and `lib/recon` checks (balanced journals, subledger = GL, OR gaps, duplicate bills, negative stock). A Data page that lists the checks and runs them on demand.
