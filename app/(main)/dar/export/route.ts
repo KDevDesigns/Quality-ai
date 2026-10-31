@@ -16,7 +16,7 @@ const dar = darStore(db);
 
 const XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-/** GET /dar/export?period=2026-10-16&format=xlsx — the signed-in tester's own DAR for that period, as Excel. */
+/** GET /dar/export?period=2026-10-16&format=xlsx — the signed-in person's own DAR for that period, as Excel. */
 export async function GET(req: Request) {
   await connection();
   const user = await getCurrentUser();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { areaLabel, buildCells, dayEntries, daysAttended, fitCells, refillCells, REST_DAY } from "@/lib/dar/autofill";
+import { areaLabel, buildCells, dayEntries, daysAttended, fitCells, prefixFor, refillCells, REST_DAY } from "@/lib/dar/autofill";
 import { darHtml } from "@/lib/dar/html";
 import {
   longDate,
@@ -14,7 +14,7 @@ import {
   recentPeriods,
 } from "@/lib/dar/period";
 import type { DarReportData } from "@/lib/dar/store";
-import { nameInitials, readDarTemplate, resolveHeader } from "@/lib/dar/template";
+import { adoptLegacyTemplate, isEmptySetup, LEGACY_TEMPLATE, nameInitials, resolveHeader, type DarProfileRow } from "@/lib/dar/template";
 
 describe("DAR periods", () => {
   it("splits each month at the 15th", () => {
@@ -99,6 +99,13 @@ describe("DAR auto-fill", () => {
     expect(e[3]).toBe("QA - BCA");
   });
 
+  it("starts developers' days with DEV", () => {
+    expect(prefixFor("DEV")).toBe("DEV");
+    expect(prefixFor("QA")).toBe("QA");
+    expect(prefixFor("ADMIN")).toBe("QA");
+    expect(dayEntries([{ at: at(1), area: bca }, { at: at(2), area: null }], days, "DEV").slice(0, 2)).toEqual(["DEV - BCA", "DEV"]);
+  });
+
   const fns = {
     core: [{ duty: "Test", mfo: "", autofill: true }],
     support: [
@@ -125,22 +132,56 @@ describe("DAR auto-fill", () => {
   });
 });
 
-describe("DAR template", () => {
-  it("has working defaults and survives bad stored JSON", () => {
-    const t = readDarTemplate(undefined);
-    expect(t.position).toBe("System Analyst");
-    expect(t.coreFunctions[0].autofill).toBe(true);
-    expect(t.supportFunctions.map((f) => f.autofill)).toEqual([false, true, false]);
-    expect(readDarTemplate("garbage")).toEqual(t);
-    expect(readDarTemplate({ unit: "QA Unit" }).unit).toBe("QA Unit");
+const profile = (p: Partial<NonNullable<DarProfileRow>> = {}): NonNullable<DarProfileRow> => ({
+  fullName: null,
+  position: null,
+  department: null,
+  unit: null,
+  confirmedByName: null,
+  confirmedByTitle: null,
+  notedByName: null,
+  notedByTitle: null,
+  coreFunctions: null,
+  supportFunctions: null,
+  ...p,
+});
+
+describe("DAR details", () => {
+  it("starts everyone empty, apart from the account name", () => {
+    const h = resolveHeader(null, { name: "Rj" });
+    expect(h).toEqual({
+      name: "Rj",
+      position: "",
+      department: "",
+      unit: "",
+      supervisor: "",
+      confirmedBy: { name: "", title: "" },
+      notedBy: { name: "", title: "" },
+      core: [],
+      support: [],
+    });
+    expect(isEmptySetup(h)).toBe(true);
   });
 
-  it("puts the tester's own details over the template", () => {
-    const t = readDarTemplate({});
-    expect(resolveHeader(t, null, { name: "Rj" })).toMatchObject({ name: "Rj", position: "System Analyst", supervisor: t.confirmedBy.name });
+  it("shows the person's own details, and ignores a bad stored list", () => {
     const mine = [{ duty: "My duty", mfo: "Mine", autofill: true }];
-    const h = resolveHeader(t, { fullName: "Reuben John F. Lisondra", position: " ", coreFunctions: mine, supportFunctions: "bad" }, { name: "Rj" });
-    expect(h).toMatchObject({ name: "Reuben John F. Lisondra", position: "System Analyst", core: mine, support: t.supportFunctions });
+    const h = resolveHeader(
+      profile({ fullName: "Reuben John F. Lisondra", position: " Developer ", unit: "Systems Unit", confirmedByName: "Boss", confirmedByTitle: "OIC", coreFunctions: mine, supportFunctions: "bad" }),
+      { name: "Rj" },
+    );
+    expect(h).toMatchObject({ name: "Reuben John F. Lisondra", position: "Developer", unit: "Systems Unit", supervisor: "Boss", confirmedBy: { name: "Boss", title: "OIC" }, core: mine, support: [] });
+    expect(isEmptySetup(h)).toBe(false);
+  });
+
+  it("gives an old backup's DAR users the old template, keeping what they had set", () => {
+    const own = [{ duty: "Own", mfo: "", autofill: false }];
+    const row = adoptLegacyTemplate({ userId: "u1", ...profile({ fullName: "Ana", position: "Tester", coreFunctions: own }) }, { unit: "QA Unit" });
+    expect(row).toMatchObject({ userId: "u1", fullName: "Ana", position: "Tester", unit: "QA Unit", department: LEGACY_TEMPLATE.department, confirmedByName: LEGACY_TEMPLATE.confirmedBy.name });
+    expect(row.coreFunctions).toEqual(own);
+    expect(row.supportFunctions).toEqual(LEGACY_TEMPLATE.supportFunctions);
+    // No stored template, or a broken one: the built-in values.
+    expect(adoptLegacyTemplate({ userId: "u2" }, undefined)).toMatchObject({ position: LEGACY_TEMPLATE.position, coreFunctions: LEGACY_TEMPLATE.coreFunctions });
+    expect(adoptLegacyTemplate({ userId: "u3" }, { unit: 5 })).toMatchObject({ unit: LEGACY_TEMPLATE.unit });
   });
 
   it("makes file-name initials", () => {
@@ -151,10 +192,9 @@ describe("DAR template", () => {
 
 describe("darHtml", () => {
   it("escapes everything typed", () => {
-    const t = readDarTemplate({});
     const period = { start: "2026-10-01", end: "2026-10-15" };
     const days = periodDays(period);
-    const header = resolveHeader(t, { fullName: "<b>Ana</b>", position: null, coreFunctions: null, supportFunctions: null }, { name: "x" });
+    const header = resolveHeader(profile({ fullName: "<b>Ana</b>", coreFunctions: LEGACY_TEMPLATE.coreFunctions }), { name: "x" });
     const cells = buildCells(header, days.map(() => REST_DAY));
     cells.core[0][0] = `<script>alert(1)</script>`;
     const r: DarReportData = { period, days, header, cells, dateSubmitted: "2026-10-16", daysAttended: 1, saved: false };

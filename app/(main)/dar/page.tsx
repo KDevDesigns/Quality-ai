@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { FileSlidersIcon } from "lucide-react";
 import { LoadingBlock, PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
-import { can } from "@/lib/auth/permissions";
 import { requireAction } from "@/lib/auth/session";
 import { manilaDay, parsePeriod, periodFor, periodLabel, recentPeriods } from "@/lib/dar/period";
 import { darStore } from "@/lib/dar/store";
@@ -17,7 +13,6 @@ export const metadata: Metadata = { title: "My DAR" };
 const dar = darStore(db);
 
 export default function DarPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  // The header sits inside the guard: admins get a button to the template there.
   return (
     <Suspense fallback={<LoadingBlock />}>
       <DarBody searchParams={searchParams} />
@@ -32,7 +27,7 @@ async function DarBody({ searchParams }: { searchParams: Promise<Record<string, 
   const today = manilaDay(new Date());
   const period = parsePeriod(typeof sp.period === "string" ? sp.period : "") ?? periodFor(today);
 
-  const [report, saved, template, profile] = await Promise.all([dar.load(me, period), dar.list(me.id), dar.template(), dar.profile(me.id)]);
+  const [report, saved, profile] = await Promise.all([dar.load(me, period), dar.list(me.id), dar.profile(me.id)]);
 
   // Recent periods, any older saved ones, and the one asked for: newest first, each once.
   const savedStarts = new Set(saved.map((s) => s.periodStart));
@@ -46,26 +41,14 @@ async function DarBody({ searchParams }: { searchParams: Promise<Record<string, 
     <>
       <PageHeader
         title="My DAR"
-        description="Your Daily Accomplishment Report for each half-month. The days are filled in from your ticket work in QA Hub; check them, add anything done outside it, then download."
-        actions={
-          can(me, "dar.template") ? (
-            <Button variant="outline" nativeButton={false} render={<Link href="/admin/dar" />}>
-              <FileSlidersIcon /> DAR template
-            </Button>
-          ) : null
-        }
+        description="Your Daily Accomplishment Report for each half-month. Set it up once under My details; the days are filled in from your ticket work in QA Hub. Check them, add anything done outside it, then download."
       />
       <DarEditor
         // A new period, or a different number of duty rows after "My details", starts the editor afresh.
         key={`${period.start}:${report.header.core.length}:${report.header.support.length}`}
         report={report}
         periods={periods}
-        template={template}
-        profile={{
-          fullName: profile?.fullName ?? "",
-          position: profile?.position ?? "",
-          ownFunctions: !!(profile?.coreFunctions || profile?.supportFunctions),
-        }}
+        hasFullName={!!profile?.fullName}
         accountName={me.name}
       />
     </>

@@ -4,17 +4,30 @@ import type { PrismaClient } from "@/lib/generated/prisma/client";
 import { REST_DAY } from "@/lib/dar/autofill";
 import { darXlsx } from "@/lib/dar/excel";
 import { darStore, type DarUser } from "@/lib/dar/store";
+import { LEGACY_TEMPLATE, type DarProfileInput } from "@/lib/dar/template";
 import { createTestDb } from "./helpers/test-db";
 
 let db: PrismaClient;
 let cleanup: () => Promise<void>;
-let ana: DarUser, ben: DarUser;
+let ana: DarUser, ben: DarUser, dev: DarUser;
 let bca: string, rsp: string;
 
 const OCT = { start: "2026-10-01", end: "2026-10-15" };
 /** 10:00 in Manila on that October day. */
 const day = (d: number) => new Date(Date.UTC(2026, 9, d, 2));
 const now = () => new Date("2026-10-16T01:00:00Z");
+
+/** The QA set-up used before 2026-11-01: one auto-filled core row; support rows 1 and 3 typed, row 2 auto-filled. */
+const QA_SETUP: DarProfileInput = {
+  fullName: "",
+  position: LEGACY_TEMPLATE.position,
+  department: LEGACY_TEMPLATE.department,
+  unit: LEGACY_TEMPLATE.unit,
+  confirmedBy: LEGACY_TEMPLATE.confirmedBy,
+  notedBy: LEGACY_TEMPLATE.notedBy,
+  coreFunctions: LEGACY_TEMPLATE.coreFunctions,
+  supportFunctions: LEGACY_TEMPLATE.supportFunctions,
+};
 
 beforeAll(async () => {
   ({ db, cleanup } = await createTestDb());
@@ -26,17 +39,20 @@ afterAll(async () => {
 beforeEach(async () => {
   await db.darReport.deleteMany();
   await db.darProfile.deleteMany();
-  await db.setting.deleteMany({ where: { key: "dar.template" } });
   await db.ticket.deleteMany();
   await db.erpArea.deleteMany({ where: { parentId: { not: null } } });
   await db.erpArea.deleteMany();
   await db.user.deleteMany();
-  const mk = async (name: string) => {
-    const u = await db.user.create({ data: { name, email: `${name.toLowerCase()}@x.ph`, passwordHash: "x", role: "QA" } });
-    return { id: u.id, name };
+  const mk = async (name: string, role: "QA" | "DEV" = "QA") => {
+    const u = await db.user.create({ data: { name, email: `${name.toLowerCase()}@x.ph`, passwordHash: "x", role } });
+    return { id: u.id, name, role };
   };
   ana = await mk("Ana");
   ben = await mk("Ben");
+  dev = await mk("Dan", "DEV");
+  const s = darStore(db, now);
+  await s.saveProfile(ana.id, QA_SETUP);
+  await s.saveProfile(ben.id, QA_SETUP);
   bca = (await db.erpArea.create({ data: { name: "Billing & Collection", code: "BCA" } })).id;
   const hr = (await db.erpArea.create({ data: { name: "HR", code: "HR" } })).id;
   rsp = (await db.erpArea.create({ data: { name: "Recruitment", code: "HR-RSP", parentId: hr } })).id;
@@ -91,19 +107,44 @@ describe("darStore", () => {
     expect(cells.support[0][2]).toBe("Encoding");
   });
 
-  it("uses the tester's own details over the template, and the template's after a reset", async () => {
+  it("starts a new account empty: no rows until they set up their DAR", async () => {
     const s = darStore(db, now);
-    await s.saveTemplate({ ...(await s.template()), unit: "QA Unit" });
-    await s.saveProfile(ana.id, { fullName: "Ana B. Cruz", position: "", coreFunctions: [{ duty: "Mine", mfo: "", autofill: false }], supportFunctions: null });
-    let h = await s.header(ana);
-    expect(h).toMatchObject({ name: "Ana B. Cruz", position: "System Analyst", unit: "QA Unit" });
-    expect(h.core.map((f) => f.duty)).toEqual(["Mine"]);
-    expect((await s.load(ana, OCT)).cells.core[0][0]).toBe(""); // own row isn't auto-filled
+    const r = await s.load(dev, OCT);
+    expect(r.header).toMatchObject({ name: "Dan", position: "", department: "", unit: "", supervisor: "", core: [], support: [] });
+    expect(r.cells).toEqual({ core: [], support: [] });
+    expect(r.daysAttended).toBe(0);
+  });
 
-    await s.saveProfile(ana.id, { fullName: "", position: "Tester", coreFunctions: null, supportFunctions: null });
-    h = await s.header(ana);
-    expect(h).toMatchObject({ name: "Ana", position: "Tester" });
-    expect(h.core[0].autofill).toBe(true);
+  it("saves each person's own set-up, and fills a developer's days with DEV", async () => {
+    const s = darStore(db, now);
+    await db.ticketComment.create({ data: { ticketId: (await db.ticket.findFirstOrThrow({ where: { number: 1 } })).id, authorId: dev.id, body: "Fixed", createdAt: day(3) } });
+    await s.saveProfile(dev.id, {
+      fullName: "Dan R. Reyes",
+      position: "Developer",
+      department: "ICT Department",
+      unit: "Systems Development Unit",
+      confirmedBy: { name: "Lead Dev", title: "OIC, Systems Development Unit" },
+      notedBy: { name: "", title: "" },
+      coreFunctions: [{ duty: "Fixes ERP bugs", mfo: "Fixed tickets", autofill: true }],
+      supportFunctions: [],
+    });
+    const r = await s.load(dev, OCT);
+    expect(r.header).toMatchObject({ name: "Dan R. Reyes", unit: "Systems Development Unit", supervisor: "Lead Dev", notedBy: { name: "", title: "" }, support: [] });
+    expect(r.cells.core[0][2]).toBe("DEV - BCA");
+    expect(r.cells.support).toEqual([]);
+
+    // Clearing a field clears it on the report; Ana's set-up is untouched.
+    await s.saveProfile(dev.id, { ...QA_SETUP, fullName: "", position: "", coreFunctions: [{ duty: "Mine", mfo: "", autofill: false }] });
+    const h = await s.header(dev);
+    expect(h).toMatchObject({ name: "Dan", position: "" });
+    expect(h.core.map((f) => f.duty)).toEqual(["Mine"]);
+    expect((await s.header(ana)).core[0].autofill).toBe(true);
+  });
+
+  it("writes an Excel file for a report with no rows yet", async () => {
+    const r = await darStore(db, now).load(dev, OCT);
+    const files = unzipSync(new Uint8Array(await darXlsx(r)));
+    expect(Object.values(files).map((f) => strFromU8(f)).join("\n")).toContain("A.) CORE FUNCTIONS");
   });
 
   it("writes an Excel file with the header, the days and every row", async () => {

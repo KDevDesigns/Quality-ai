@@ -1,5 +1,20 @@
 # Changelog
 
+## My DAR for everyone, each set up their own (2026-11-01)
+
+- **Developers have My DAR too.** Everyone (QA testers, developers, admins) gets it in the sidebar. A developer's days
+  read "DEV - BCA / CRM"; QA testers' and admins' still read "QA - …".
+- **No more shared DAR template.** Admin → DAR template is gone. Each person sets up their whole report once under
+  **My details**: full name, position, department, unit, the Confirmed by and Noted by signatories, and their core and
+  support duties with MFOs. A new account starts empty with a **Set up my DAR** button.
+- **Nothing changes for people already using it:** the migration copies the template's values into the details of
+  everyone who had a DAR, wherever they hadn't set their own, so their reports look the same. Restoring an older
+  backup does the same.
+- **Setup:** migration `dar_own_details` (`npm run db:deploy`), run **before** merging (the new code reads the new
+  columns; the old code ignores them).
+- Code: `lib/dar/template.ts`, `lib/dar/store.ts`, `lib/dar/autofill.ts`, `lib/backup.ts`,
+  `app/(main)/dar/dar-editor.tsx`; removed `app/(main)/admin/dar/`.
+
 ## Lighter on the free plan (2026-11-01)
 
 Supabase's logs showed about 945 MB of file downloads in one day, almost all from one video loaded again on every

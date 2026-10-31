@@ -1,5 +1,6 @@
-// The fixed text of a DAR: an admin-set template (Setting "dar.template"), with each tester's own overrides
-// (DarProfile) on top. Stored JSON that no longer matches falls back to the defaults instead of breaking the page.
+// The fixed text of a DAR (name, office, signatories, duties and MFOs). Each person sets up their own once under
+// My DAR → My details (DarProfile); there is no shared template, so a new account starts empty. Stored JSON that no
+// longer matches falls back to empty instead of breaking the page.
 
 import { z } from "zod";
 
@@ -13,16 +14,86 @@ export const darFunction = z.object({
 });
 export type DarFunction = z.infer<typeof darFunction>;
 
+const functionList = z.array(darFunction).max(10);
 const signatory = z.object({ name: line(120).default(""), title: line(160).default("") });
+export type Signatory = z.infer<typeof signatory>;
 
-export const darTemplate = z.object({
-  position: line(120).default("System Analyst"),
-  department: line(160).default("Information and Communication Technology Department"),
-  unit: line(160).default("Data Management Unit"),
+/** Everything a person saves under My details. Empty fields stay empty on the report. */
+export const darProfileInput = z.object({
+  fullName: line(120),
+  position: line(120),
+  department: line(160),
+  unit: line(160),
   /** Immediate supervisor; also signs "Confirmed by". */
-  confirmedBy: signatory.default({ name: "Verlie S. Tuyor", title: "OIC, Data Management Unit" }),
-  notedBy: signatory.default({ name: "Engr. Anne Michelle S. Buagas", title: "Manager, Information and Communication Technology Department" }),
-  coreFunctions: z.array(darFunction).max(10).default([
+  confirmedBy: signatory,
+  notedBy: signatory,
+  coreFunctions: functionList,
+  supportFunctions: functionList,
+});
+export type DarProfileInput = z.infer<typeof darProfileInput>;
+
+export type DarProfileRow = {
+  fullName: string | null;
+  position: string | null;
+  department: string | null;
+  unit: string | null;
+  confirmedByName: string | null;
+  confirmedByTitle: string | null;
+  notedByName: string | null;
+  notedByTitle: string | null;
+  coreFunctions: unknown;
+  supportFunctions: unknown;
+} | null;
+
+const functions = (v: unknown): DarFunction[] => {
+  const r = functionList.safeParse(v);
+  return r.success ? r.data : [];
+};
+
+const str = (v: string | null | undefined) => v?.trim() ?? "";
+
+export type DarHeader = {
+  name: string;
+  position: string;
+  department: string;
+  unit: string;
+  supervisor: string;
+  confirmedBy: Signatory;
+  notedBy: Signatory;
+  core: DarFunction[];
+  support: DarFunction[];
+};
+
+/** The header and functions as they appear on the report: the person's own details; the name falls back to the account. */
+export function resolveHeader(profile: DarProfileRow, user: { name: string }): DarHeader {
+  const confirmedBy = { name: str(profile?.confirmedByName), title: str(profile?.confirmedByTitle) };
+  return {
+    name: str(profile?.fullName) || user.name,
+    position: str(profile?.position),
+    department: str(profile?.department),
+    unit: str(profile?.unit),
+    supervisor: confirmedBy.name,
+    confirmedBy,
+    notedBy: { name: str(profile?.notedByName), title: str(profile?.notedByTitle) },
+    core: functions(profile?.coreFunctions),
+    support: functions(profile?.supportFunctions),
+  };
+}
+
+/** Nothing to report yet: no duty rows, so the page asks them to set up their DAR first. */
+export const isEmptySetup = (h: DarHeader) => !h.core.length && !h.support.length;
+
+/**
+ * The shared admin template that QA Hub had until 2026-11-01, with its built-in values. Only used to restore an older
+ * backup: anyone who already had a DAR keeps what it showed (migration 20261101000300_dar_own_details does the same).
+ */
+export const LEGACY_TEMPLATE = {
+  position: "System Analyst",
+  department: "Information and Communication Technology Department",
+  unit: "Data Management Unit",
+  confirmedBy: { name: "Verlie S. Tuyor", title: "OIC, Data Management Unit" },
+  notedBy: { name: "Engr. Anne Michelle S. Buagas", title: "Manager, Information and Communication Technology Department" },
+  coreFunctions: [
     {
       duty:
         "Performs API testing, automation testing, and performance validation for ERP system (HR, Procurement (BUR), Property and Supply Management System (PSMS), Project Monitoring System (PrMS), DCWD Mobile Application and Leak Alert), including data validation, defect identification, and test documentation.",
@@ -35,8 +106,8 @@ export const darTemplate = z.object({
       ].join("\n"),
       autofill: true,
     },
-  ]),
-  supportFunctions: z.array(darFunction).max(10).default([
+  ],
+  supportFunctions: [
     {
       duty: "Assist in the accurate encoding of data submitted by end-users.",
       mfo: "Data entries on ERP (HR, Procurement, Property and Supply Management System (PSMS), DCWD Mobile Application and Leak Alert)",
@@ -48,55 +119,36 @@ export const darTemplate = z.object({
       autofill: true,
     },
     { duty: "Perform other related functions as may be required by the immediate supervisor", mfo: "Accomplishment Report", autofill: false },
-  ]),
-});
-export type DarTemplate = z.infer<typeof darTemplate>;
-
-export function readDarTemplate(value: unknown): DarTemplate {
-  const r = darTemplate.safeParse(value ?? {});
-  return r.success ? r.data : darTemplate.parse({});
-}
-
-/** A tester's overrides. Empty or missing means "use the template". */
-export const darProfileInput = z.object({
-  fullName: line(120),
-  position: line(120),
-  coreFunctions: z.array(darFunction).max(10).nullable(),
-  supportFunctions: z.array(darFunction).max(10).nullable(),
-});
-export type DarProfileInput = z.infer<typeof darProfileInput>;
-
-export type DarProfileRow = { fullName: string | null; position: string | null; coreFunctions: unknown; supportFunctions: unknown } | null;
-
-const functions = (v: unknown): DarFunction[] | null => {
-  const r = z.array(darFunction).max(10).safeParse(v);
-  return r.success && r.data.length ? r.data : null;
+  ],
 };
 
-export type DarHeader = {
-  name: string;
-  position: string;
-  department: string;
-  unit: string;
-  supervisor: string;
-  confirmedBy: { name: string; title: string };
-  notedBy: { name: string; title: string };
-  core: DarFunction[];
-  support: DarFunction[];
-};
+const legacyTemplate = z.object({
+  position: z.string().catch(LEGACY_TEMPLATE.position),
+  department: z.string().catch(LEGACY_TEMPLATE.department),
+  unit: z.string().catch(LEGACY_TEMPLATE.unit),
+  confirmedBy: signatory.catch(LEGACY_TEMPLATE.confirmedBy),
+  notedBy: signatory.catch(LEGACY_TEMPLATE.notedBy),
+  coreFunctions: functionList.catch(LEGACY_TEMPLATE.coreFunctions),
+  supportFunctions: functionList.catch(LEGACY_TEMPLATE.supportFunctions),
+});
 
-/** The header and functions as they appear on the report: the tester's overrides, else the template. */
-export function resolveHeader(t: DarTemplate, profile: DarProfileRow, user: { name: string }): DarHeader {
+const isEmptyJson = (v: unknown) => v == null || (Array.isArray(v) && !v.length);
+
+/** A DarProfile row from an old backup with the old template's values in every field it left empty. */
+export function adoptLegacyTemplate<T extends Record<string, unknown>>(row: T, storedTemplate: unknown): T {
+  const t = legacyTemplate.parse(typeof storedTemplate === "object" && storedTemplate ? { ...LEGACY_TEMPLATE, ...storedTemplate } : LEGACY_TEMPLATE);
+  const keep = (key: string, value: unknown) => (row[key] == null || row[key] === "" ? value : row[key]);
   return {
-    name: profile?.fullName?.trim() || user.name,
-    position: profile?.position?.trim() || t.position,
-    department: t.department,
-    unit: t.unit,
-    supervisor: t.confirmedBy.name,
-    confirmedBy: t.confirmedBy,
-    notedBy: t.notedBy,
-    core: functions(profile?.coreFunctions) ?? t.coreFunctions,
-    support: functions(profile?.supportFunctions) ?? t.supportFunctions,
+    ...row,
+    position: keep("position", t.position),
+    department: keep("department", t.department),
+    unit: keep("unit", t.unit),
+    confirmedByName: keep("confirmedByName", t.confirmedBy.name),
+    confirmedByTitle: keep("confirmedByTitle", t.confirmedBy.title),
+    notedByName: keep("notedByName", t.notedBy.name),
+    notedByTitle: keep("notedByTitle", t.notedBy.title),
+    coreFunctions: isEmptyJson(row.coreFunctions) ? t.coreFunctions : row.coreFunctions,
+    supportFunctions: isEmptyJson(row.supportFunctions) ? t.supportFunctions : row.supportFunctions,
   };
 }
 

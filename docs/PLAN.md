@@ -287,8 +287,9 @@ QA and developers stop using Messenger for bugs. Runs behind login, now on Verce
   3. ✅ A built-in screenshot markup tool (box, arrow, pen, text) on attached and pasted images.
   4. ✅ Unread badges: a notification bell, sidebar counts and red dots, live without reloading (2026-10-31).
      CSV/XLSX export of tickets: dropped, not needed (2026-10-31).
-  - Extra, done: ✅ **My DAR**, the QA testers' half-month Daily Accomplishment Report, filled from ticket work and
-    downloaded as Excel or printed (admin template under Admin → DAR template).
+  - Extra, done: ✅ **My DAR**, everyone's half-month Daily Accomplishment Report, filled from ticket work and
+    downloaded as Excel or printed. Each person sets up their own under My details (the admin template was removed
+    on 2026-11-01).
 
 This replaces the planned Phase 9 Defects *screen*. The `Defect` model stays for the traceability code and is merged
 into tickets in Phase 9.

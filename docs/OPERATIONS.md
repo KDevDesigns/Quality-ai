@@ -197,20 +197,23 @@ missed*, so a night with the laptop off is caught up the next morning. Check `ba
 
 ## 6. Daily Accomplishment Reports (My DAR)
 
-- **Set up once (admin):**
-  - **Admin → DAR template:** department, unit, default position, the Confirmed by and Noted by signatories, and the
-    core and support duties with their MFOs.
-  - Tick **Fill this row's days from my ticket work** on the rows that should get the day entries.
+- **Everyone has My DAR** (QA testers, developers and admins, in the sidebar under Tickets). There is no shared
+  template: a new account starts empty and shows **Set up my DAR**.
+- **Set up once (each person), under My DAR → My details:**
+  - Full name as on official forms (the account only holds a nickname), and position title.
+  - Department and unit.
+  - The Confirmed by (immediate supervisor) and Noted by signatories, with their titles.
+  - The core and support duties with their MFOs. Tick **Fill this row's days from my ticket work** on the rows that
+    should get the day entries.
+  - It's used for every period and can be changed anytime. A field left empty stays empty on the report.
 - **Module codes:** set them in **Team & modules** (e.g. `BCA`, `CRM`, `HR-RSP`, `HR201`). The DAR writes a day as
-  "QA - BCA / CRM" from those codes. A sub-module with no code uses its module's code, then its name.
-- **Admins** have their own **My DAR** too (in the sidebar under Tickets). **DAR template** on My DAR and **My
-  DAR** on the template page switch between the two. An admin still can't open anyone else's DAR.
-- **Each QA tester:**
-  - Opens **My DAR** and adds their full name once under **My details**, since the account only holds a nickname.
-  - Picks the period (1–15 or 16 to the end of the month) and checks the days.
-  - A day with no ticket work is **REST DAY**. They type over it for work done outside QA Hub, such as HR201 or encoding.
-  - Then saves and either downloads **Excel** or uses **Print** (choose *Save as PDF* in the print dialog for a PDF).
-- **Privacy:** each person sees only their own DARs. Admins and developers can't open a tester's.
+  "QA - BCA / CRM" from those codes, or "DEV - BCA / CRM" for developers. A sub-module with no code uses its module's
+  code, then its name.
+- **Each period:**
+  - Pick the period (1–15 or 16 to the end of the month) and check the days.
+  - A day with no ticket work is **REST DAY**. Type over it for work done outside QA Hub, such as HR201 or encoding.
+  - Then save and either download **Excel** or use **Print** (choose *Save as PDF* in the print dialog for a PDF).
+- **Privacy:** each person sees only their own DARs. Nobody, admins included, can open anyone else's.
 
 ## 7. Free-plan limits and when to upgrade
 

@@ -21,10 +21,8 @@ const MATRIX = {
   "users.manage": ["ADMIN"],
   "projects.manage": ["ADMIN"],
   "workspace.manage": ["ADMIN"],
-  /** Your own Daily Accomplishment Report. Each person sees only their own; admins can't open a tester's DAR. */
-  "dar.use": ["QA", "ADMIN"],
-  /** The DAR template: department, unit, signatories and the duties and MFOs. */
-  "dar.template": ["ADMIN"],
+  /** Your own Daily Accomplishment Report, set up under My details. Each person sees only their own, admins included. */
+  "dar.use": ["QA", "DEV", "ADMIN"],
 } as const satisfies Record<string, readonly Role[]>;
 
 export type Action = keyof typeof MATRIX;

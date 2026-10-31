@@ -1,5 +1,4 @@
 import {
-  FileSlidersIcon,
   FileSpreadsheetIcon,
   InboxIcon,
   LayoutDashboardIcon,
@@ -22,12 +21,11 @@ export const TICKETS_NAV: NavItem[] = [
   { href: "/team", label: "Team & modules", icon: UsersRoundIcon },
 ];
 
-/** QA testers and admins: their own Daily Accomplishment Report. */
+/** Everyone: their own Daily Accomplishment Report. */
 export const DAR_NAV: NavItem = { href: "/dar", label: "My DAR", icon: FileSpreadsheetIcon };
 
 export const ADMIN_NAV: NavItem[] = [
   { href: "/admin/users", label: "Users", icon: UsersIcon },
-  { href: "/admin/dar", label: "DAR template", icon: FileSlidersIcon },
 ];
 
 const PAGES: NavItem[] = [{ href: "/account", label: "My account", icon: UsersIcon }];
