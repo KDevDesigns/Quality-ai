@@ -1,7 +1,7 @@
-import { BugIcon, CheckIcon } from "lucide-react";
+import { CheckIcon, FlaskConicalIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// The QA Hub preloader, after the DCWD ERP's Module preloader: QA Hub's emblem (a bug under test, with a check) in a
+// The QA Hub preloader, after the DCWD ERP's Module preloader: QA Hub's emblem (a lab flask for the QA workshop, with a check) in a
 // white ring that fills with water as loading goes on, inside slowly rippling rings, with waves along the bottom. The
 // rings, ripples, float and waves reuse the sign-in brand pane's styles and colours (.auth-brand in globals.css).
 
@@ -63,10 +63,10 @@ export function Preloader({ progress, status, done, className }: { progress: num
               </div>
               <div className="absolute inset-0 rounded-full shadow-[inset_0_0_0_6px_rgba(30,42,120,0.08)]" />
             </div>
-            {/* The emblem: indigo disc, a bug under test, and a green check for "verified". */}
+            {/* The emblem: indigo disc, a lab flask (the QA workshop), and a green check for "verified". */}
             <div className="absolute top-1/2 left-1/2 z-[2] flex size-[124px] -translate-1/2 items-center justify-center rounded-full bg-white shadow-[0_0_0_3px_#fff,0_6px_18px_rgba(30,42,120,0.18)]">
               <div className="flex size-[112px] items-center justify-center rounded-full bg-[linear-gradient(135deg,#4f56d3,#1e2a78)] ring-4 ring-[#4f56d3]/25 ring-inset">
-                <BugIcon className="size-12 text-white" strokeWidth={1.6} aria-hidden />
+                <FlaskConicalIcon className="size-12 text-white" strokeWidth={1.6} aria-hidden />
               </div>
               <span className="absolute right-0.5 bottom-1.5 flex size-8 items-center justify-center rounded-full bg-[#0f9f6e] text-white shadow-[0_0_0_3px_#fff]">
                 <CheckIcon className="size-4.5" strokeWidth={3} aria-hidden />
@@ -76,7 +76,7 @@ export function Preloader({ progress, status, done, className }: { progress: num
         </div>
 
         <span className="mt-12 inline-flex h-8 items-center gap-2 rounded-full border border-(--ab-chip-line) bg-(--ab-chip-bg) px-3.5 font-mono text-[12.5px] font-semibold tracking-[0.06em] text-(--ab-chip-ink)">
-          <BugIcon className="size-4 text-(--ab-chip-icon)" aria-hidden />
+          <FlaskConicalIcon className="size-4 text-(--ab-chip-icon)" aria-hidden />
           QA HUB · DCWD ERP
         </span>
         <h1 className="mt-4 text-[34px] leading-tight font-bold tracking-[-0.02em]">QA Hub</h1>
