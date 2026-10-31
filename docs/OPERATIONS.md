@@ -138,8 +138,9 @@ missed*, so a night with the laptop off is caught up the next morning. Check `ba
 - "New" means anything someone **else** did on a ticket you can see (developers: tickets assigned to them; QA: their
   own; admins: all): a new ticket, a reply, a status change, a reassignment or an edit. Your own actions never notify you.
 - Opening a ticket marks it read. **Mark all as read** in the bell clears everything.
-- The app checks every 30 seconds while the tab is open, and lists and tickets update by themselves; no reload needed.
-  Nothing is checked while the tab is in the background, and it checks at once when you come back.
+- Lists and tickets update by themselves; no reload needed. With device notifications on, an open tab updates the
+  moment one arrives; otherwise it checks every 15 seconds while the tab is open. Nothing is checked while the tab is
+  in the background, and it checks at once when you come back.
 
 ### Device notifications (Windows, Mac, Android, iPhone)
 
@@ -153,9 +154,12 @@ missed*, so a night with the laptop off is caught up the next morning. Check `ba
   messaging**, restart Brave, then Turn on again.
 - **Sound** (My account → Notification sound, or in the sign-in question): Tone 1 to 11 (Tone 1 is the default),
   **Silent**, or **your own** MP3/WAV (at most 5 s and 500 KB; only you hear it). ▶ plays it.
-  - The tone plays when QA Hub is **open in a tab you've clicked in** (it can be in the background); the Windows/phone
-    notification is then silent, so it doesn't ring twice. With QA Hub **closed**, the device's own notification sound
-    plays: browsers can't give a web notification its own sound. **Silent** mutes both.
+  - The tone plays when QA Hub is **on screen in a tab you've clicked in**; the Windows/phone notification is then
+    silent, so it doesn't ring twice. With QA Hub **closed or behind other windows**, the device's own notification
+    sound plays: browsers can't give a web notification its own sound. **Silent** mutes both.
+  - **No sound at all?** Windows Focus / Do Not Disturb (or the phone's) mutes the device sound, and so does turning
+    off sounds for the browser in Windows Settings → System → Notifications.
+  - Your own messages never notify **any** of your devices: replying from your phone doesn't ring your PC.
   - The presets are in `public/sounds/` (from Pixabay, free to use). Own tones are in the private bucket and are
     included in the nightly backup.
 - They come for the same things as the bell: a new or assigned ticket, a reply, a status change, an edit. Your own
