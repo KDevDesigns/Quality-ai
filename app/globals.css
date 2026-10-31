@@ -68,6 +68,16 @@
   --color-risk-medium: var(--risk-medium);
   --color-risk-high: var(--risk-high);
   --color-risk-critical: var(--risk-critical);
+  --color-type-bug: var(--type-bug);
+  --color-type-bug-t: var(--type-bug-t);
+  --color-type-bug-b: var(--type-bug-b);
+  --color-type-sug: var(--type-sug);
+  --color-type-sug-t: var(--type-sug-t);
+  --color-type-sug-b: var(--type-sug-b);
+  --color-type-imp: var(--type-imp);
+  --color-type-imp-t: var(--type-imp-t);
+  --color-type-imp-b: var(--type-imp-b);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -107,6 +117,16 @@
   --risk-medium: #fcefc9;
   --risk-high: #f8cf98;
   --risk-critical: #f1a29a;
+  /* Ticket types: Bug red, Suggestion amber, Improvement blue (lib/tickets/workflow.ts TYPE_TONES). */
+  --type-bug: var(--bad);
+  --type-bug-t: var(--bad-t);
+  --type-bug-b: var(--bad-b);
+  --type-sug: #b45309;
+  --type-sug-t: #fef5e6;
+  --type-sug-b: #f3c98b;
+  --type-imp: #1d5fd1;
+  --type-imp-t: #edf3fe;
+  --type-imp-b: #a9c4f3;
 
   --acc-t: color-mix(in srgb, var(--acc) 10%, var(--sf));
   --acc-t2: color-mix(in srgb, var(--acc) 5%, var(--sf));
@@ -182,6 +202,12 @@
   --risk-medium: #4a4020;
   --risk-high: #5c3a17;
   --risk-critical: #6b2620;
+  --type-sug: #f3b45e;
+  --type-sug-t: rgba(243, 180, 94, 0.12);
+  --type-sug-b: rgba(243, 180, 94, 0.35);
+  --type-imp: #8fb4f6;
+  --type-imp-t: rgba(143, 180, 246, 0.12);
+  --type-imp-b: rgba(143, 180, 246, 0.35);
   --background: #0f1218;
   --primary-foreground: #0f1218;
   --destructive: #f2867c;
@@ -190,17 +216,97 @@
   color-scheme: dark;
 }
 
-@utility native-select {
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px;
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  /* Thin, quiet scrollbars everywhere (Firefox and Chromium read scrollbar-*; Safari needs the pseudo-elements). */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--mu) 38%, transparent) transparent;
+  }
+  *:hover {
+    scrollbar-color: color-mix(in srgb, var(--mu) 60%, transparent) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--mu) 38%, transparent) padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--mu) 62%, transparent);
+  }
+  /* Checkboxes and radios in QA Hub's style instead of the browser's. */
+  input[type="checkbox"]:not([role]),
+  input[type="radio"]:not([role]) {
+    appearance: none;
+    display: inline-grid;
+    place-content: center;
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    border: 1.5px solid color-mix(in srgb, var(--mu) 55%, transparent);
+    background: var(--sf);
+    cursor: pointer;
+    transition:
+      background-color 160ms var(--ease-out),
+      border-color 160ms var(--ease-out),
+      box-shadow 160ms var(--ease-out);
+  }
+  input[type="checkbox"]:not([role]) {
+    border-radius: 5px;
+  }
+  input[type="radio"]:not([role]) {
+    border-radius: 999px;
+  }
+  input[type="checkbox"]:not([role])::before,
+  input[type="radio"]:not([role])::before {
+    content: "";
+    background: var(--primary-foreground);
+    transform: scale(0);
+    transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  input[type="checkbox"]:not([role])::before {
+    width: 0.62rem;
+    height: 0.62rem;
+    clip-path: polygon(14% 52%, 0 66%, 38% 100%, 100% 22%, 86% 8%, 37% 70%);
+  }
+  input[type="radio"]:not([role])::before {
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 999px;
+  }
+  input[type="checkbox"]:not([role]):checked,
+  input[type="radio"]:not([role]):checked {
+    border-color: var(--acc);
+    background: var(--acc);
+  }
+  input[type="checkbox"]:not([role]):checked::before,
+  input[type="radio"]:not([role]):checked::before {
+    transform: scale(1);
+  }
+  input[type="checkbox"]:not([role]):hover:not(:disabled),
+  input[type="radio"]:not([role]):hover:not(:disabled) {
+    border-color: var(--acc);
+  }
+  input[type="checkbox"]:not([role]):focus-visible,
+  input[type="radio"]:not([role]):focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--acc) 22%, transparent);
+  }
+  input[type="checkbox"]:not([role]):disabled,
+  input[type="radio"]:not([role]):disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
   }
   body {
     @apply bg-background text-foreground;
@@ -298,4 +404,119 @@
 @media (prefers-reduced-motion: reduce) {
   .auth-brand .rip { display: none; }
   .auth-brand .seal, .auth-brand .w1, .auth-brand .w2, .auth-brand .w3, .auth-enter > *, .auth-tab-on { animation: none; }
+}
+
+/* ── Motion: shared enter animations, skeleton shimmer and the QA Hub preloader. All of it stops for reduced motion. ── */
+
+/* Each page's content rises in gently when it opens (app/(main)/layout.tsx). */
+.page-enter {
+  animation: page-rise 420ms var(--ease-out) both;
+}
+/* Lists and card grids: the first few children come in one after another. */
+.stagger > * {
+  animation: page-rise 380ms var(--ease-out) both;
+}
+.stagger > *:nth-child(2) { animation-delay: 30ms; }
+.stagger > *:nth-child(3) { animation-delay: 60ms; }
+.stagger > *:nth-child(4) { animation-delay: 90ms; }
+.stagger > *:nth-child(5) { animation-delay: 120ms; }
+.stagger > *:nth-child(n + 6) { animation-delay: 150ms; }
+@keyframes page-rise {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to { opacity: 1; transform: none; }
+}
+/* Something that just appeared or changed: a badge, an unread dot, a saved note. */
+.pop-in {
+  animation: pop-in 320ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: none; }
+}
+/* A panel switching in place (account tabs). */
+.panel-in {
+  animation: panel-in 300ms var(--ease-out) both;
+}
+@keyframes panel-in {
+  from { opacity: 0; transform: translate3d(10px, 0, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Skeletons: a soft light sweeping across, like the preloader's progress shine. */
+.skeleton-shine {
+  position: relative;
+  overflow: hidden;
+  background: var(--sf3);
+}
+.skeleton-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 20%, color-mix(in srgb, var(--sf) 75%, transparent) 50%, transparent 80%);
+  transform: translate3d(-100%, 0, 0);
+  animation: skeleton-sweep 1.6s ease-in-out infinite;
+}
+.dark .skeleton-shine::after {
+  background: linear-gradient(90deg, transparent 20%, rgba(255, 255, 255, 0.06) 50%, transparent 80%);
+}
+@keyframes skeleton-sweep {
+  to { transform: translate3d(100%, 0, 0); }
+}
+
+/* The QA Hub preloader (components/preloader.tsx), after the DCWD Module preloader: water rising inside the emblem.
+   Rings, ripples, float and waves come from .auth-brand above. */
+.qa-splash .water {
+  position: absolute;
+  inset: 0;
+  transition: transform 500ms var(--ease-out);
+  will-change: transform;
+}
+.qa-splash .slosh {
+  position: absolute;
+  left: 0;
+  top: -10px;
+  width: 200%;
+  max-width: none;
+  height: 200%;
+  will-change: transform;
+}
+.qa-splash .s1 { animation: qa-slosh 3.2s linear infinite; }
+.qa-splash .s2 { animation: qa-slosh 4.6s linear infinite reverse; }
+@keyframes qa-slosh {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+.qa-splash .bar-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
+  transform: translate3d(-100%, 0, 0);
+  animation: skeleton-sweep 1.8s ease-in-out infinite;
+}
+.qa-splash {
+  transition: opacity 420ms var(--ease-out), transform 420ms var(--ease-out);
+}
+.qa-splash.is-done {
+  opacity: 0;
+  transform: scale(1.02);
+  pointer-events: none;
+}
+/* Shown before React runs only when this session hasn't seen it yet (the inline script in components/app-splash.tsx). */
+html:not(.qa-splash-on) .qa-splash {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+  .skeleton-shine::after,
+  .qa-splash .bar-shine {
+    display: none;
+  }
 }

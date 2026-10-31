@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { LoadingBlock, PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/page-header";
+import { DarSkeleton } from "@/components/skeletons";
 import { requireAction } from "@/lib/auth/session";
 import { manilaDay, parsePeriod, periodFor, periodLabel, recentPeriods } from "@/lib/dar/period";
 import { darStore } from "@/lib/dar/store";
@@ -14,7 +15,7 @@ const dar = darStore(db);
 
 export default function DarPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   return (
-    <Suspense fallback={<LoadingBlock />}>
+    <Suspense fallback={<DarSkeleton />}>
       <DarBody searchParams={searchParams} />
     </Suspense>
   );

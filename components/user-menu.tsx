@@ -42,7 +42,7 @@ export function UserMenu({ user, active }: { user: SidebarUser; active: boolean 
       </Menu.Trigger>
       <Menu.Portal>
         <Menu.Positioner side="bottom" align="end" sideOffset={8} className="isolate z-50">
-          <Menu.Popup className="w-72 origin-(--transform-origin) rounded-xl bg-popover p-1.5 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
+          <Menu.Popup className="w-72 origin-(--transform-origin) rounded-xl bg-popover p-1.5 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-150 ease-(--ease-out) data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
             <div className="px-3 pt-2 pb-2.5">
               <div className="truncate text-[14.5px] font-semibold">{user.name}</div>
               <div className="text-[12.5px] text-muted-foreground">{ROLE_LABELS[user.role]}</div>

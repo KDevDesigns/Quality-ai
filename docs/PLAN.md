@@ -357,6 +357,23 @@ one `PushSubscription` row per device, VAPID-signed pushes sent after each ticke
 **Done when:** on Windows, Android and an iPhone, a person turns it on, closes QA Hub, and gets a notification within
 seconds when someone else replies; clicking opens the ticket; outside their work hours nothing arrives.
 
+### Phase 3.10 — UI polish ✅ (2026-11-01)
+Kevin's requests after DAR for everyone. No database changes.
+- **My DAR set-up** is a full page (`/dar/setup`) laid out like the old template page, instead of a pop-up.
+- **Ticket type colours:** Bug red, Suggestion amber, Improvement blue: chips, a stripe on list rows, the new-ticket
+  picker (`TYPE_TONES`, `--type-*` tokens).
+- **QA Hub preloader** once per browser session (after opening QA Hub or signing in), after the DCWD Module
+  preloader: an emblem filling with water, rings, ripples, waves (`components/preloader.tsx`, `app-splash.tsx`).
+- **Skeletons** shaped like each page while it loads (`components/skeletons.tsx`).
+- **My account** in tabbed sections (Profile, Password, Notifications, Sound, Work hours).
+- **No browser-default controls:** styled dropdowns (`components/select-field.tsx`), a date picker
+  (`components/date-picker.tsx`, `lib/calendar.ts`), half-hour time pickers (`lib/time-options.ts`), checkboxes and
+  radios, thin scrollbars.
+- **Motion:** pages rise in, lists stagger, dialogs and menus grow in, cards lift; all of it off with the system's
+  reduced-motion setting.
+
+**Done when:** each of the above checks out in light and dark mode, on a laptop and a phone.
+
 ### Phase 3.6 — Test library, manual runs, then record & replay ★ last
 **Built last**, after 3.7 and 3.8c: the design still has open questions to settle first (2026-10-31).
 The AI workbench is being dropped. Testers' own ChatGPT Plus/Pro plans **cannot** power QA Hub: they include no API

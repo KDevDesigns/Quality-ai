@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { ArrowLeftIcon, ArrowRightIcon, MessagesSquareIcon } from "lucide-react";
-import { LoadingBlock, PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/page-header";
+import { InboxSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { requireAction } from "@/lib/auth/session";
@@ -54,7 +55,7 @@ export default function InboxPage({ searchParams }: PageProps<"/inbox">) {
   return (
     <>
       <PageHeader title="My inbox" description="The conversations on your tickets, newest first. Replies you send here go to the ticket." />
-      <Suspense fallback={<LoadingBlock />}>
+      <Suspense fallback={<InboxSkeleton />}>
         <Inbox searchParams={searchParams} />
       </Suspense>
     </>
@@ -108,7 +109,7 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
           </nav>
         </div>
         {threads.length ? (
-          <ul className="min-h-0 flex-1 overflow-y-auto">
+          <ul className="stagger min-h-0 flex-1 overflow-y-auto">
             {threads.map((x) => (
               <ThreadRow key={x.id} x={x} href={hrefWith(p, { t: x.number })} active={x.number === t?.number} now={now} />
             ))}

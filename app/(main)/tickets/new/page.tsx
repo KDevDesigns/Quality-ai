@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { InlineAlert } from "@/components/inline-alert";
-import { LoadingBlock, PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/page-header";
+import { FormSkeleton } from "@/components/skeletons";
 import { Card, CardContent } from "@/components/ui/card";
 import { can } from "@/lib/auth/permissions";
 import { requireAction } from "@/lib/auth/session";
@@ -15,7 +16,7 @@ export default function NewTicketPage() {
   return (
     <>
       <PageHeader title="New ticket" description="Report a bug, or suggest an improvement to the ERP. The developer you pick finds it under Assigned to me." />
-      <Suspense fallback={<LoadingBlock />}>
+      <Suspense fallback={<FormSkeleton sections={3} />}>
         <NewTicket />
       </Suspense>
     </>

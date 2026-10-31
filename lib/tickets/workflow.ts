@@ -15,6 +15,10 @@ export type SeverityValue = (typeof SEVERITIES)[number];
 
 export const TYPE_LABELS: Record<TicketType, string> = { BUG: "Bug", SUGGESTION: "Suggestion", IMPROVEMENT: "Improvement" };
 
+/** The colour each type is shown in: Bug red, Suggestion amber, Improvement blue (the --type-* tokens in globals.css). */
+export type TypeTone = "bug" | "sug" | "imp";
+export const TYPE_TONES: Record<TicketType, TypeTone> = { BUG: "bug", SUGGESTION: "sug", IMPROVEMENT: "imp" };
+
 export const STATUS_LABELS: Record<TicketStatus, string> = {
   NEW: "New",
   IN_PROGRESS: "In progress",

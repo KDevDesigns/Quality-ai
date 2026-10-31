@@ -14,7 +14,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { InlineAlert } from "@/components/inline-alert";
-import { LoadingBlock, PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/page-header";
+import { DashboardSkeleton } from "@/components/skeletons";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { can, ROLE_LABELS, type Role } from "@/lib/auth/permissions";
 import { auth, requireUser } from "@/lib/auth/session";
@@ -32,7 +33,7 @@ export default function DashboardPage() {
   return (
     <>
       <PageHeader title="Overview" description="Tickets, the conversation with developers and the module directory, in one place." />
-      <Suspense fallback={<LoadingBlock />}>
+      <Suspense fallback={<DashboardSkeleton />}>
         <Overview />
       </Suspense>
     </>
@@ -88,7 +89,7 @@ async function Overview() {
           {myAreas.length === 0 ? (
             <CardContent><p className="text-sm text-muted-foreground">You aren’t assigned to a module yet. Ask an admin to add you.</p></CardContent>
           ) : (
-            <ul>
+            <ul className="stagger">
               {myAreas.map((a, i) => (
                 <li key={i} className="flex items-center justify-between gap-3 border-t border-line2 px-5 py-3 text-[14.5px] first:border-t-0">
                   <span className="truncate font-medium">{a.area.parent ? `${a.area.parent.name} › ` : ""}{a.area.name}</span>
@@ -151,7 +152,7 @@ async function NotInAnyModule() {
       {unassigned.length === 0 ? (
         <CardContent><p className="text-sm text-muted-foreground">Everyone has a module.</p></CardContent>
       ) : (
-        <ul>
+        <ul className="stagger">
           {unassigned.map((u) => (
             <li key={u.id} className="flex items-center justify-between gap-3 border-t border-line2 px-5 py-3 text-[14.5px] first:border-t-0">
               <span className="truncate font-medium">{u.name}</span>
@@ -207,7 +208,7 @@ function RecentTickets({ rows, role, unread }: { rows: Awaited<ReturnType<typeof
           </p>
         </CardContent>
       ) : (
-        <ul>
+        <ul className="stagger">
           {rows.map((t) => (
             <li key={t.id} className="relative flex items-center gap-3 border-t border-line2 px-5 py-3 text-[14px] first:border-t-0 hover:bg-surface2">
               <span className="flex w-14 shrink-0 items-center gap-2 font-mono text-[13px] text-muted-foreground">
@@ -235,14 +236,14 @@ function RecentTickets({ rows, role, unread }: { rows: Awaited<ReturnType<typeof
 
 function StatRow({ stats }: { stats: Stat[] }) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="stagger grid grid-cols-1 gap-4 sm:grid-cols-3">
       {stats.map(({ label, value, href, icon: Icon, note }) => (
         <Link
           key={label}
           href={href}
-          className="group flex items-center gap-4 rounded-xl border border-line bg-card p-5 transition-[border-color,box-shadow] duration-200 hover:border-acc-b hover:shadow-[0_10px_24px_rgba(40,46,140,0.08)]"
+          className="group flex items-center gap-4 rounded-xl border border-line bg-card p-5 transition-[border-color,box-shadow,transform] duration-200 ease-(--ease-out) hover:-translate-y-0.5 hover:border-acc-b hover:shadow-[0_10px_24px_rgba(40,46,140,0.08)] active:translate-y-0"
         >
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-[11px] bg-acc-t text-acc" aria-hidden>
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-[11px] bg-acc-t text-acc transition-transform duration-300 ease-(--ease-out) group-hover:scale-110" aria-hidden>
             <Icon className="size-[22px]" />
           </span>
           <span className="min-w-0 flex-1">

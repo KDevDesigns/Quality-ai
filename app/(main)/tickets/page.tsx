@@ -4,9 +4,10 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { ChevronLeftIcon, ChevronRightIcon, MessageSquareIcon, PlusIcon, TicketIcon } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
-import { nativeSelectClass } from "@/components/form-field";
+import { SelectField } from "@/components/select-field";
 import { InlineAlert } from "@/components/inline-alert";
-import { LoadingBlock, PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/page-header";
+import { TicketListSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,7 @@ import { notificationStore } from "@/lib/tickets/notifications";
 import { PAGE_SIZE, ticketStore } from "@/lib/tickets/store";
 import { STATUS_LABELS, TICKET_TYPES, TYPE_LABELS, type SeverityValue } from "@/lib/tickets/workflow";
 import { cn } from "@/lib/utils";
-import { SeverityTag, TicketStatusPill, TicketTypeLabel, UnreadDot } from "./ticket-bits";
+import { SeverityTag, TicketStatusPill, TicketTypeLabel, typeStyle, UnreadDot } from "./ticket-bits";
 
 export const metadata: Metadata = { title: "Tickets" };
 
@@ -31,7 +32,7 @@ const notifications = notificationStore(db);
 export default function TicketsPage({ searchParams }: PageProps<"/tickets">) {
   // The header depends on who is signed in (what they see, whether they may file), so it renders inside the guard.
   return (
-    <Suspense fallback={<LoadingBlock />}>
+    <Suspense fallback={<TicketListSkeleton header />}>
       <TicketList searchParams={searchParams} />
     </Suspense>
   );
@@ -125,33 +126,43 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
         {f.status ? <input type="hidden" name="status" value={f.status} /> : null}
         {f.reporter ? <input type="hidden" name="reporter" value={f.reporter} /> : null}
         <Input name="q" defaultValue={f.q} placeholder="Search title, text or #number" aria-label="Search" className="h-9 w-64 text-sm" />
-        <select name="type" defaultValue={f.type ?? ""} aria-label="Type" className={cn(nativeSelectClass, "h-9 w-40 text-sm")}>
-          <option value="">All types</option>
-          {TICKET_TYPES.map((t) => (
-            <option key={t} value={t}>{TYPE_LABELS[t]}</option>
-          ))}
-        </select>
-        <select name="area" defaultValue={f.area ?? ""} aria-label="Module" className={cn(nativeSelectClass, "h-9 w-56 text-sm")}>
-          <option value="">All modules</option>
-          {buildTree(areas).map((m) => (
-            <optgroup key={m.id} label={m.name}>
-              <option value={m.id}>{m.name} (all)</option>
-              {m.children.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
+        <SelectField
+          name="type"
+          defaultValue={f.type ?? ""}
+          aria-label="Type"
+          size="sm"
+          className="w-40"
+          options={[{ value: "", label: "All types" }, ...TICKET_TYPES.map((t) => ({ value: t, label: TYPE_LABELS[t] }))]}
+        />
+        <SelectField
+          name="area"
+          defaultValue={f.area ?? ""}
+          aria-label="Module"
+          size="sm"
+          className="w-56"
+          groups={[
+            { options: [{ value: "", label: "All modules" }] },
+            ...buildTree(areas).map((m) => ({
+              label: m.name,
+              options: [{ value: m.id, label: `${m.name} (all)` }, ...m.children.map((c) => ({ value: c.id, label: c.name }))],
+            })),
+          ]}
+        />
         {/* A developer's list is already "assigned to me". */}
         {me.role !== "DEV" ? (
-          <select name="assignee" defaultValue={f.assignee ?? ""} aria-label="Developer" className={cn(nativeSelectClass, "h-9 w-48 text-sm")}>
-            <option value="">Any developer</option>
-            {me.role === "ADMIN" ? <option value="me">Me</option> : null}
-            <option value="none">Not assigned</option>
-            {people.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
+          <SelectField
+            name="assignee"
+            defaultValue={f.assignee ?? ""}
+            aria-label="Developer"
+            size="sm"
+            className="w-48"
+            options={[
+              { value: "", label: "Any developer" },
+              ...(me.role === "ADMIN" ? [{ value: "me", label: "Me" }] : []),
+              { value: "none", label: "Not assigned" },
+              ...people.map((p) => ({ value: p.id, label: p.name })),
+            ]}
+          />
         ) : null}
         <Button type="submit" variant="outline" size="sm">Filter</Button>
         {filtered ? (
@@ -186,10 +197,10 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
                 <TableHead className="w-28 text-right">Activity</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="stagger">
               {rows.map((t) => (
                 <TableRow key={t.id} className="relative">
-                  <TableCell className="font-mono text-[13px] text-muted-foreground">
+                  <TableCell className={cn("font-mono text-[13px] text-muted-foreground", typeStyle(t.type).stripe)}>
                     <span className="inline-flex items-center gap-2">
                       {t.number}
                       {unread.has(t.id) ? <UnreadDot /> : null}

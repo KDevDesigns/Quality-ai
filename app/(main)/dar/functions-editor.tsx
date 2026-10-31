@@ -42,7 +42,7 @@ export function FunctionsEditor({ name, label, initial }: { name: string; label:
             </label>
           </div>
           <label className="flex items-center gap-2 text-[13px]">
-            <input type="checkbox" checked={r.autofill} onChange={(e) => set(i, { autofill: e.target.checked })} className="size-4 accent-acc" />
+            <input type="checkbox" checked={r.autofill} onChange={(e) => set(i, { autofill: e.target.checked })} />
             Fill this row&apos;s days from my ticket work
           </label>
         </div>

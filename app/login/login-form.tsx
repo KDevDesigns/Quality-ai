@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { LockIcon, MailIcon } from "lucide-react";
+import { ResetSplash } from "@/components/app-splash";
 import { Field, FormMessage } from "@/components/form-field";
 import { IconField, PasswordInput } from "@/components/password-input";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ export function LoginForm({ next }: { next: string }) {
 
   return (
     <form action={action} className="auth-enter grid gap-[18px]">
+      <ResetSplash />
       <div className="mb-1.5">
         <h2 className="text-[32px] leading-tight font-semibold tracking-[-0.02em]">Sign in</h2>
         <p className="mt-2.5 text-base leading-normal text-muted-foreground">Welcome back. Sign in to file tickets and follow up with the team.</p>

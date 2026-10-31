@@ -4,8 +4,6 @@ import { Label } from "@/components/ui/label";
 import type { FormState } from "@/lib/form";
 import { cn } from "@/lib/utils";
 
-export const nativeSelectClass =
-  "native-select h-11 w-full min-w-0 rounded-[9px] border border-line bg-card pr-9 pl-3.5 text-[15px] text-foreground outline-none transition-colors hover:border-acc-b focus-visible:border-acc focus-visible:ring-3 focus-visible:ring-acc/15 aria-invalid:border-destructive [&>option]:bg-popover [&>option]:text-popover-foreground";
 
 export function Field({
   label,

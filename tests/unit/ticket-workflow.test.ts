@@ -8,6 +8,8 @@ import {
   isDone,
   OPEN_STATUSES,
   TICKET_STATUSES,
+  TICKET_TYPES,
+  TYPE_TONES,
   ticketScope,
   transitionError,
   type Actor,
@@ -123,5 +125,12 @@ describe("ticket workflow", () => {
     expect(canDeleteTicket(ticket("CLOSED"), admin)).toBe(true);
     expect(canEditTicket(filedByDev, dev)).toBe(false);
     expect(canDeleteTicket(filedByDev, dev)).toBe(false);
+  });
+});
+
+describe("ticket type colours", () => {
+  it("gives each type its own colour", () => {
+    expect(TICKET_TYPES.map((t) => TYPE_TONES[t])).toEqual(["bug", "sug", "imp"]);
+    expect(new Set(Object.values(TYPE_TONES)).size).toBe(TICKET_TYPES.length);
   });
 });

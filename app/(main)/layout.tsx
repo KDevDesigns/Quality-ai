@@ -1,9 +1,11 @@
 import { Suspense } from "react";
+import { AppSplash } from "@/components/app-splash";
 import { AppSidebar, AppSidebarShell, type SidebarUser } from "@/components/app-sidebar";
 import { AppTopbar, AppTopbarShell } from "@/components/app-topbar";
 import { NotificationsProvider } from "@/components/notifications";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { getCurrentUser } from "@/lib/auth/session";
+
 import { PushPrompt } from "./push-prompt";
 import { ToneListener } from "./tone-listener";
 
@@ -13,6 +15,7 @@ import { ToneListener } from "./tone-listener";
 export default function MainLayout({ children }: LayoutProps<"/">) {
   return (
     <NotificationsProvider>
+      <AppSplash />
       <SidebarProvider style={{ "--sidebar-width": "17.5rem" } as React.CSSProperties}>
         <Suspense fallback={<AppSidebarShell />}>
           <SessionSidebar />
@@ -21,7 +24,7 @@ export default function MainLayout({ children }: LayoutProps<"/">) {
           <Suspense fallback={<AppTopbarShell />}>
             <SessionTopbar />
           </Suspense>
-          <main className="mx-auto w-full max-w-[1320px] flex-1 space-y-6 px-4 py-7 has-data-full-width:max-w-none md:px-10">{children}</main>
+          <main className="page-enter mx-auto w-full max-w-[1320px] flex-1 space-y-6 px-4 py-7 has-data-full-width:max-w-none md:px-10">{children}</main>
           <footer className="flex h-[52px] shrink-0 items-center justify-center border-t border-line2 px-4 text-center text-[13px] tracking-[0.02em] text-muted-foreground">
             Davao City Water District · QA Hub for the in-house ERP
           </footer>

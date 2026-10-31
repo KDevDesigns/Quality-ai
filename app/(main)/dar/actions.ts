@@ -50,5 +50,6 @@ export async function saveDarProfile(_prev: FormState, fd: FormData): Promise<Fo
   if (!parsed.success) return fromZodError(parsed.error);
   await dar.saveProfile(me.id, parsed.data);
   revalidatePath("/dar");
-  return { ok: true, message: "Saved." };
+  revalidatePath("/dar/setup");
+  return { ok: true, message: "Saved. Your DAR uses it from now on." };
 }

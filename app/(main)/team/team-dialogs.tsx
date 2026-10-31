@@ -2,7 +2,8 @@
 
 import { useActionState, useState } from "react";
 import { FolderPlusIcon, PencilIcon, PlusIcon, UserPlusIcon } from "lucide-react";
-import { Field, FormMessage, nativeSelectClass } from "@/components/form-field";
+import { Field, FormMessage } from "@/components/form-field";
+import { SelectField } from "@/components/select-field";
 import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,17 +76,16 @@ function AreaForm({ modules, area, parentId, onDone }: { modules: { id: string; 
         ) : null}
       </div>
       <Field label="Inside module" htmlFor="parentId" error={err.parentId} hint="Leave empty for a top-level module.">
-        <select id="parentId" name="parentId" defaultValue={parent ?? ""} onChange={(e) => setIsSub(e.target.value !== "")} className={nativeSelectClass}>
-          <option value="">— Top-level module —</option>
-          {modules
-            .filter((m) => m.id !== area?.id)
-            .map((m) => (
-              <option key={m.id} value={m.id}>{m.name}</option>
-            ))}
-        </select>
+        <SelectField
+          id="parentId"
+          name="parentId"
+          defaultValue={parent ?? ""}
+          onValueChange={(v) => setIsSub(v !== "")}
+          options={[{ value: "", label: "— Top-level module —" }, ...modules.filter((m) => m.id !== area?.id).map((m) => ({ value: m.id, label: m.name }))]}
+        />
       </Field>
       <label className="flex items-center gap-2.5 text-sm">
-        <input type="checkbox" name="active" defaultChecked={area?.active ?? true} className="size-4 accent-acc" />
+        <input type="checkbox" name="active" defaultChecked={area?.active ?? true} />
         Show in ticket forms
       </label>
       <FormMessage state={state} />
@@ -162,12 +162,12 @@ function MembersForm({ areaId, people, members, onDone }: { areaId: string; peop
             {group.map((p) => (
               <div key={p.id} className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 hover:bg-surface2">
                 <label className="flex items-center gap-2.5 text-sm">
-                  <input type="checkbox" checked={chosen.has(p.id)} onChange={() => toggle(p.id)} className="size-4 accent-acc" />
+                  <input type="checkbox" checked={chosen.has(p.id)} onChange={() => toggle(p.id)} />
                   {p.name}
                 </label>
                 {p.role !== "QA" ? (
                   <label className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
-                    <input type="radio" name="lead-pick" checked={lead === p.id} disabled={!chosen.has(p.id)} onChange={() => setLead(p.id)} className="size-3.5 accent-acc" />
+                    <input type="radio" name="lead-pick" checked={lead === p.id} disabled={!chosen.has(p.id)} onChange={() => setLead(p.id)} />
                     Lead
                   </label>
                 ) : null}
