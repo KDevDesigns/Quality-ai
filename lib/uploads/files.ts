@@ -54,8 +54,7 @@ export function cleanOriginalName(name: string): string {
   return (clean || "file").slice(0, 120);
 }
 
-// mp3 and wav are notification tones people upload for themselves (lib/uploads/audio.ts).
-const STORED = /^\d{4}\/\d{2}\/[a-f0-9]{32}\.(png|jpg|gif|webp|mp4|webm|mp3|wav)$/;
+const STORED = /^\d{4}\/\d{2}\/[a-f0-9]{32}\.(png|jpg|gif|webp|mp4|webm)$/;
 
 /** True for an object key this module generated; anything else is never passed to Storage. */
 export const isStoredName = (name: string) => STORED.test(name);

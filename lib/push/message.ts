@@ -1,7 +1,8 @@
 import { STATUS_LABELS, TYPE_LABELS, type TicketStatus } from "@/lib/tickets/workflow";
 
 // What a device notification says. With previews on (the default) it leads with the message: the ticket's title, who
-// wrote what (cut short), the module, and the first photo. With previews off it shows no ticket text at all, only
+// wrote what (cut short, with 📷/🎥 when something is attached) and the module. No photo: each one would be downloaded
+// from Storage by every device, and screenshots show customer data. With previews off it shows no ticket text at all, only
 // "#12 · Bug / New reply from Ana / Module: Billing", for people whose lock screens others can see.
 // The device adds the time itself.
 
@@ -14,10 +15,10 @@ export type PushEvent =
   | { kind: "edited" };
 
 /**
- * `tone` is the recipient's sound choice (see tones.ts), added per person when it's sent. `image` is a short-lived
- * link to the reply's first photo. `stack` lets the service worker merge replies on one ticket (public/sw.js).
+ * `tone` is the recipient's sound choice (see tones.ts), added per person when it's sent. `stack` lets the service
+ * worker merge replies on one ticket (public/sw.js).
  */
-export type PushMessage = { title: string; body: string; url: string; tag: string; tone?: string; image?: string; stack?: { line: string; detail: string } };
+export type PushMessage = { title: string; body: string; url: string; tag: string; tone?: string; stack?: { line: string; detail: string } };
 
 export type PushTicket = { number: number; title: string; type: keyof typeof TYPE_LABELS; areaName: string | null };
 

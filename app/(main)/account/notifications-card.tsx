@@ -6,11 +6,9 @@ import { InlineAlert } from "@/components/inline-alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { initialFormState, type FormState } from "@/lib/form";
+import { initialFormState } from "@/lib/form";
 import { cn } from "@/lib/utils";
-import { DEFAULT_TONE } from "@/lib/push/tones";
-import { TONE_MAX_BYTES, TONE_MAX_SECONDS } from "@/lib/uploads/limits";
-import { removeTone, savePreviews, saveTone, saveWorkHours, sendTestPush, uploadTone } from "./actions";
+import { savePreviews, saveTone, saveWorkHours, sendTestPush } from "./actions";
 import { currentSubscription, deviceState, turnOffDevice, turnOnDevice, type DeviceState } from "./device-push";
 import { ToneSelect } from "./tone-select";
 
@@ -171,17 +169,11 @@ export function WorkHoursCard({ initial }: { initial: { pushWorkHoursOnly: boole
   );
 }
 
-export function ToneCard({ initial }: { initial: { tone: string; hasCustom: boolean; previews: boolean } }) {
+export function ToneCard({ initial }: { initial: { tone: string; previews: boolean } }) {
   const [tone, setTone] = useState(initial.tone);
   const [previews, setPreviews] = useState(initial.previews);
   const [note, setNote] = useState<{ ok: boolean; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
-  const [upState, upload, uploading] = useActionState(async (prev: FormState, fd: FormData) => {
-    const r = await uploadTone(prev, fd);
-    // The server picks the new tone after an upload; follow it.
-    if (r.ok) setTone("custom");
-    return r;
-  }, initialFormState);
 
   async function save() {
     setSaving(true);
@@ -200,10 +192,10 @@ export function ToneCard({ initial }: { initial: { tone: string; hasCustom: bool
           The sound plays when a notification arrives while QA Hub is open in a tab you&apos;ve clicked in. With QA Hub closed, your device&apos;s own notification sound plays instead.
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-5">
+      <CardContent>
         <div className="grid gap-4">
           <Field label="Sound" htmlFor="tone">
-            <ToneSelect id="tone" value={tone} onChange={setTone} hasCustom={initial.hasCustom} />
+            <ToneSelect id="tone" value={tone} onChange={setTone} />
           </Field>
           <div className="grid gap-1.5">
             <label className="flex items-center gap-2.5 text-sm">
@@ -211,7 +203,7 @@ export function ToneCard({ initial }: { initial: { tone: string; hasCustom: bool
               Show message previews
             </label>
             <p className="pl-[26px] text-[12.5px] text-muted-foreground">
-              The ticket title, the message and the first photo. Turn it off if others can see your screen: you&apos;ll get only &quot;#12 · New reply from Ana&quot;.
+              The ticket title and the message. Turn it off if others can see your screen: you&apos;ll get only &quot;#12 · New reply from Ana&quot;.
             </p>
           </div>
           {note && !note.ok ? <InlineAlert tone="bad" role="alert">{note.message}</InlineAlert> : null}
@@ -220,30 +212,6 @@ export function ToneCard({ initial }: { initial: { tone: string; hasCustom: bool
             <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
           </div>
         </div>
-
-        <form action={upload} className="grid gap-4 border-t border-line2 pt-5">
-          <Field label="Your own sound" htmlFor="toneFile" hint={`MP3 or WAV, at most ${TONE_MAX_SECONDS} seconds and ${TONE_MAX_BYTES / 1024} KB. Only you hear it.`}>
-            <Input id="toneFile" name="tone" type="file" accept=".mp3,.wav,audio/mpeg,audio/wav" required />
-          </Field>
-          <FormMessage state={upState} />
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            <span aria-live="polite" className={cn("text-[13px] text-muted-foreground", !upState.ok && "sr-only")}>{upState.ok ? upState.message : ""}</span>
-            {initial.hasCustom ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={async () => {
-                  await removeTone();
-                  if (tone === "custom") setTone(DEFAULT_TONE);
-                }}
-                disabled={uploading}
-              >
-                Remove my sound
-              </Button>
-            ) : null}
-            <Button type="submit" disabled={uploading}>{uploading ? "Uploading…" : initial.hasCustom ? "Replace my sound" : "Upload"}</Button>
-          </div>
-        </form>
       </CardContent>
     </Card>
   );

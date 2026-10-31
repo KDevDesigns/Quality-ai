@@ -63,15 +63,12 @@ export async function turnOnDevice(): Promise<{ state: DeviceState; message?: st
   }
 }
 
-/**
- * Plays a tone; true if it played. Browsers refuse sound on a page nobody has clicked yet, which gives false.
- * `fresh` skips the browser's copy of "custom", so a newly uploaded tone plays instead of the old one.
- */
-export async function playTone(tone: string, fresh = false): Promise<boolean> {
+/** Plays a tone; true if it played. Browsers refuse sound on a page nobody has clicked yet, which gives false. */
+export async function playTone(tone: string): Promise<boolean> {
   const src = toneSrc(tone);
   if (!src) return false;
   try {
-    await new Audio(fresh ? `${src}?t=${Date.now()}` : src).play();
+    await new Audio(src).play();
     return true;
   } catch {
     return false;

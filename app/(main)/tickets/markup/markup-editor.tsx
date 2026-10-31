@@ -5,7 +5,8 @@ import { CropIcon, EyeOffIcon, MoveUpRightIcon, PencilLineIcon, Redo2Icon, Squar
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CROP_DIM, CROP_LINE, DEFAULT_MARK_COLOR, HIDE_COLOR, MARK_COLORS, TEXT_OUTLINE } from "@/lib/markup/colors";
-import { JPEG, JPEG_QUALITY, markedName, pickFormat, PNG } from "@/lib/markup/export";
+import { encodeCanvas } from "@/lib/markup/encode";
+import { markedName } from "@/lib/markup/export";
 import { canRedo, canUndo, emptyHistory, push, redo, undo, type History } from "@/lib/markup/history";
 import { arrowHead, cropOf, drawOrder, fontSizeFor, isTiny, normalizeRect, strokeFor, type Point, type Shape, type Tool } from "@/lib/markup/shapes";
 import { IMAGE_MAX_BYTES } from "@/lib/uploads/limits";
@@ -77,7 +78,7 @@ function drawShape(ctx: CanvasRenderingContext2D, s: Shape, sw: number, fs: numb
   }
 }
 
-/** The marked-up image at full resolution, cropped: PNG, or JPEG when the PNG would be over the upload limit. */
+/** The marked-up image at full resolution, cropped, in the smallest format that keeps it sharp (lib/markup/encode.ts). */
 async function exportImage(img: HTMLImageElement, shapes: Shape[], name: string): Promise<File> {
   const size = { w: img.naturalWidth, h: img.naturalHeight };
   const crop = cropOf(shapes, size);
@@ -89,13 +90,9 @@ async function exportImage(img: HTMLImageElement, shapes: Shape[], name: string)
   ctx.drawImage(img, 0, 0);
   for (const s of drawOrder(shapes)) drawShape(ctx, s, strokeFor(size.w), fontSizeFor(size.w));
 
-  const blob = (type: string, quality?: number) =>
-    new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("The image couldn't be saved."))), type, quality));
-  let out = await blob(PNG.mime);
-  const format = pickFormat(out.size);
-  if (format === JPEG) out = await blob(JPEG.mime, JPEG_QUALITY);
-  if (out.size > IMAGE_MAX_BYTES) throw new Error(`The image is still larger than ${IMAGE_MAX_BYTES / 1024 / 1024} MB. Crop it to the part that matters.`);
-  return new File([out], markedName(name, format), { type: format.mime });
+  const out = await encodeCanvas(canvas);
+  if (!out) throw new Error(`The image is still larger than ${IMAGE_MAX_BYTES / 1024 / 1024} MB. Crop it to the part that matters.`);
+  return new File([out.blob], markedName(name, out.format), { type: out.format.mime });
 }
 
 type Draft = Shape | null;

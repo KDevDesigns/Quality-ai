@@ -46,12 +46,6 @@ export async function sendTo(db: PrismaClient, send: PushSender, subs: Sub[], ms
 /** What an action reports: a reply names its comment, and the message and photos are looked up here. */
 export type TicketTrigger = Exclude<PushEvent, { kind: "reply" }> | { kind: "reply"; commentId: string };
 
-/** A short-lived link to a stored photo (Storage in the app, a fake in tests). */
-export type PhotoLink = (storedName: string) => Promise<string>;
-
-/** Long enough for the device to fetch the photo when the notification shows; useless soon after. */
-export const PHOTO_LINK_SECONDS = 10 * 60;
-
 /**
  * Tells everyone who can see a ticket (except the person who acted) that something happened on it. Runs after the
  * action has answered, and never throws: a failed notification must not fail or slow the change itself.
@@ -60,7 +54,7 @@ export async function notifyTicket(
   db: PrismaClient,
   send: PushSender | null,
   input: { ticketId: string; actorId: string; event: TicketTrigger },
-  opts: { now?: Date; photoLink?: PhotoLink } = {},
+  opts: { now?: Date } = {},
 ): Promise<{ sent: number; removed: number }> {
   if (!send) return { sent: 0, removed: 0 };
   const now = opts.now ?? new Date();
@@ -73,16 +67,10 @@ export async function notifyTicket(
     if (!ticket || !actor) return { sent: 0, removed: 0 };
 
     let event: PushEvent;
-    let photo: string | null = null;
     if (input.event.kind === "reply") {
-      const c = await db.ticketComment.findUnique({
-        where: { id: input.event.commentId },
-        select: { body: true, attachments: { select: { kind: true, storedName: true }, orderBy: { createdAt: "asc" } } },
-      });
+      const c = await db.ticketComment.findUnique({ where: { id: input.event.commentId }, select: { body: true, attachments: { select: { kind: true } } } });
       if (!c) return { sent: 0, removed: 0 };
-      const photos = c.attachments.filter((x) => x.kind === "IMAGE");
-      event = { kind: "reply", text: c.body, photos: photos.length, video: c.attachments.some((x) => x.kind === "VIDEO") };
-      photo = photos[0]?.storedName ?? null;
+      event = { kind: "reply", text: c.body, photos: c.attachments.filter((x) => x.kind === "IMAGE").length, video: c.attachments.some((x) => x.kind === "VIDEO") };
     } else {
       event = input.event;
     }
@@ -102,15 +90,12 @@ export async function notifyTicket(
         workEndMin: true,
         workDays: true,
         notifyTone: true,
-        customTone: true,
         pushPreviews: true,
         pushSubscriptions: { select: { id: true, endpoint: true, p256dh: true, auth: true } },
       },
     });
 
     const recipients = pickRecipients(ticket, input.actorId, candidates, now);
-    // One link for everyone who sees previews; none at all when nobody does.
-    const image = photo && opts.photoLink && recipients.some((u) => u.pushPreviews) ? await opts.photoLink(photo).catch(() => null) : null;
 
     let sent = 0;
     let removed = 0;
@@ -119,7 +104,6 @@ export async function notifyTicket(
       const msg = {
         ...pushMessage(event, { ...facts, actorName: actor.name, forAssignee: u.id === ticket.assigneeId, previews: u.pushPreviews }),
         tone: effectiveTone(u),
-        ...(image && u.pushPreviews ? { image } : {}),
       };
       const r = await sendTo(db, send, u.pushSubscriptions, msg, now);
       sent += r.sent;

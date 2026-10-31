@@ -6,21 +6,20 @@ import { after } from "next/server";
 import { requireAction, requireUser } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { fromZodError, text, type FormState } from "@/lib/form";
-import { notifyTicket, PHOTO_LINK_SECONDS, type TicketTrigger } from "@/lib/push/send";
+import { notifyTicket, type TicketTrigger } from "@/lib/push/send";
 import { webPushSender } from "@/lib/push/web-push";
 import { commentInput, ticketCreate, ticketEdit, transitionInput } from "@/lib/schemas/ticket";
 import { notificationStore } from "@/lib/tickets/notifications";
 import { TicketError, ticketStore } from "@/lib/tickets/store";
-import { removeObjects, signedReadUrl } from "@/lib/uploads/storage";
+import { removeObjects } from "@/lib/uploads/storage";
 
 const tickets = ticketStore(db);
 const sender = webPushSender();
 
 /** Device notifications are sent after the response, so a slow push service never holds up the person's change. */
-const photoLink = (storedName: string) => signedReadUrl(storedName, { expiresIn: PHOTO_LINK_SECONDS });
 const push = (ticketId: string, actorId: string, event: TicketTrigger) =>
   after(async () => {
-    const r = await notifyTicket(db, sender, { ticketId, actorId, event }, { photoLink });
+    const r = await notifyTicket(db, sender, { ticketId, actorId, event });
     // Counts only, so the logs show whether a device was reached without any ticket text or address.
     console.info(`[push] ${event.kind}: sent to ${r.sent} device(s), removed ${r.removed} dead`);
   });
