@@ -84,6 +84,16 @@ export async function resetPassword(id: string): Promise<UserFormState> {
   const tempPassword = generateTempPassword();
   await auth.setPassword(id, tempPassword, true);
   await auth.deleteUserSessions(id);
-  revalidatePath("/admin/users");
+  await auth.clearResetRequest(id);
+  // No revalidatePath, like approveSignUp: the dialog showing the password refreshes the page when it closes.
   return { ok: true, tempPassword, email: user.email };
+}
+
+/** Removes a forgot-password request without resetting, e.g. when the person remembered their password. */
+export async function dismissResetRequest(id: string): Promise<FormState> {
+  await requireAction("users.manage");
+  if (!(await auth.clearResetRequest(id))) return { ok: false, message: "This request was already handled. Refresh the page." };
+  revalidatePath("/admin/users");
+  revalidatePath("/");
+  return { ok: true };
 }

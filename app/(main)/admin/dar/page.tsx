@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { FileSpreadsheetIcon } from "lucide-react";
 import { LoadingBlock, PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireAction } from "@/lib/auth/session";
 import { darStore } from "@/lib/dar/store";
@@ -29,6 +32,11 @@ async function DarTemplateBody() {
       <PageHeader
         title="DAR template"
         description="The fixed text on every QA tester's Daily Accomplishment Report. Testers can change their own name, position and duties under My DAR → My details; everything else comes from here."
+        actions={
+          <Button variant="outline" nativeButton={false} render={<Link href="/dar" />}>
+            <FileSpreadsheetIcon /> My DAR
+          </Button>
+        }
       />
       <Card>
         <CardContent>

@@ -102,8 +102,9 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
     await tx.pendingUpload.deleteMany({ where: { id: { in: ids } } });
   }
 
-  async function touch(tx: Tx, id: string, at: Date, data: Prisma.TicketUncheckedUpdateInput = {}) {
-    await tx.ticket.update({ where: { id }, data: { ...data, lastActivityAt: at } });
+  /** Bumps lastActivityAt and records who did it, so everyone else sees the ticket as unread. */
+  async function touch(tx: Tx, actor: Actor, id: string, at: Date, data: Prisma.TicketUncheckedUpdateInput = {}) {
+    await tx.ticket.update({ where: { id }, data: { ...data, lastActivityAt: at, lastActivityById: actor.id } });
   }
 
   return {
@@ -140,6 +141,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
                 assigneeId: input.assigneeId,
                 createdAt: at,
                 lastActivityAt: at,
+                lastActivityById: actor.id,
               },
             });
             await claimUploads(tx, actor, t.id, ids);
@@ -172,7 +174,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
 
       await db.$transaction(async (tx) => {
         const at = now();
-        await touch(tx, id, at, input);
+        await touch(tx, actor, id, at, input);
         await tx.ticketEvent.createMany({ data: changes.map((c) => ({ ticketId: id, actorId: actor.id, kind: "FIELD", ...c, createdAt: at })) });
       });
       return changes.length;
@@ -188,7 +190,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
       ]);
       await db.$transaction(async (tx) => {
         const at = now();
-        await touch(tx, id, at, { assigneeId });
+        await touch(tx, actor, id, at, { assigneeId });
         await tx.ticketEvent.create({ data: { ticketId: id, actorId: actor.id, kind: "ASSIGNEE", from, to, createdAt: at } });
       });
     },
@@ -215,7 +217,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
         // Only move it if nobody else changed the status since this page was loaded.
         const moved = await tx.ticket.updateMany({
           where: { id, status: t.status },
-          data: { status: input.to, closedAt: isDone(input.to) ? at : null, lastActivityAt: at, ...(duplicateOfId !== undefined ? { duplicateOfId } : {}) },
+          data: { status: input.to, closedAt: isDone(input.to) ? at : null, lastActivityAt: at, lastActivityById: actor.id, ...(duplicateOfId !== undefined ? { duplicateOfId } : {}) },
         });
         if (moved.count === 0) throw new TicketError("Someone else just changed this ticket. Refresh the page and try again.");
         await tx.ticketEvent.create({ data: { ticketId: id, actorId: actor.id, kind: "STATUS", from: t.status, to: input.to, note, createdAt: at } });
@@ -231,7 +233,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
         const at = now();
         const c = await tx.ticketComment.create({ data: { ticketId: id, authorId: actor.id, body: body.trim(), createdAt: at } });
         await claimUploads(tx, actor, id, ids, c.id);
-        await touch(tx, id, at);
+        await touch(tx, actor, id, at);
         return c.id;
       });
     },

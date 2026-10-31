@@ -17,14 +17,16 @@ import { requireAction } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { timeAgo } from "@/lib/format";
 import { ticketFilters, type TicketFilters } from "@/lib/schemas/ticket";
+import { notificationStore } from "@/lib/tickets/notifications";
 import { PAGE_SIZE, ticketStore } from "@/lib/tickets/store";
 import { STATUS_LABELS, TICKET_TYPES, TYPE_LABELS, type SeverityValue } from "@/lib/tickets/workflow";
 import { cn } from "@/lib/utils";
-import { SeverityTag, TicketStatusPill, TicketTypeLabel } from "./ticket-bits";
+import { SeverityTag, TicketStatusPill, TicketTypeLabel, UnreadDot } from "./ticket-bits";
 
 export const metadata: Metadata = { title: "Tickets" };
 
 const tickets = ticketStore(db);
+const notifications = notificationStore(db);
 
 export default function TicketsPage({ searchParams }: PageProps<"/tickets">) {
   // The header depends on who is signed in (what they see, whether they may file), so it renders inside the guard.
@@ -87,6 +89,7 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
     db.erpArea.findMany({ where: { active: true }, select: { id: true, parentId: true, name: true, sortOrder: true } }),
     db.user.findMany({ where: { active: true, role: { in: ["DEV", "ADMIN"] } }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
   ]);
+  const unread = await notifications.unreadIds(me, rows.map((t) => t.id));
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const now = new Date();
   const isQuick = (p: Quick["patch"]) => f.group === p.group && f.status === p.status && f.assignee === p.assignee && f.reporter === p.reporter;
@@ -186,9 +189,14 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
             <TableBody>
               {rows.map((t) => (
                 <TableRow key={t.id} className="relative">
-                  <TableCell className="font-mono text-[13px] text-muted-foreground">{t.number}</TableCell>
+                  <TableCell className="font-mono text-[13px] text-muted-foreground">
+                    <span className="inline-flex items-center gap-2">
+                      {t.number}
+                      {unread.has(t.id) ? <UnreadDot /> : null}
+                    </span>
+                  </TableCell>
                   <TableCell className="whitespace-normal">
-                    <Link href={`/tickets/${t.number}`} className="font-medium after:absolute after:inset-0 hover:text-acc">
+                    <Link href={`/tickets/${t.number}`} className={cn(unread.has(t.id) ? "font-semibold" : "font-medium", "after:absolute after:inset-0 hover:text-acc")}>
                       {t.title}
                     </Link>
                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-muted-foreground">

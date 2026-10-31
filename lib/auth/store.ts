@@ -29,10 +29,10 @@ export function authStore(db: PrismaClient, now: () => Date = () => new Date()) 
 
     /**
      * A self sign-up: no password yet, turned off and pending until an admin approves it and hands over a temporary
-     * password. Returns "exists" without changing anything when the email is taken; the caller shows the same
-     * message either way.
+     * password. When the email is taken nothing changes, and the result says whether that account is still waiting
+     * for approval ("pending") or already exists.
      */
-    async signUp(input: { name: string; email: string; role: Role }): Promise<"created" | "exists"> {
+    async signUp(input: { name: string; email: string; role: Role }): Promise<"created" | "exists" | "pending"> {
       if (input.role === "ADMIN") throw new Error("Admins can't sign themselves up.");
       try {
         await db.user.create({
@@ -49,9 +49,35 @@ export function authStore(db: PrismaClient, now: () => Date = () => new Date()) 
         });
         return "created";
       } catch (e) {
-        if ((e as { code?: unknown } | null)?.code === "P2002") return "exists";
-        throw e;
+        if ((e as { code?: unknown } | null)?.code !== "P2002") throw e;
+        const taken = await db.user.findUnique({ where: { email: normalizeEmail(input.email) }, select: { pending: true } });
+        return taken?.pending ? "pending" : "exists";
       }
+    },
+
+    /** "Forgot password" on the sign-in page: flags the account for an admin, who resets it in Admin → Users. */
+    async requestReset(email: string): Promise<"requested" | "unknown" | "pending" | "inactive"> {
+      const user = await db.user.findUnique({ where: { email: normalizeEmail(email) }, select: { id: true, pending: true, active: true } });
+      if (!user) return "unknown";
+      if (user.pending) return "pending";
+      if (!user.active) return "inactive";
+      await db.user.update({ where: { id: user.id }, data: { resetRequestedAt: now() } });
+      return "requested";
+    },
+
+    /** Clears a forgot-password request, after a reset or when the admin dismisses it. */
+    async clearResetRequest(userId: string): Promise<boolean> {
+      const r = await db.user.updateMany({ where: { id: userId, resetRequestedAt: { not: null } }, data: { resetRequestedAt: null } });
+      return r.count === 1;
+    },
+
+    /** What waits for an admin in Admin → Users: sign-up requests and forgot-password requests. */
+    async adminRequests(): Promise<{ signUps: number; resets: number }> {
+      const [signUps, resets] = await Promise.all([
+        db.user.count({ where: { pending: true } }),
+        db.user.count({ where: { resetRequestedAt: { not: null }, pending: false } }),
+      ]);
+      return { signUps, resets };
     },
 
     /** Turns a pending sign-up on with a temporary password they must change at first sign-in. False if already handled. */

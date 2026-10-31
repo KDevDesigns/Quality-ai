@@ -34,6 +34,9 @@ export const signupInput = z.object({
   email,
 });
 
+/** "Forgot password" on the sign-in page. */
+export const forgotInput = z.object({ email });
+
 export const userInput = z.object({
   name: nickname,
   email,

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { UserPlusIcon, UsersIcon } from "lucide-react";
+import { KeyRoundIcon, UserPlusIcon, UsersIcon } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { LoadingBlock, PageHeader } from "@/components/page-header";
 import { StatusPill } from "@/components/status-pill";
@@ -12,7 +12,7 @@ import { ROLE_LABELS, type Role } from "@/lib/auth/permissions";
 import { requireAction } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { formatDateTime, timeAgo } from "@/lib/format";
-import { ApprovalHost, PendingActions } from "./pending-actions";
+import { ApprovalHost, PendingActions, ResetRequestActions } from "./pending-actions";
 import { ResetPasswordButton, UserDialog } from "./user-dialog";
 
 export const metadata: Metadata = { title: "Users" };
@@ -33,6 +33,11 @@ async function UsersBody() {
     where: { pending: true },
     orderBy: { createdAt: "asc" },
     select: { id: true, name: true, email: true, role: true, createdAt: true },
+  });
+  const resets = await db.user.findMany({
+    where: { pending: false, resetRequestedAt: { not: null } },
+    orderBy: { resetRequestedAt: "asc" },
+    select: { id: true, name: true, email: true, role: true, active: true, resetRequestedAt: true },
   });
   const users = await db.user.findMany({
     where: { pending: false },
@@ -73,6 +78,30 @@ async function UsersBody() {
                   <TableCell><Badge variant="outline">{ROLE_LABELS[r.role as Role]}</Badge></TableCell>
                   <TableCell className="text-[13px] text-muted-foreground" title={formatDateTime(r.createdAt)}>{timeAgo(r.createdAt)}</TableCell>
                   <TableCell><PendingActions id={r.id} name={r.name} /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      ) : null}
+      {resets.length ? (
+        <Card className="border-warn-b">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <KeyRoundIcon className="size-4 text-warn-ink" aria-hidden /> Password reset requests
+              <span className="rounded-full bg-warn-t px-2 text-[12.5px] font-semibold text-warn-ink">{resets.length}</span>
+            </CardTitle>
+            <CardDescription>They used &ldquo;Forgot your password?&rdquo; on the sign-in page. Reset gives you a temporary password to hand over in person; check it&apos;s really them first.</CardDescription>
+          </CardHeader>
+          <Table>
+            <TableBody>
+              {resets.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell className="font-semibold">{r.name}</TableCell>
+                  <TableCell className="font-mono text-[13px]">{r.email}</TableCell>
+                  <TableCell><Badge variant="outline">{ROLE_LABELS[r.role as Role]}</Badge></TableCell>
+                  <TableCell className="text-[13px] text-muted-foreground" title={formatDateTime(r.resetRequestedAt!)}>{timeAgo(r.resetRequestedAt!)}</TableCell>
+                  <TableCell><ResetRequestActions id={r.id} name={r.name} /></TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 import type { Role } from "@/lib/auth/permissions";
 import { isActive, navGroups } from "./nav";
+import { NavCount, useNotifications } from "./notifications";
 
 export type SidebarUser = { name: string; role: Role };
 
@@ -40,6 +41,12 @@ export function AppSidebarShell() {
 
 function SidebarView({ pathname, user }: { pathname: string | null; user: SidebarUser | null }) {
   const active = (href: string) => pathname !== null && isActive(pathname, href);
+  const { data } = useNotifications();
+  // Unread tickets on Tickets; sign-up and password requests waiting for an admin on Users.
+  const counts: Record<string, { count: number; label: string }> = {
+    "/tickets": { count: data?.count ?? 0, label: "unread" },
+    "/admin/users": { count: data?.requests ?? 0, label: "waiting" },
+  };
   return (
     <Sidebar>
       <SidebarHeader className="h-[72px] flex-row items-center gap-3 border-b border-line2 px-4 py-0">
@@ -72,6 +79,11 @@ function SidebarView({ pathname, user }: { pathname: string | null; user: Sideba
                         <Icon />
                         <span>{label}</span>
                       </SidebarMenuButton>
+                      {counts[href]?.count ? (
+                        <SidebarMenuBadge className="top-2.5 right-2 px-0">
+                          <NavCount {...counts[href]} />
+                        </SidebarMenuBadge>
+                      ) : null}
                     </SidebarMenuItem>
                   ),
                 )}

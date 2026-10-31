@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { LockIcon, MailIcon } from "lucide-react";
 import { Field, FormMessage } from "@/components/form-field";
@@ -30,7 +31,9 @@ export function LoginForm({ next }: { next: string }) {
       </Field>
       <FormMessage state={state} />
       <Button type="submit" disabled={pending} className="mt-2 h-[50px] text-base">{pending ? "Signing in…" : "Sign in"}</Button>
-      <p className="text-center text-sm text-muted-foreground">Forgot your password? Ask a QA Hub admin to reset it.</p>
+      <p className="text-center text-sm text-muted-foreground">
+        <Link href="/login?mode=forgot" className="font-medium text-acc hover:underline">Forgot your password?</Link>
+      </p>
     </form>
   );
 }

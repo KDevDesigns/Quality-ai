@@ -56,6 +56,8 @@ model User {
   /// Signed up on the sign-in page and waiting for an admin. Pending accounts are also inactive, so they can't sign in.
   pending            Boolean         @default(false)
   mustChangePassword Boolean         @default(true)
+  /// Set when they asked for a new password on the sign-in page; cleared when an admin resets or dismisses it.
+  resetRequestedAt   DateTime?
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
   sessions           Session[]
@@ -68,6 +70,8 @@ model User {
   pendingUploads     PendingUpload[]
   darProfile         DarProfile?
   darReports         DarReport[]
+  lastActed          Ticket[]        @relation("TicketLastActivityBy")
+  ticketReads        TicketRead[]
 }
 
 model Session {
@@ -138,36 +142,52 @@ enum AttachmentKind {
 }
 
 model Ticket {
-  id             String          @id @default(cuid())
-  number         Int             @unique // shown as #12; max + 1 when created
-  type           TicketType
-  title          String
-  description    String
-  status         TicketStatus    @default(NEW)
-  severity       Severity? // bugs only
-  priority       Priority        @default(P3)
-  foundIn        String? // ERP build or environment, free text
-  areaId         String?
-  area           ErpArea?        @relation(fields: [areaId], references: [id], onDelete: SetNull)
-  reporterId     String
-  reporter       User            @relation("TicketReporter", fields: [reporterId], references: [id])
-  assigneeId     String?
-  assignee       User?           @relation("TicketAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
-  duplicateOfId  String?
-  duplicateOf    Ticket?         @relation("TicketDuplicate", fields: [duplicateOfId], references: [id], onDelete: SetNull)
-  duplicates     Ticket[]        @relation("TicketDuplicate")
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  lastActivityAt DateTime        @default(now())
-  closedAt       DateTime?
-  comments       TicketComment[]
-  events         TicketEvent[]
-  attachments    Attachment[]
+  id               String          @id @default(cuid())
+  number           Int             @unique // shown as #12; max + 1 when created
+  type             TicketType
+  title            String
+  description      String
+  status           TicketStatus    @default(NEW)
+  severity         Severity? // bugs only
+  priority         Priority        @default(P3)
+  foundIn          String? // ERP build or environment, free text
+  areaId           String?
+  area             ErpArea?        @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  reporterId       String
+  reporter         User            @relation("TicketReporter", fields: [reporterId], references: [id])
+  assigneeId       String?
+  assignee         User?           @relation("TicketAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  duplicateOfId    String?
+  duplicateOf      Ticket?         @relation("TicketDuplicate", fields: [duplicateOfId], references: [id], onDelete: SetNull)
+  duplicates       Ticket[]        @relation("TicketDuplicate")
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  lastActivityAt   DateTime        @default(now())
+  /// Who caused lastActivityAt. Everyone else who can see the ticket gets it as unread (lib/tickets/notifications.ts).
+  lastActivityById String?
+  lastActivityBy   User?           @relation("TicketLastActivityBy", fields: [lastActivityById], references: [id], onDelete: SetNull)
+  closedAt         DateTime?
+  comments         TicketComment[]
+  events           TicketEvent[]
+  attachments      Attachment[]
+  reads            TicketRead[]
 
   @@index([status, lastActivityAt])
   @@index([assigneeId, status])
   @@index([areaId])
   @@index([reporterId])
+}
+
+/// When a person last opened a ticket. A ticket with newer activity by someone else is unread for them.
+model TicketRead {
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticketId String
+  ticket   Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  readAt   DateTime
+
+  @@id([userId, ticketId])
+  @@index([ticketId])
 }
 
 model TicketComment {

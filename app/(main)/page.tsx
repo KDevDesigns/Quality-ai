@@ -17,13 +17,16 @@ import { InlineAlert } from "@/components/inline-alert";
 import { LoadingBlock, PageHeader } from "@/components/page-header";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { can, ROLE_LABELS, type Role } from "@/lib/auth/permissions";
-import { requireUser } from "@/lib/auth/session";
+import { auth, requireUser } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { timeAgo } from "@/lib/format";
+import { notificationStore } from "@/lib/tickets/notifications";
 import { ticketStore } from "@/lib/tickets/store";
-import { TicketStatusPill } from "./tickets/ticket-bits";
+import { cn } from "@/lib/utils";
+import { TicketStatusPill, UnreadDot } from "./tickets/ticket-bits";
 
 const tickets = ticketStore(db);
+const notifications = notificationStore(db);
 
 export default function DashboardPage() {
   return (
@@ -61,20 +64,25 @@ async function Overview() {
     { label: "Modules", value: modules, href: "/team", icon: BoxesIcon, note: `${subModules} sub-modules` },
   ];
 
-  const signUps = can(me, "users.manage") ? await db.user.count({ where: { pending: true } }) : 0;
+  const { signUps, resets } = can(me, "users.manage") ? await auth.adminRequests() : { signUps: 0, resets: 0 };
+  const unread = await notifications.unreadIds(me, recent.map((t) => t.id));
+  const waiting = [
+    signUps ? `${signUps} sign-up${signUps === 1 ? "" : "s"}` : null,
+    resets ? `${resets} password reset request${resets === 1 ? "" : "s"}` : null,
+  ].filter(Boolean);
 
   return (
     <>
-      {signUps ? (
+      {waiting.length ? (
         <InlineAlert tone="warn" role="status">
           <span className="font-semibold">
-            {signUps} sign-up{signUps === 1 ? " is" : "s are"} waiting for approval.
+            {waiting.join(" and ")} {signUps + resets === 1 ? "is" : "are"} waiting for you.
           </span>{" "}
           <Link href="/admin/users" className="font-medium underline underline-offset-2">Review in Admin → Users</Link>
         </InlineAlert>
       ) : null}
       <StatRow stats={ticketStats} />
-      <RecentTickets rows={recent} role={me.role} />
+      <RecentTickets rows={recent} role={me.role} unread={unread} />
       <StatRow stats={teamStats} />
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -152,7 +160,7 @@ const TICKET_STATS: Record<Role, (c: Counts) => Stat[]> = {
   ],
 };
 
-function RecentTickets({ rows, role }: { rows: Awaited<ReturnType<typeof tickets.recent>>; role: Role }) {
+function RecentTickets({ rows, role, unread }: { rows: Awaited<ReturnType<typeof tickets.recent>>; role: Role; unread: Set<string> }) {
   const now = new Date();
   return (
     <Card>
@@ -176,8 +184,14 @@ function RecentTickets({ rows, role }: { rows: Awaited<ReturnType<typeof tickets
         <ul>
           {rows.map((t) => (
             <li key={t.id} className="relative flex items-center gap-3 border-t border-line2 px-5 py-3 text-[14px] first:border-t-0 hover:bg-surface2">
-              <span className="w-10 shrink-0 font-mono text-[13px] text-muted-foreground">#{t.number}</span>
-              <Link href={`/tickets/${t.number}`} className="min-w-0 flex-1 truncate font-medium after:absolute after:inset-0 hover:text-acc">
+              <span className="flex w-14 shrink-0 items-center gap-2 font-mono text-[13px] text-muted-foreground">
+                #{t.number}
+                {unread.has(t.id) ? <UnreadDot /> : null}
+              </span>
+              <Link
+                href={`/tickets/${t.number}`}
+                className={cn("min-w-0 flex-1 truncate after:absolute after:inset-0 hover:text-acc", unread.has(t.id) ? "font-semibold" : "font-medium")}
+              >
                 {t.title}
               </Link>
               <span className="hidden shrink-0 text-[12.5px] text-muted-foreground sm:inline">

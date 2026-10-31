@@ -1,5 +1,16 @@
 # Changelog
 
+## Notifications, forgot password, clearer sign-up, admin's own DAR (2026-10-31)
+
+- **Notifications:** a bell in the top bar with the number of tickets that have something new for you and a list of the newest, a red count on **Tickets** in the sidebar, and a red dot plus bold title on unread rows in the ticket list and the dashboard. "New" is anything someone else did on a ticket you can see; your own actions never count. Opening a ticket marks it read; **Mark all as read** clears all.
+  - The app polls `GET /api/notifications` every 30 s while the tab is visible (and at once when you return), and refreshes ticket lists and the open ticket by itself when something new arrives. No reload needed.
+  - Data: `Ticket.lastActivityById` (who acted last, set on every change) and a `TicketRead` table (when each person last opened each ticket), migration `notifications_reset_requests`, RLS on. Logic in `lib/tickets/notifications.ts`, with tests.
+  - The disabled "My inbox" sidebar item is gone; the bell replaces it.
+- **Forgot password:** a **Forgot your password?** link on the sign-in page sends a request to **Admin → Users → Password reset requests** (no email is sent). The admin resets it there and hands over the temporary password, or dismisses it. Limited to 5 per email and 30 in total per hour. Admins also see a count on **Users** in the sidebar and on the dashboard.
+- **Sign-up:** an email that already has an account, or a request waiting for approval, now says so instead of pretending to send a new request.
+- **Admin's own DAR:** admins have **My DAR** too, with buttons to switch between it and the DAR template. Each person still sees only their own DAR.
+- **Replies send on Enter:** in a ticket's reply box, Enter sends and Shift+Enter starts a new line (it was Ctrl+Enter). Enter waits while an image or video is still uploading.
+
 ## QA Hub moves to Vercel + Supabase (2026-10-31)
 
 - **Hosting:** QA Hub now runs on Vercel (HTTPS, region `sin1`) with a Supabase database and Storage in Singapore, so it no longer depends on the QA laptop being on. IT/DPO approved putting ticket data in the cloud.

@@ -6,6 +6,7 @@ import { requireAction, requireUser } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { fromZodError, text, type FormState } from "@/lib/form";
 import { commentInput, ticketCreate, ticketEdit, transitionInput } from "@/lib/schemas/ticket";
+import { notificationStore } from "@/lib/tickets/notifications";
 import { TicketError, ticketStore } from "@/lib/tickets/store";
 import { removeObjects } from "@/lib/uploads/storage";
 
@@ -109,4 +110,20 @@ export async function addComment(_prev: FormState, fd: FormData): Promise<FormSt
   const r = await run(() => tickets.comment(me, text(fd, "id"), parsed.data.body, uploadIds(fd)));
   if (r.ok) refresh(Number(text(fd, "number")));
   return r;
+}
+
+const notifications = notificationStore(db);
+
+/** Opening a ticket marks it read for the person (the ticket page calls this once it has shown the latest activity). */
+export async function markTicketRead(ticketId: string): Promise<void> {
+  const me = await requireUser();
+  await notifications.markRead(me, ticketId);
+}
+
+/** "Mark all as read" in the bell. */
+export async function markAllTicketsRead(): Promise<void> {
+  const me = await requireUser();
+  await notifications.markAllRead(me);
+  revalidatePath("/tickets");
+  revalidatePath("/");
 }

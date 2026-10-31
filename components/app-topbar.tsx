@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import type { SidebarUser } from "./app-sidebar";
 import { currentNav, isActive } from "./nav";
+import { NotificationBell } from "./notifications";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 
@@ -36,6 +37,7 @@ function TopbarView({ pathname, user }: { pathname: string | null; user: Sidebar
         </nav>
       </div>
       <div className="flex items-center gap-3">
+        {user ? <NotificationBell /> : null}
         <ThemeToggle />
         {user ? <UserMenu user={user} active={pathname !== null && isActive(pathname, "/account")} /> : null}
       </div>

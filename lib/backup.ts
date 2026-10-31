@@ -1,7 +1,8 @@
 import { Prisma, type PrismaClient } from "@/lib/generated/prisma/client";
 
 // Supabase Free has no backups, so the laptop takes its own each night (scripts/backup.ts) as one JSON file.
-// Sessions, rate-limit hits and unsent uploads are left out: they are short-lived, and after a restore people sign in again.
+// Sessions, rate-limit hits, unsent uploads and read markers are left out: they are short-lived. After a restore people
+// sign in again, and tickets show as unread once.
 
 export const SNAPSHOT_VERSION = 1;
 

@@ -285,7 +285,8 @@ QA and developers stop using Messenger for bugs. Runs behind login, now on Verce
      thread with image attachments (paste, pick or drop) and a timeline of every change.
   2. ✅ Videos up to 3 min / 50 MB (free plan) in Supabase Storage, served through an auth-checked route.
   3. A built-in screenshot markup tool (box, arrow, pen, text, blur).
-  4. An inbox with unread badges, a ticket dashboard, and CSV/XLSX export.
+  4. ✅ Unread badges: a notification bell, sidebar counts and red dots, live without reloading (2026-10-31).
+     Still to do: CSV/XLSX export of tickets.
   - Extra, done: ✅ **My DAR**, the QA testers' half-month Daily Accomplishment Report, filled from ticket work and
     downloaded as Excel or printed (admin template under Admin → DAR template).
 

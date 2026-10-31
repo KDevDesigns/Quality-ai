@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { FileSlidersIcon } from "lucide-react";
 import { LoadingBlock, PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { can } from "@/lib/auth/permissions";
 import { requireAction } from "@/lib/auth/session";
 import { manilaDay, parsePeriod, periodFor, periodLabel, recentPeriods } from "@/lib/dar/period";
 import { darStore } from "@/lib/dar/store";
@@ -13,16 +17,11 @@ export const metadata: Metadata = { title: "My DAR" };
 const dar = darStore(db);
 
 export default function DarPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  // The header sits inside the guard: admins get a button to the template there.
   return (
-    <>
-      <PageHeader
-        title="My DAR"
-        description="Your Daily Accomplishment Report for each half-month. The days are filled in from your ticket work in QA Hub; check them, add anything done outside it, then download."
-      />
-      <Suspense fallback={<LoadingBlock />}>
-        <DarBody searchParams={searchParams} />
-      </Suspense>
-    </>
+    <Suspense fallback={<LoadingBlock />}>
+      <DarBody searchParams={searchParams} />
+    </Suspense>
   );
 }
 
@@ -44,18 +43,31 @@ async function DarBody({ searchParams }: { searchParams: Promise<Record<string, 
   const periods = [...all.values()].sort((a, b) => b.start.localeCompare(a.start));
 
   return (
-    <DarEditor
-      // A new period, or a different number of duty rows after "My details", starts the editor afresh.
-      key={`${period.start}:${report.header.core.length}:${report.header.support.length}`}
-      report={report}
-      periods={periods}
-      template={template}
-      profile={{
-        fullName: profile?.fullName ?? "",
-        position: profile?.position ?? "",
-        ownFunctions: !!(profile?.coreFunctions || profile?.supportFunctions),
-      }}
-      accountName={me.name}
-    />
+    <>
+      <PageHeader
+        title="My DAR"
+        description="Your Daily Accomplishment Report for each half-month. The days are filled in from your ticket work in QA Hub; check them, add anything done outside it, then download."
+        actions={
+          can(me, "dar.template") ? (
+            <Button variant="outline" nativeButton={false} render={<Link href="/admin/dar" />}>
+              <FileSlidersIcon /> DAR template
+            </Button>
+          ) : null
+        }
+      />
+      <DarEditor
+        // A new period, or a different number of duty rows after "My details", starts the editor afresh.
+        key={`${period.start}:${report.header.core.length}:${report.header.support.length}`}
+        report={report}
+        periods={periods}
+        template={template}
+        profile={{
+          fullName: profile?.fullName ?? "",
+          position: profile?.position ?? "",
+          ownFunctions: !!(profile?.coreFunctions || profile?.supportFunctions),
+        }}
+        accountName={me.name}
+      />
+    </>
   );
 }
