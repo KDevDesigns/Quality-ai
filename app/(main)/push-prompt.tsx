@@ -41,7 +41,7 @@ export function PushPrompt() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [saved, setSaved] = useState({ tone: DEFAULT_TONE, hasCustom: false });
+  const [saved, setSaved] = useState({ tone: DEFAULT_TONE });
   const [tone, setTone] = useState(DEFAULT_TONE);
 
   useEffect(() => {
@@ -95,7 +95,7 @@ export function PushPrompt() {
         </DialogHeader>
         {state === "off" ? (
           <Field label="Sound" htmlFor="promptTone" hint="Plays while QA Hub is open. Change it any time in My account.">
-            <ToneSelect id="promptTone" value={tone} onChange={setTone} hasCustom={saved.hasCustom} />
+            <ToneSelect id="promptTone" value={tone} onChange={setTone} />
           </Field>
         ) : null}
         {message ? <InlineAlert tone="bad" role="alert">{message}</InlineAlert> : null}

@@ -1,6 +1,6 @@
 // QA Hub's service worker: shows device notifications (Web Push) even when no QA Hub tab is open.
-// The server sends { title, body, url, tag, tone, image?, stack? } (see lib/push/message.ts). With the person's
-// "Show message previews" off, it holds no ticket text and no photo.
+// The server sends { title, body, url, tag, tone, stack? } (see lib/push/message.ts). With the person's
+// "Show message previews" off, it holds no ticket text.
 //
 // Sound: a service worker can't play audio, and browsers can't attach a custom sound to a notification. So when a QA
 // Hub tab is on screen, it's asked to play the person's tone and the notification is shown silently; when no tab can
@@ -65,8 +65,6 @@ self.addEventListener("push", (event) => {
         silent,
         icon: "/dcwd-seal.png",
         badge: "/dcwd-seal.png",
-        // The reply's first photo, through a link that expires after 10 minutes (Windows and Android show it).
-        ...(msg.image ? { image: msg.image } : {}),
         data: { url: msg.url, replies },
       });
       await refreshTabs();

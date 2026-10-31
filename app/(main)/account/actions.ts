@@ -12,9 +12,6 @@ import { sendTo } from "@/lib/push/send";
 import { pushStore } from "@/lib/push/store";
 import { webPushSender } from "@/lib/push/web-push";
 import { pushSubscriptionInput, workHoursInput } from "@/lib/schemas/push";
-import { checkTone } from "@/lib/uploads/audio";
-import { newStoredName, UploadError } from "@/lib/uploads/files";
-import { putObject, removeObjects } from "@/lib/uploads/storage";
 import { passwordChangeInput } from "@/lib/schemas/user";
 
 const push = pushStore(db);
@@ -87,7 +84,7 @@ export async function saveWorkHours(_prev: FormState, fd: FormData): Promise<For
 // ── Notification sound ──
 
 /** Their sound choice, for the sign-in prompt. */
-export async function myTone(): Promise<{ tone: string; hasCustom: boolean }> {
+export async function myTone(): Promise<{ tone: string }> {
   const me = await requireUser();
   return push.tone(me.id);
 }
@@ -99,38 +96,10 @@ export async function saveTone(tone: string): Promise<FormState> {
   return { ok: true, message: "Saved." };
 }
 
-/** "Show message previews": ticket title, message and photo in notifications, or only the short form. */
+/** "Show message previews": ticket title and message in notifications, or only the short form. */
 export async function savePreviews(on: boolean): Promise<void> {
   const me = await requireUser();
   await push.setPreviews(me.id, on === true);
   revalidatePath("/account");
 }
 
-/** Their own tone: checked for real type, size and length, then stored under a generated name (CLAUDE.md rule 4). */
-export async function uploadTone(_prev: FormState, fd: FormData): Promise<FormState> {
-  const me = await requireUser();
-  const file = fd.get("tone");
-  if (!(file instanceof File) || !file.size) return { ok: false, message: "Choose a sound file." };
-  // Don't read a huge file into memory just to refuse it.
-  if (file.size > 1024 * 1024) return { ok: false, message: "The sound is too big: at most 500 KB." };
-  try {
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const type = checkTone(bytes);
-    const storedName = newStoredName(new Date(), type.ext);
-    await putObject(storedName, bytes, type.mime);
-    const old = await push.setCustomTone(me.id, storedName);
-    if (old) await removeObjects([old]).catch((e) => console.error("[tones] couldn't remove the old tone:", e instanceof Error ? e.message : e));
-  } catch (e) {
-    if (e instanceof UploadError) return { ok: false, message: e.message };
-    throw e;
-  }
-  revalidatePath("/account");
-  return { ok: true, message: "Uploaded and picked." };
-}
-
-export async function removeTone(): Promise<void> {
-  const me = await requireUser();
-  const old = await push.clearCustomTone(me.id);
-  if (old) await removeObjects([old]).catch((e) => console.error("[tones] couldn't remove the tone:", e instanceof Error ? e.message : e));
-  revalidatePath("/account");
-}

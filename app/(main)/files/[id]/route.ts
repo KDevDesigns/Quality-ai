@@ -9,6 +9,8 @@ import { signedReadUrl } from "@/lib/uploads/storage";
 // The answer is a redirect to a short-lived signed Storage URL, so files never pass through a Vercel function, and
 // Storage answers the Range requests that let a video be scrubbed.
 
+const FILE_REDIRECT_CACHE_S = 5 * 60;
+
 /** GET /files/[id] — one ticket attachment, for someone who may see its ticket. */
 export async function GET(_req: Request, { params }: RouteContext<"/files/[id]">) {
   await connection();
@@ -21,6 +23,7 @@ export async function GET(_req: Request, { params }: RouteContext<"/files/[id]">
   if (!file) return new Response("File not found.", { status: 404 });
 
   const url = await signedReadUrl(file.storedName);
-  // Not cached: each visit re-checks access and gets a fresh URL.
-  return new Response(null, { status: 302, headers: { Location: url, "Cache-Control": "private, no-store" } });
+  // Kept by this browser for 5 minutes (the signed URL lasts an hour), so going back to a ticket reuses the same URL and
+  // the file comes from the browser's copy instead of Storage again. After that, access is checked again.
+  return new Response(null, { status: 302, headers: { Location: url, "Cache-Control": `private, max-age=${FILE_REDIRECT_CACHE_S}` } });
 }

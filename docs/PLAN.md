@@ -346,10 +346,10 @@ loses signal mid-upload and retries, files the ticket, and a developer on a lapt
 ### Phase 3.8c — Device notifications (Web Push) ✅ (2026-10-31, awaiting device tests)
 Testers and developers asked for notifications outside the browser tab. Web Push: a service worker (`public/sw.js`),
 one `PushSubscription` row per device, VAPID-signed pushes sent after each ticket action (`lib/push/`).
-- Text: ticket title, `Ana: <message>`, module and the first photo (10-minute link); replies stack. Per-person
+- Text: ticket title, `Ana: <message>` and module (no photo since 2026-11-01); replies stack. Per-person
   "Show message previews" switch (off: no ticket text) plus a lock-screen guide. Same recipients as the bell.
 - Mute: on/off per device, and per-person work hours (Philippine time). The device's Do Not Disturb also applies.
-- Sound: Tone 1–11, Silent or their own upload, played by an open tab (the service worker asks it); closed → device sound.
+- Sound: Tone 1–11 or Silent (own uploads removed 2026-11-01), played by an open tab (the service worker asks it); closed → device sound.
 - Limits: Windows/Mac need the browser running; iPhone needs iOS 16.4+ and Add to Home Screen; best-effort delivery;
   the office firewall must allow the push services (`docs/OPERATIONS.md` §5b).
 

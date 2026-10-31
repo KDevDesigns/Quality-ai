@@ -8,18 +8,17 @@ export const DEFAULT_TONE = "tone-1";
 
 export type ToneId = string;
 
-/** Valid choices: a preset, "silent", or "custom" when the person has uploaded one. */
-export function isTone(id: string, hasCustom: boolean): boolean {
-  return id === "silent" || (id === "custom" && hasCustom) || PRESET_TONES.some((t) => t.id === id);
+/** Valid choices: a preset or "silent". */
+export function isTone(id: string): boolean {
+  return id === "silent" || PRESET_TONES.some((t) => t.id === id);
 }
 
-/** What the browser plays for a tone, or null for none. "custom" goes through a route that checks the session. */
+/** What the browser plays for a tone, or null for none. */
 export function toneSrc(id: ToneId): string | null {
-  if (id === "custom") return "/tones/mine";
   return PRESET_TONES.some((t) => t.id === id) ? `/sounds/${id}.mp3` : null;
 }
 
-/** The tone to send in a push: a saved "custom" without a file (or an unknown value) falls back to the default. */
-export function effectiveTone(u: { notifyTone: string; customTone: string | null }): ToneId {
-  return isTone(u.notifyTone, !!u.customTone) ? u.notifyTone : DEFAULT_TONE;
+/** The tone to send in a push: an unknown value falls back to the default. */
+export function effectiveTone(u: { notifyTone: string }): ToneId {
+  return isTone(u.notifyTone) ? u.notifyTone : DEFAULT_TONE;
 }
