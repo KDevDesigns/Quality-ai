@@ -113,7 +113,14 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
   const [view, setView] = useState({ scale: 1, w: 0, h: 0 });
   const stage = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
+  const textInput = useRef<HTMLInputElement>(null);
   const start = useRef<Point | null>(null);
+
+  // A new text box takes the typing at once. Done here rather than with autoFocus, which the dialog's own focus handling
+  // can override.
+  useEffect(() => {
+    if (textAt) textInput.current?.focus();
+  }, [textAt]);
 
   // A new image starts a clean editor.
   useEffect(() => {
@@ -358,10 +365,13 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
                   onPointerMove={onPointerMove}
                   onPointerUp={onPointerUp}
                   onPointerCancel={onPointerUp}
+                  // The click that places a text box would otherwise move focus to the dialog right after the box opens,
+                  // which blurs it, saves it empty and closes it at once.
+                  onMouseDown={(e) => tool === "text" && e.preventDefault()}
                 />
                 {textAt ? (
                   <input
-                    autoFocus
+                    ref={textInput}
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     onBlur={commitText}
