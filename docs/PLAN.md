@@ -387,6 +387,19 @@ shares or picks it into a new ticket, marks it up with a finger, adds a phone sc
 loses signal mid-upload and retries, files the ticket, and a developer on a laptop sees it all. Every page works at
 375 px wide with no sideways scrolling.
 
+### Phase 3.8c — Device notifications (Web Push)
+Testers and developers asked for notifications outside the browser tab. Web Push: a service worker (`public/sw.js`),
+one `PushSubscription` row per device, VAPID-signed pushes sent after each ticket action (`lib/push/`).
+- Text: ticket title, `Ana: <message>`, module and the first photo (10-minute link); replies stack. Per-person
+  "Show message previews" switch (off: no ticket text) plus a lock-screen guide. Same recipients as the bell.
+- Mute: on/off per device, and per-person work hours (Philippine time). The device's Do Not Disturb also applies.
+- Sound: Tone 1–11, Silent or their own upload, played by an open tab (the service worker asks it); closed → device sound.
+- Limits: Windows/Mac need the browser running; iPhone needs iOS 16.4+ and Add to Home Screen; best-effort delivery;
+  the office firewall must allow the push services (`docs/OPERATIONS.md` §5b).
+
+**Done when:** on Windows, Android and an iPhone, a person turns it on, closes QA Hub, and gets a notification within
+seconds when someone else replies; clicking opens the ticket; outside their work hours nothing arrives.
+
 ### Phase 4 — Test data and oracles
 `lib/oracles/*` with unit tests from the signed-off examples. Fixture builders that create referentially intact test records on staging through the ERP API or UI (customer + meter + reading; supplier + item + PR; employee + attendance). Read-only DB connector and `lib/recon` checks (balanced journals, subledger = GL, OR gaps, duplicate bills, negative stock). A Data page that lists the checks and runs them on demand.
 **Done when:** the tariff and payroll oracles match the hand-worked examples exactly, and the recon checks run against staging and show pass/fail with details.

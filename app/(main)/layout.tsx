@@ -4,6 +4,8 @@ import { AppTopbar, AppTopbarShell } from "@/components/app-topbar";
 import { NotificationsProvider } from "@/components/notifications";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { getCurrentUser } from "@/lib/auth/session";
+import { PushPrompt } from "./push-prompt";
+import { ToneListener } from "./tone-listener";
 
 // The session is read behind Suspense (Cache Components), so the chrome streams in without holding up the page.
 // This only shapes the navigation; each page and action still checks access itself.
@@ -25,6 +27,11 @@ export default function MainLayout({ children }: LayoutProps<"/">) {
           </footer>
         </SidebarInset>
       </SidebarProvider>
+      {/* It reads the URL, which Cache Components only allows inside Suspense. */}
+      <Suspense fallback={null}>
+        <PushPrompt />
+      </Suspense>
+      <ToneListener />
     </NotificationsProvider>
   );
 }

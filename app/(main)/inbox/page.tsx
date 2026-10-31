@@ -130,7 +130,7 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
       {/* The selected conversation */}
       {t ? (
         <section aria-label={`Conversation on #${t.number}`} className="flex min-h-0 flex-col">
-          <MarkRead ticketId={t.id} lastActivityAt={t.lastActivityAt.toISOString()} />
+          <MarkRead ticketId={t.id} number={t.number} lastActivityAt={t.lastActivityAt.toISOString()} />
           <ScrollToLatest targetId="inbox-messages" endId="inbox-reply" version={t.lastActivityAt.toISOString()} />
           <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line2 px-4 py-3">
             <div className="min-w-0">

@@ -24,6 +24,8 @@ Build **one phase at a time**, start in plan mode, and stop for review at the en
 ## Hard rules
 1. **Ticket data never goes to an LLM.** Ticket text, screenshots and videos show customer names, account numbers and
    amounts. No AI feature reads tickets unless the user approves a local-only design first.
+   - The Supabase MCP server (`.mcp.json`) is read-only and leaves out the `database` features (no SQL, no table
+     reads), so ticket data can't reach Claude. Don't widen it; schema changes go through migrations.
 2. **Behind login.** Every page, Server Action and route handler checks the session through `lib/auth/session.ts`
    (`requireUser`, `requireAction`, `getCurrentUser`). `proxy.ts` is only an optimistic redirect. Permissions live in
    one matrix in `lib/auth/permissions.ts`. Accounts are QA Hub's own (not Supabase Auth), only `@davao-water.gov.ph`

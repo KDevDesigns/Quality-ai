@@ -72,6 +72,13 @@ describe("backup and restore", () => {
     expect(snapshotFiles(await takeSnapshot(source))).toEqual([{ storedName: "2026/10/abc123.png", mime: "image/png", size: 1234 }]);
   });
 
+  it("also lists people's own notification tones", async () => {
+    const s = await takeSnapshot(source);
+    s.tables.user = [...s.tables.user, { id: "u1", customTone: "2026/10/abc.wav" }, { id: "u2", customTone: null }];
+    expect(snapshotFiles(s)).toContainEqual({ storedName: "2026/10/abc.wav", mime: "audio/wav", size: 0 });
+    expect(snapshotFiles(s)).toHaveLength(2);
+  });
+
   it("rejects files that aren't a QA Hub backup", () => {
     expect(() => parseSnapshot({ hello: 1 })).toThrow(/isn't a QA Hub/);
     expect(() => parseSnapshot({ app: "qa-hub", version: 99, tables: {} })).toThrow(/version 99/);

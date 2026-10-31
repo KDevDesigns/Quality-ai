@@ -1,5 +1,35 @@
 # Changelog
 
+## Device notifications (2026-10-31)
+
+- **Notifications on this device** (My account): Windows, Mac, Android and iPhone notifications for a new or assigned
+  ticket, a reply, a status change or an edit, even with QA Hub closed. **Turn on** once per device; **Send test** and
+  **Turn off** are there too. Clicking one opens the ticket.
+  - **Asked after sign-in:** on a device where they're off, a **Turn on notifications?** dialog offers them (Not now
+    hides it there for 14 days). On an iPhone not yet on the Home Screen it shows how to add it.
+  - **Notification sound:** pick Tone 1–11 (default Tone 1), Silent, or upload your own MP3/WAV (5 s, 500 KB), with
+    ▶ to preview, in My account or the sign-in question. An open QA Hub tab plays it and the system notification stays
+    silent; with QA Hub closed the device's own sound plays. Own tones are checked by their real bytes and length,
+    stored under generated names in the private bucket, played only through `/tones/mine` (session-checked) and
+    backed up. Migration `notification_tones`; code in `lib/push/tones.ts` and `lib/uploads/audio.ts`.
+  - They lead with the message: the ticket's title, `Ana: <message>` (cut at about 120 characters, with 📷/🎥 when
+    something is attached), `Module: Billing`, and the reply's first photo on Windows and Android (through a link that
+    expires after 10 minutes). A status change shows its note. Replies on one ticket stack ("3 new replies"); opening
+    the ticket clears it.
+  - **Show message previews** (on by default, My account → Sound and previews): off gives only
+    `#12 · Bug / New reply from Ana / Module: Billing`, with no ticket text or photo. The guide shows how to hide
+    previews on locked phones and PCs. Migration `push_previews`.
+  - **Work hours:** *Only notify me during work hours* keeps devices quiet outside the chosen hours and days
+    (Philippine time). The bell and My inbox still show everything.
+  - iPhone and iPad: iOS 16.4+ and QA Hub added to the Home Screen first. Windows and Mac: the browser must be running.
+    Details and the firewall list for IT: `docs/OPERATIONS.md` §5b.
+- **Install QA Hub:** a web app manifest, so phones can add it to the Home Screen with the DCWD seal.
+- **Setup:** three new settings, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (make the keys
+  with `npx web-push generate-vapid-keys`). Migration `push_subscriptions` (RLS on). Without the keys nothing is sent.
+- Code: `lib/push/` (message text, recipients and work hours, device store, sending and clean-up of dead devices; unit
+  tested with a fake push service), `public/sw.js`, `app/manifest.ts`, and the card in `app/(main)/account/`. The
+  server only accepts push addresses of the real browser push services, so nobody can make it call another URL.
+
 ## My inbox, Messenger-style (2026-10-31)
 
 - **My inbox** is back in the sidebar, for everyone: the conversations on your tickets on the left (newest first, last message preview, red dot, unread reply count), the selected ticket's messages on the right with the description as the first message, and a reply box (Enter sends; images go through the markup tools). Search, an Unread filter and Show more. On a phone it shows the list, then the conversation with a back link. **Open ticket** leads to the full page for status changes and editing.

@@ -35,6 +35,15 @@ export async function signUpload(storedName: string, mime: string): Promise<{ ur
   return { url: data.signedUrl, headers: { "content-type": mime, "x-upsert": "false" } };
 }
 
+/**
+ * Stores a small file the server already holds and has checked (a notification tone, at most a few hundred KB).
+ * Ticket attachments never come this way: browsers upload those straight to Storage with signUpload.
+ */
+export async function putObject(storedName: string, bytes: Uint8Array, mime: string): Promise<void> {
+  const { error } = await bucket().upload(key(storedName), bytes, { contentType: mime, upsert: false });
+  if (error) throw new Error(`Storage couldn't save the file: ${error.message}`);
+}
+
 /** The object's size and Content-Type, or null when nothing was uploaded under that name. */
 export async function objectInfo(storedName: string): Promise<{ size: number; contentType: string | null } | null> {
   const { data, error } = await bucket().info(key(storedName));

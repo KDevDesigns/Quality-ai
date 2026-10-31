@@ -63,9 +63,14 @@ export function parseSnapshot(value: unknown): Snapshot {
   return s as Snapshot;
 }
 
-/** The stored names of every attachment in the snapshot: the Storage objects that belong with it. */
+/** The stored names of every attachment and uploaded notification tone in the snapshot: the Storage objects that belong with it. */
 export function snapshotFiles(s: Snapshot): { storedName: string; mime: string; size: number }[] {
-  return s.tables.attachment.map((a) => ({ storedName: String(a.storedName), mime: String(a.mime), size: Number(a.size) }));
+  const files = s.tables.attachment.map((a) => ({ storedName: String(a.storedName), mime: String(a.mime), size: Number(a.size) }));
+  for (const u of s.tables.user) {
+    // Older backups have no customTone column.
+    if (typeof u.customTone === "string") files.push({ storedName: u.customTone, mime: u.customTone.endsWith(".wav") ? "audio/wav" : "audio/mpeg", size: 0 });
+  }
+  return files;
 }
 
 const CHUNK = 500;
