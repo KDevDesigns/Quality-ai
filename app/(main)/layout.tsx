@@ -16,7 +16,7 @@ export default function MainLayout({ children }: LayoutProps<"/">) {
   return (
     <NotificationsProvider>
       <AppSplash />
-      <SidebarProvider style={{ "--sidebar-width": "17.5rem" } as React.CSSProperties}>
+      <SidebarProvider style={{ "--sidebar-width": "17.5rem", "--sidebar-width-icon": "3.5rem" } as React.CSSProperties}>
         <Suspense fallback={<AppSidebarShell />}>
           <SessionSidebar />
         </Suspense>
