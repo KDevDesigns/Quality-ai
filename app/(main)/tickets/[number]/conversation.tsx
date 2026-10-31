@@ -90,7 +90,10 @@ export function Thread({ t, meId, now }: { t: TicketDetail; meId: string; now: D
   );
 }
 
-/** One message: a reply, or (in My inbox) the ticket's description as the opening message. */
+/**
+ * One message: a reply, or (in My inbox) the ticket's description as the opening message. Chat-style, so it's clear who
+ * said what: your own messages sit on the right in a tinted bubble, everyone else's on the left.
+ */
 export function Message({
   author,
   mine,
@@ -107,11 +110,17 @@ export function Message({
   files: FileRow[];
 }) {
   return (
-    <div className="flex gap-3">
+    <div className={cn("flex items-start gap-3", mine && "flex-row-reverse")}>
       <Avatar name={author.name} mine={mine} />
-      <div className="min-w-0 flex-1 rounded-xl border border-line bg-card px-4 py-3">
-        <div className="flex flex-wrap items-baseline gap-x-2 text-[0.8125rem]">
-          <span className="font-semibold text-foreground">{author.name}</span>
+      <div
+        className={cn(
+          "max-w-[85%] min-w-0 rounded-2xl border px-4 py-3",
+          files.length ? "w-full" : "w-fit",
+          mine ? "rounded-tr-md border-acc-b bg-acc-t" : "rounded-tl-md border-line bg-card",
+        )}
+      >
+        <div className={cn("flex flex-wrap items-baseline gap-x-2 text-[0.8125rem]", mine && "justify-end")}>
+          <span className="font-semibold text-foreground">{mine ? "You" : author.name}</span>
           <span className="text-muted-foreground">{ROLE_LABELS[author.role as Role]}</span>
           <time className="text-muted-foreground" title={formatDateTime(at)}>· {timeAgo(at, now)}</time>
         </div>

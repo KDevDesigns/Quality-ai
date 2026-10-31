@@ -213,9 +213,8 @@ function ActivityLog({ entries }: { entries: LogEntry[] }) {
           <HistoryIcon className="size-4 text-acc" aria-hidden /> Activity log
         </CardTitle>
       </CardHeader>
-      {/* Like the conversation: oldest at the top, newest at the bottom, opened scrolled to the newest. */}
-      <ol id="activity-log" className="max-h-[26.25rem] overflow-y-auto overscroll-contain" aria-label="Activity log, newest last">
-        {entries.map((e) => {
+      <ol className="max-h-[26.25rem] overflow-y-auto overscroll-contain" aria-label="Activity log, newest first">
+        {[...entries].reverse().map((e) => {
           const Icon = LOG_ICON[e.kind];
           return (
             <li key={`${e.kind}-${e.id}`} className="flex gap-2.5 border-t border-line2 px-5 py-2.5 first:border-t-0">
@@ -233,7 +232,6 @@ function ActivityLog({ entries }: { entries: LogEntry[] }) {
           );
         })}
       </ol>
-      <ScrollToLatest targetId="activity-log" version={`${entries.length}`} />
     </Card>
   );
 }

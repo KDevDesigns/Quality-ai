@@ -24,8 +24,9 @@
   2560 × 1440 monitor shows it at the same proportions as 1920 × 1080 (up to twice the size on 4K). Phones and laptops
   are unchanged. The sign-in and preloader waves now loop without a gap at any width.
 - **A ticket's conversation keeps its look but stops growing:** past a set height the messages scroll on their own,
-  opened at the newest one like Messenger, so the reply box, Add images and Send stay in place. The **Activity log**
-  works the same way: oldest at the top, newest at the bottom, opened at the newest.
+  opened at the newest one like Messenger, so the reply box, Add images and Send stay in place. Messages are chat
+  bubbles: yours on the right in a tinted bubble marked "You", everyone else's on the left (also in My inbox). The
+  **Activity log** scrolls in its own box too and keeps the newest entry at the top.
 - **Reassign:** on a ticket, Developer shows who has it and a **Reassign** button: pick another developer and, if you
   like, a reason ("Ben is on leave"). The timeline reads "reassigned it from Ben to Cy" with the reason, and the new
   developer's notification includes it (when previews are on). This also fixes the developer picker, which had
