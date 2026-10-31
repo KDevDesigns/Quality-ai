@@ -11,11 +11,11 @@ import { Button } from "@/components/ui/button";
 import { timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-// Unread tickets for the bell, the sidebar counts and the red dots, from GET /api/notifications. Polled every 30
-// seconds while the tab is visible and at once when it comes back, so new tickets and replies show up without a
-// reload. Nothing is polled on a hidden tab.
+// Unread tickets for the bell, the sidebar counts and the red dots, from GET /api/notifications. Polled at once when a
+// device notification arrives (app/(main)/tone-listener.tsx), every 15 seconds while the tab is visible, and when the
+// tab or window comes back, so new tickets and replies show up without a reload. Nothing is polled on a hidden tab.
 
-const POLL_MS = 30_000;
+const POLL_MS = 15_000;
 
 type Item = { id: string; number: number; title: string; status: string; lastActivityAt: string; actorName: string | null };
 /** count/items: everything unread (the bell). messages: unread replies (My inbox). newTickets: unopened tickets (Tickets). */
@@ -57,10 +57,13 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     const timer = setInterval(() => document.visibilityState === "visible" && poll(), POLL_MS);
     const onVisible = () => document.visibilityState === "visible" && poll();
     document.addEventListener("visibilitychange", onVisible);
+    // A window behind another one stays "visible", so coming back to it only shows as focus.
+    window.addEventListener("focus", onVisible);
     return () => {
       clearTimeout(first);
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
     };
   }, [poll]);
 

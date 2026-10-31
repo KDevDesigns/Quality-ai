@@ -3,17 +3,19 @@
 // "Show message previews" off, it holds no ticket text and no photo.
 //
 // Sound: a service worker can't play audio, and browsers can't attach a custom sound to a notification. So when a QA
-// Hub tab is open, it's asked to play the person's tone and the notification is shown silently; when no tab can play
-// it (closed, or never clicked: browsers block sound until then), the device's own notification sound plays instead.
+// Hub tab is on screen, it's asked to play the person's tone and the notification is shown silently; when no tab can
+// play it (closed, behind other windows, or never clicked: browsers block sound until then), the device's own
+// notification sound plays instead. Hidden tabs aren't asked: a sleeping one answers late or not at all, and on Android
+// one can report "played" while no sound comes out.
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 
-/** Asks one tab to play the tone; true if it did. Gives up after 1.5 s so the notification is never held back long. */
+/** Asks one tab to play the tone; true if it did. Gives up after 0.6 s so the notification is never held back long. */
 function askToPlay(client, tone) {
   return new Promise((resolve) => {
     const channel = new MessageChannel();
-    const timer = setTimeout(() => resolve(false), 1500);
+    const timer = setTimeout(() => resolve(false), 600);
     channel.port1.onmessage = (e) => {
       clearTimeout(timer);
       resolve(e.data === true);
@@ -22,12 +24,19 @@ function askToPlay(client, tone) {
   });
 }
 
+const qaHubTabs = () => self.clients.matchAll({ type: "window", includeUncontrolled: true });
+
 async function playInATab(tone) {
-  const tabs = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+  const tabs = (await qaHubTabs()).filter((t) => t.visibilityState === "visible");
   // The tab the person is looking at first, so only one tab plays.
-  tabs.sort((a, b) => Number(b.focused) - Number(a.focused) || Number(b.visibilityState === "visible") - Number(a.visibilityState === "visible"));
+  tabs.sort((a, b) => Number(b.focused) - Number(a.focused));
   for (const tab of tabs) if (await askToPlay(tab, tone)) return true;
   return false;
+}
+
+/** Open tabs update the bell, the counts and the page now instead of at their next check. */
+async function refreshTabs() {
+  for (const tab of await qaHubTabs()) tab.postMessage({ type: "qa-hub:refresh" });
 }
 
 self.addEventListener("push", (event) => {
@@ -60,6 +69,7 @@ self.addEventListener("push", (event) => {
         ...(msg.image ? { image: msg.image } : {}),
         data: { url: msg.url, replies },
       });
+      await refreshTabs();
     })(),
   );
 });

@@ -1,5 +1,17 @@
 # Changelog
 
+## Notification sound and live updates fixed (2026-10-31)
+
+- **Pages update the moment a notification arrives:** the bell, the sidebar counts, My inbox and an open ticket no
+  longer wait for the next check (which also went from every 30 to every 15 seconds, and now also runs when you switch
+  back to the window).
+- **The tone is reliable:** only a QA Hub tab that is on screen is asked to play it. A tab in the background (asleep on
+  a PC, or on a phone) used to hold the notification back or, on Android, swallow the sound; now the device's own sound
+  plays straight away instead.
+- **Preview builds:** the database client is created on first use, so Vercel Preview builds no longer fail without
+  `DATABASE_URL`.
+- Code: `public/sw.js`, `app/(main)/tone-listener.tsx`, `components/notifications.tsx`, `lib/db.ts`.
+
 ## Device notifications (2026-10-31)
 
 - **Notifications on this device** (My account): Windows, Mac, Android and iPhone notifications for a new or assigned
