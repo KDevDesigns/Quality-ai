@@ -1,6 +1,7 @@
 import {
   FileSlidersIcon,
   FileSpreadsheetIcon,
+  InboxIcon,
   LayoutDashboardIcon,
   TicketIcon,
   UsersIcon,
@@ -17,6 +18,7 @@ export type NavGroup = { key: NavGroupKey; label: string; items: NavItem[] };
 export const TICKETS_NAV: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboardIcon },
   { href: "/tickets", label: "Tickets", icon: TicketIcon },
+  { href: "/inbox", label: "My inbox", icon: InboxIcon },
   { href: "/team", label: "Team & modules", icon: UsersRoundIcon },
 ];
 

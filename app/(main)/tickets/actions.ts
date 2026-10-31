@@ -43,6 +43,7 @@ function fields(fd: FormData) {
 
 const refresh = (number?: number) => {
   revalidatePath("/tickets");
+  revalidatePath("/inbox");
   revalidatePath("/");
   if (number) revalidatePath(`/tickets/${number}`);
 };

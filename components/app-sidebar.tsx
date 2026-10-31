@@ -42,9 +42,10 @@ export function AppSidebarShell() {
 function SidebarView({ pathname, user }: { pathname: string | null; user: SidebarUser | null }) {
   const active = (href: string) => pathname !== null && isActive(pathname, href);
   const { data } = useNotifications();
-  // Unread tickets on Tickets; sign-up and password requests waiting for an admin on Users.
+  // Unread replies on My inbox, unopened new tickets on Tickets, and sign-up and password requests on Users.
   const counts: Record<string, { count: number; label: string }> = {
-    "/tickets": { count: data?.count ?? 0, label: "unread" },
+    "/inbox": { count: data?.messages ?? 0, label: "unread messages" },
+    "/tickets": { count: data?.newTickets ?? 0, label: "new tickets" },
     "/admin/users": { count: data?.requests ?? 0, label: "waiting" },
   };
   return (

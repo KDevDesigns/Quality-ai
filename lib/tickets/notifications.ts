@@ -35,6 +35,45 @@ export function notificationStore(db: PrismaClient, now: () => Date = () => new 
       return { count: rows.length ? Number(rows[0].total) : 0, items: rows.map((r) => ({ id: r.id, number: r.number, title: r.title, status: r.status, lastActivityAt: r.lastActivityAt, actorName: r.actorName })) };
     },
 
+    /**
+     * The sidebar counts. Messages: replies by others you haven't seen (newer than when you last opened that ticket, or
+     * any, if you never did), for My inbox. New tickets: filed by someone else and never opened by you, for Tickets.
+     */
+    async counts(actor: Actor): Promise<{ messages: number; newTickets: number }> {
+      const [[m], [t]] = await Promise.all([
+        db.$queryRaw<{ n: number }[]>`
+          SELECT count(*)::int AS n FROM "TicketComment" c JOIN "Ticket" t ON t.id = c."ticketId"
+          WHERE ${scopeSql(actor)} AND c."authorId" <> ${actor.id}
+            AND NOT EXISTS (
+              SELECT 1 FROM "TicketRead" r WHERE r."ticketId" = t.id AND r."userId" = ${actor.id} AND r."readAt" >= c."createdAt"
+            )`,
+        db.$queryRaw<{ n: number }[]>`
+          SELECT count(*)::int AS n FROM "Ticket" t
+          WHERE ${scopeSql(actor)} AND t."reporterId" <> ${actor.id}
+            AND NOT EXISTS (SELECT 1 FROM "TicketRead" r WHERE r."ticketId" = t.id AND r."userId" = ${actor.id})`,
+      ]);
+      return { messages: m?.n ?? 0, newTickets: t?.n ?? 0 };
+    },
+
+    /** Unread replies per ticket, for the numbers on inbox conversations. */
+    async unreadMessages(actor: Actor, ticketIds: string[]): Promise<Map<string, number>> {
+      if (!ticketIds.length) return new Map();
+      const rows = await db.$queryRaw<{ id: string; n: number }[]>`
+        SELECT c."ticketId" AS id, count(*)::int AS n FROM "TicketComment" c JOIN "Ticket" t ON t.id = c."ticketId"
+        WHERE c."ticketId" IN (${Prisma.join(ticketIds)}) AND ${scopeSql(actor)} AND c."authorId" <> ${actor.id}
+          AND NOT EXISTS (
+            SELECT 1 FROM "TicketRead" r WHERE r."ticketId" = t.id AND r."userId" = ${actor.id} AND r."readAt" >= c."createdAt"
+          )
+        GROUP BY c."ticketId"`;
+      return new Map(rows.map((r) => [r.id, r.n]));
+    },
+
+    /** Every unread ticket's id, for the inbox's Unread filter. */
+    async allUnreadIds(actor: Actor): Promise<string[]> {
+      const rows = await db.$queryRaw<{ id: string }[]>`SELECT t.id FROM "Ticket" t WHERE ${unreadSql(actor)}`;
+      return rows.map((r) => r.id);
+    },
+
     /** Which of these tickets are unread, for the red dots on a list. */
     async unreadIds(actor: Actor, ticketIds: string[]): Promise<Set<string>> {
       if (!ticketIds.length) return new Set();

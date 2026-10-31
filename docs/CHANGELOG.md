@@ -1,5 +1,12 @@
 # Changelog
 
+## My inbox, Messenger-style (2026-10-31)
+
+- **My inbox** is back in the sidebar, for everyone: the conversations on your tickets on the left (newest first, last message preview, red dot, unread reply count), the selected ticket's messages on the right with the description as the first message, and a reply box (Enter sends; images go through the markup tools). Search, an Unread filter and Show more. On a phone it shows the list, then the conversation with a back link. **Open ticket** leads to the full page for status changes and editing.
+- **Sidebar counts split:** **My inbox ● N** counts unread replies from others; **Tickets ● N** counts new tickets you haven't opened (developers: newly assigned; admins: newly filed). The bell still shows all activity and links to the inbox.
+- Live: the inbox refreshes by itself when something new arrives, like the ticket pages.
+- Code: `lib/tickets/inbox.ts` (conversation list and previews) and `counts` / `unreadMessages` in `lib/tickets/notifications.ts`, with tests. The ticket page's conversation moved to `app/(main)/tickets/[number]/conversation.tsx` so the inbox shows messages exactly the same way.
+
 ## Screenshot markup (2026-10-31)
 
 - **Mark up screenshot:** every image added to a ticket or reply (paste, Add images, drop) opens in a markup editor before it uploads: **Box**, **Arrow**, **Pen**, **Text**, **Hide** (a solid black box) and **Crop**, four colours, undo and redo, keys B/A/P/T/H/C and Ctrl+Z/Ctrl+Y. Several images go through it one after another ("2 of 3").

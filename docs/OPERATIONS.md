@@ -123,8 +123,15 @@ missed*, so a night with the laptop off is caught up the next morning. Check `ba
 
 ## 5b. Notifications
 
-- The **bell** in the top bar shows how many tickets have something new for you, and the newest ones. The sidebar shows
-  the same number on **Tickets**, and new tickets have a red dot in the lists.
+- The **bell** in the top bar shows how many tickets have something new for you, and the newest ones, with a link to
+  My inbox. New tickets have a red dot in the lists.
+- **Sidebar counts:** **My inbox ● N** is how many replies from other people you haven't read yet. **Tickets ● N** is
+  how many new tickets you haven't opened yet (developers: newly assigned to you; admins: newly filed; QA testers file
+  their own, so it stays at 0). **Users ● N** (admins) is sign-ups and password resets waiting.
+- **My inbox** works like Messenger: conversations on the left (newest first, with the last message, a red dot and the
+  number of unread replies), the selected ticket's messages on the right with a reply box (Enter sends, images open in
+  the markup tools). Search by title or #number, or show only Unread. Status changes, editing and assigning are on the
+  ticket page: **Open ticket**.
 - "New" means anything someone **else** did on a ticket you can see (developers: tickets assigned to them; QA: their
   own; admins: all): a new ticket, a reply, a status change, a reassignment or an edit. Your own actions never notify you.
 - Opening a ticket marks it read. **Mark all as read** in the bell clears everything.

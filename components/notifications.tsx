@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useTransition } from "react";
 import { Menu } from "@base-ui/react/menu";
-import { BellIcon, CheckCheckIcon } from "lucide-react";
+import { BellIcon, CheckCheckIcon, InboxIcon } from "lucide-react";
 import { markAllTicketsRead } from "@/app/(main)/tickets/actions";
 import { UnreadDot } from "@/app/(main)/tickets/ticket-bits";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,8 @@ import { cn } from "@/lib/utils";
 const POLL_MS = 30_000;
 
 type Item = { id: string; number: number; title: string; status: string; lastActivityAt: string; actorName: string | null };
-type Data = { count: number; items: Item[]; requests: number };
+/** count/items: everything unread (the bell). messages: unread replies (My inbox). newTickets: unopened tickets (Tickets). */
+type Data = { count: number; items: Item[]; messages: number; newTickets: number; requests: number };
 type Ctx = { data: Data | null; poll: () => void };
 
 const NotificationsContext = createContext<Ctx>({ data: null, poll: () => {} });
@@ -26,7 +27,7 @@ const NotificationsContext = createContext<Ctx>({ data: null, poll: () => {} });
 export const useNotifications = () => useContext(NotificationsContext);
 
 /** Pages that list or show tickets, refreshed in place when something new arrives. */
-const LIVE = (path: string) => path === "/" || path === "/tickets" || path.startsWith("/tickets/");
+const LIVE = (path: string) => path === "/" || path === "/inbox" || path === "/tickets" || path.startsWith("/tickets/");
 
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<Data | null>(null);
@@ -126,9 +127,12 @@ export function NotificationBell() {
             ) : (
               <p className="px-3 py-6 text-center text-sm text-muted-foreground">You&apos;re all caught up.</p>
             )}
+            <Menu.Separator className="-mx-1.5 my-1 h-px bg-line2" />
+            <Menu.Item className={cn(item, "h-10 items-center py-0 [&_svg]:size-4 [&_svg]:text-ink2 data-highlighted:[&_svg]:text-acc")} render={<Link href="/inbox" />}>
+              <InboxIcon /> My inbox
+            </Menu.Item>
             {count ? (
               <>
-                <Menu.Separator className="-mx-1.5 my-1 h-px bg-line2" />
                 <Menu.Item
                   className={cn(item, "h-10 items-center py-0 [&_svg]:size-4 [&_svg]:text-ink2 data-highlighted:[&_svg]:text-acc")}
                   disabled={marking}
