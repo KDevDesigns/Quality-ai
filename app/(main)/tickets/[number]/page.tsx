@@ -13,6 +13,7 @@ import {
   PencilLineIcon,
   UserRoundIcon,
 } from "lucide-react";
+import { ScrollToLatest } from "@/components/scroll-to-latest";
 import { TicketPageSkeleton } from "@/components/skeletons";
 import { ImageGallery } from "./image-viewer";
 import { MarkRead } from "./mark-read";
@@ -142,7 +143,16 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
 
             <section aria-label="Conversation and history" className="grid gap-3">
               <h2 className="text-xs font-semibold tracking-[0.06em] text-ink2 uppercase">Conversation</h2>
-              <Thread t={t} meId={me.id} now={now} />
+              {/* A long conversation scrolls in its own pane, opened at the newest message, with the reply box right below. */}
+              <div
+                id="ticket-thread"
+                tabIndex={0}
+                aria-label="Messages and history"
+                className="max-h-[min(62svh,640px)] overflow-y-auto overscroll-contain rounded-xl border border-line2 bg-surface2 p-3 outline-none [scrollbar-gutter:stable] focus-visible:ring-3 focus-visible:ring-acc/20 sm:p-4"
+              >
+                <Thread t={t} meId={me.id} now={now} />
+              </div>
+              <ScrollToLatest targetId="ticket-thread" version={t.lastActivityAt.toISOString()} />
               <Card>
                 <CardContent>
                   <CommentForm ticket={ref} />
@@ -162,7 +172,7 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
                 <Detail label="Status"><TicketStatusPill status={t.status} /></Detail>
                 <Detail label="Developer">
                   {assignable && options ? (
-                    <AssignControl ticket={ref} areas={options.areas} people={options.people} areaId={t.areaId ?? ""} assigneeId={t.assigneeId ?? ""} />
+                    <AssignControl ticket={ref} areas={options.areas} people={options.people} areaId={t.areaId ?? ""} assigneeId={t.assigneeId ?? ""} assigneeName={t.assignee?.name ?? null} />
                   ) : (
                     <span className={cn(!t.assignee && "text-muted-foreground")}>{t.assignee?.name ?? "Not assigned"}</span>
                   )}

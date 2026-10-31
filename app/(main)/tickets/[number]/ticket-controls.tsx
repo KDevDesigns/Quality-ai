@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { PencilIcon, SendIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
+import { ArrowRightLeftIcon, PencilIcon, SendIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
 import { Field, FormMessage } from "@/components/form-field";
 import { FormDialog } from "@/components/form-dialog";
 import { Button } from "@/components/ui/button";
@@ -82,23 +82,71 @@ function MoveForm({ ticket, move, onDone }: { ticket: Ref; move: Transition; onD
   );
 }
 
-export function AssignControl({ ticket, areas, people, areaId, assigneeId }: { ticket: Ref; areas: AreaOption[]; people: AssigneeOption[]; areaId: string; assigneeId: string }) {
-  const [dirty, setDirty] = useState(false);
+/**
+ * The Developer box in a ticket's details. With a developer set it shows their name and **Reassign**, which opens the
+ * picker and an optional reason for the timeline; with none, the picker shows straight away with **Assign**.
+ */
+export function AssignControl({
+  ticket,
+  areas,
+  people,
+  areaId,
+  assigneeId,
+  assigneeName,
+}: {
+  ticket: Ref;
+  areas: AreaOption[];
+  people: AssigneeOption[];
+  areaId: string;
+  assigneeId: string;
+  assigneeName: string | null;
+}) {
+  const [open, setOpen] = useState(!assigneeId);
+  const [chosen, setChosen] = useState(assigneeId);
   const [state, action, pending] = useActionState(async (prev: FormState, fd: FormData) => {
     const r = await assignTicket(prev, fd);
-    if (r.ok) setDirty(false);
+    if (r.ok) setOpen(false);
     return r;
   }, initialFormState);
+
+  if (!open) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-medium">{assigneeName ?? "Not assigned"}</span>
+        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
+          <ArrowRightLeftIcon /> Reassign
+        </Button>
+      </div>
+    );
+  }
+
+  const changed = chosen !== assigneeId;
   return (
-    <form onSubmit={submitKeepingInput(action)} onChange={() => setDirty(true)} className="grid gap-2">
+    <form onSubmit={submitKeepingInput(action)} className="panel-in grid gap-2.5">
       <input type="hidden" name="id" value={ticket.id} />
       <input type="hidden" name="number" value={ticket.number} />
-      <AssigneeSelect areas={areas} people={people} areaId={areaId} defaultValue={assigneeId} id="assign" />
-      {dirty ? (
-        <Button type="submit" size="sm" disabled={pending} className="justify-self-start">
-          {pending ? "Saving…" : "Save developer"}
-        </Button>
+      <AssigneeSelect areas={areas} people={people} areaId={areaId} defaultValue={assigneeId} id="assign" onValueChange={setChosen} />
+      {assigneeId ? (
+        <Textarea name="note" rows={2} maxLength={500} placeholder="Reason (optional), e.g. Ben is on leave" aria-label="Reason for reassigning" className="min-h-0 text-[14px]" />
       ) : null}
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" size="sm" disabled={pending || !changed}>
+          {pending ? "Saving…" : assigneeId ? "Save" : "Assign"}
+        </Button>
+        {assigneeId ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setChosen(assigneeId);
+              setOpen(false);
+            }}
+          >
+            Cancel
+          </Button>
+        ) : null}
+      </div>
       <FormMessage state={state} />
     </form>
   );

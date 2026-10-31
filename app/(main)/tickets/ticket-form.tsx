@@ -74,12 +74,14 @@ export function AssigneeSelect({
   areaId,
   defaultValue,
   id = "assigneeId",
+  onValueChange,
 }: {
   areas: AreaOption[];
   people: AssigneeOption[];
   areaId: string;
   defaultValue?: string;
   id?: string;
+  onValueChange?: (assigneeId: string) => void;
 }) {
   const parent = areas.find((m) => m.id === areaId || m.children.some((c) => c.id === areaId));
   const scope = areaId ? [areaId, ...(parent && parent.id !== areaId ? [parent.id] : [])] : [];
@@ -96,6 +98,7 @@ export function AssigneeSelect({
       id={id}
       name="assigneeId"
       defaultValue={defaultValue ?? ""}
+      onValueChange={onValueChange}
       groups={[
         { options: [{ value: "", label: "— Not assigned yet —" }] },
         ...(inArea.length ? [{ label: "Works on this module", options: inArea.map((p) => ({ value: p.id, label: label(p) })) }] : []),

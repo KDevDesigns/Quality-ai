@@ -19,7 +19,7 @@ import { ImageGallery } from "../tickets/[number]/image-viewer";
 import { MarkRead } from "../tickets/[number]/mark-read";
 import { CommentForm } from "../tickets/[number]/ticket-controls";
 import { TicketStatusPill, UnreadDot } from "../tickets/ticket-bits";
-import { ScrollToLatest } from "./scroll-to-latest";
+import { ScrollToLatest } from "@/components/scroll-to-latest";
 
 // My inbox: the conversations on the tickets this person can see, Messenger-style. The list is on the left, the
 // selected conversation (?t=<number>) on the right with a reply box. On a phone, one of the two at a time.

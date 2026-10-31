@@ -9,7 +9,7 @@ import { STATUS_LABELS, TYPE_LABELS, type TicketStatus } from "@/lib/tickets/wor
 /** What happened, with what's needed to describe it. Replies carry the message and what's attached. */
 export type PushEvent =
   | { kind: "filed" }
-  | { kind: "assigned" }
+  | { kind: "assigned"; note?: string | null }
   | { kind: "reply"; text: string; photos: number; video: boolean }
   | { kind: "status"; to: TicketStatus; note?: string | null }
   | { kind: "edited" };
@@ -46,7 +46,9 @@ export function pushMessage(e: PushEvent, t: PushTicket & { actorName: string; f
   } else if (e.kind === "edited") {
     line = `Edited by ${a}`;
   } else {
-    line = t.forAssignee ? `Assigned to you by ${a}` : e.kind === "filed" ? `New ticket from ${a}` : `Assignee changed by ${a}`;
+    // A reassign reason ("Ben is on leave") is ticket text too, so it shows only with previews on.
+    const why = e.kind === "assigned" && t.previews && e.note ? `: ${clip(e.note, LINE_MAX)}` : "";
+    line = (t.forAssignee ? `Assigned to you by ${a}` : e.kind === "filed" ? `New ticket from ${a}` : `Assignee changed by ${a}`) + why;
   }
   return {
     title: t.previews ? `#${t.number} · ${clip(t.title, TITLE_MAX)}` : `#${t.number} · ${TYPE_LABELS[t.type]}`,

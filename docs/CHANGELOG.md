@@ -17,6 +17,15 @@
   are restyled, and scrollbars are thin and quiet.
 - **Motion:** pages rise in gently, lists come in one after another, dialogs and menus grow in, dashboard tiles lift
   on hover, unread dots pop. All of it stops when the computer or phone is set to reduce motion.
+- **Minimise the sidebar** (the toggle in the top bar, or Ctrl+B): it springs down to a centred rail of icons; the
+  brand text and labels slide away in turn, the seal turns, counts become red dots, and each icon shows its name on
+  hover.
+- **A ticket's conversation scrolls in its own pane** (opened at the newest message, the reply box right below), so a
+  long conversation no longer stretches the whole page.
+- **Reassign:** on a ticket, Developer shows who has it and a **Reassign** button: pick another developer and, if you
+  like, a reason ("Ben is on leave"). The timeline reads "reassigned it from Ben to Cy" with the reason, and the new
+  developer's notification includes it (when previews are on). This also fixes the developer picker, which had
+  stopped showing its Save button with the new dropdowns.
 - Code: `components/preloader.tsx`, `app-splash.tsx`, `skeletons.tsx`, `select-field.tsx`, `date-picker.tsx`,
   `components/ui/select.tsx`; `lib/calendar.ts`, `lib/time-options.ts`, `lib/splash.ts`; `app/(main)/dar/setup/`,
   `app/(main)/account/account-tabs.tsx`; `app/globals.css`.

@@ -31,7 +31,8 @@ const rail = "group-data-[collapsible=icon]";
 
 const navButton = cn(
   "h-10 gap-3.5 rounded-lg px-3.5 text-[15px] font-medium text-sidebar-foreground transition-[background-color,transform,box-shadow,width,height,padding] duration-200 hover:translate-x-[3px] hover:bg-acc-t2 data-active:translate-x-0 data-active:bg-acc data-active:font-medium data-active:text-primary-foreground data-active:shadow-[0_4px_14px_color-mix(in_srgb,var(--acc)_32%,transparent)] data-active:hover:bg-acc data-active:hover:text-primary-foreground [&_svg]:size-[18px]",
-  `${rail}:size-10! ${rail}:p-[11px]! ${rail}:hover:translate-x-0 ${rail}:hover:scale-110 ${rail}:active:scale-95`,
+  // In the rail: exactly 40 px with the icon centred, and only the icon grows on hover, so nothing is clipped.
+  `${rail}:size-10! ${rail}:gap-0 ${rail}:p-[11px]! ${rail}:hover:translate-x-0 ${rail}:hover:[&_svg]:scale-115 ${rail}:active:[&_svg]:scale-95`,
   "[&_svg]:transition-transform [&_svg]:duration-(--sidebar-dur) [&_svg]:ease-(--sidebar-ease)",
 );
 const groupLabel = cn(
@@ -43,6 +44,8 @@ const fadeText = cn(
   "transition-[opacity,transform] duration-300 ease-(--ease-out) delay-(--d)",
   `${rail}:-translate-x-3 ${rail}:opacity-0 ${rail}:delay-0`,
 );
+/** The brand text also gives up its width in the rail, so it never spills past the edge while the sidebar shrinks. */
+const brandText = cn(fadeText, "max-w-40 overflow-hidden transition-[opacity,transform,max-width]", `${rail}:max-w-0`);
 
 export function AppSidebar({ user }: { user: SidebarUser | null }) {
   return <SidebarView pathname={usePathname()} user={user} />;
@@ -67,8 +70,13 @@ function SidebarView({ pathname, user }: { pathname: string | null; user: Sideba
   };
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className={cn("h-[72px] flex-row items-center gap-3 border-b border-line2 px-4 py-0 transition-[padding] duration-(--sidebar-dur) ease-(--sidebar-ease)", `${rail}:px-2`)}>
-        <Link href="/" className="flex items-center gap-3 rounded-lg focus-visible:ring-3 focus-visible:ring-acc/30 focus-visible:outline-none">
+      <SidebarHeader
+        className={cn("h-[72px] flex-row items-center gap-3 overflow-hidden border-b border-line2 px-4 py-0 transition-[padding] duration-(--sidebar-dur) ease-(--sidebar-ease)", `${rail}:px-2`)}
+      >
+        <Link
+          href="/"
+          className={cn("flex items-center gap-3 rounded-lg transition-[gap] duration-(--sidebar-dur) ease-(--sidebar-ease) focus-visible:ring-3 focus-visible:ring-acc/30 focus-visible:outline-none", `${rail}:gap-0`)}
+        >
           <Image
             src="/dcwd-seal.png"
             alt="DCWD seal"
@@ -77,7 +85,7 @@ function SidebarView({ pathname, user }: { pathname: string | null; user: Sideba
             priority
             className={cn("shrink-0 transition-transform duration-700 ease-(--sidebar-ease)", `${rail}:-rotate-[360deg]`)}
           />
-          <span className={cn("flex flex-col whitespace-nowrap", fadeText)} style={{ "--d": "120ms" } as React.CSSProperties}>
+          <span className={cn("flex flex-col whitespace-nowrap", brandText)} style={{ "--d": "120ms" } as React.CSSProperties}>
             <span className="text-[22px] leading-none font-bold tracking-[-0.01em] text-acc">DCWD</span>
             <span className="mt-1 text-[11px] font-semibold tracking-[0.14em] text-acc uppercase">QA Hub</span>
           </span>
@@ -112,7 +120,7 @@ function SidebarView({ pathname, user }: { pathname: string | null; user: Sideba
                             <NavCount {...counts[href]} />
                           </SidebarMenuBadge>
                           {/* Minimised, the count becomes a dot on the icon. */}
-                          <span className={cn("pointer-events-none absolute top-1 left-7 pop-in hidden size-2.5 rounded-full border-2 border-sidebar bg-bad", `${rail}:block`)} aria-hidden />
+                          <span className={cn("pointer-events-none absolute top-[7px] left-[25px] pop-in hidden size-2.5 rounded-full border-2 border-sidebar bg-bad", `${rail}:block`)} aria-hidden />
                         </>
                       ) : null}
                     </SidebarMenuItem>
