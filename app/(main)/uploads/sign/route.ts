@@ -8,7 +8,7 @@ import { fail, uploader } from "../shared";
 
 // Files are too big for a Server Action or a Vercel function (4.5 MB body cap), so the browser uploads each one
 // straight to Storage. Step 1: it asks here for a signed URL; the session and declared type and size are checked
-// first, and the object name is generated here, never taken from the file name (CLAUDE.md rule 13).
+// first, and the object name is generated here, never taken from the file name (CLAUDE.md rule 4).
 
 const tickets = ticketStore(db);
 

@@ -10,6 +10,7 @@
 - Publishable key (public by design) vs secret key (server only) — check question pending
 - React context — introduced 2026-10-31 with the ticket image gallery (shared bulletin board analogy)
 - CSS variables for themes (light value + `.dark` value) — introduced 2026-10-31 fixing the login brand pane
+- Hydration (server HTML must match the first browser render) — introduced 2026-10-31 fixing the sidebar mismatch
 ## Mistakes caught (don't repeat)
 - Hard-coded colours (`#eef2fd`, `bg-white`) ignore dark mode → use theme tokens / CSS variables
 - (none yet) Warned: service_role key must never be NEXT_PUBLIC_ or pasted in chat

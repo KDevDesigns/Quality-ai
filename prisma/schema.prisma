@@ -111,7 +111,7 @@ model AreaMember {
 }
 
 // ── QA Hub: tickets (Phase 3.5b) ──
-// Ticket text and attachments show customer data, so they never go to an LLM (CLAUDE.md rule 12).
+// Ticket text and attachments show customer data, so they never go to an LLM (CLAUDE.md rule 1).
 
 enum TicketType {
   BUG
@@ -200,7 +200,7 @@ model TicketEvent {
   @@index([ticketId, createdAt])
 }
 
-/// The file lives in UPLOAD_DIR under `storedName` (generated). `originalName` is for display only.
+/// The file lives in the private Storage bucket under `storedName` (generated). `originalName` is for display only.
 model Attachment {
   id           String         @id @default(cuid())
   ticketId     String

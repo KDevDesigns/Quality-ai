@@ -1,5 +1,9 @@
 # QA AI for In-House ERP — Complete Build Plan
 
+> **Status (2026-10-31):** QA Hub (Phase 3.5) is what's live, on Vercel + Supabase (see "Cloud move" below). The AI
+> workbench code was removed. Sections 1–7 and Phases 4–11 are the original workbench design, kept as background for
+> Phase 3.6; anything they say about `lib/ai`, SQLite or the office LAN no longer applies, and `CLAUDE.md` wins.
+
 > **How to use this file:** Claude Code reads `CLAUDE.md` automatically. Point it at this plan **one phase at a time**
 > (see §12). Every phase ends with a "Done when" check. Do not start the next phase until it passes and is committed.
 
@@ -268,29 +272,34 @@ Requirement input (paste, or upload .md/.docx/.pdf) with a sensitive toggle → 
 **Done when:** one billing requirement produces at least 15 labeled cases including boundaries and negatives, the traceability matrix renders, and the export opens in Excel.
 
 ### Phase 3.5 — QA Ticket Hub ★ current focus
-QA and developers stop using Messenger for bugs. Runs on the office LAN behind login. The AI workbench (Phases 1–3 and
-later) is hidden behind an admin toggle and paused for a major revision.
+QA and developers stop using Messenger for bugs. Runs behind login, now on Vercel + Supabase.
 - **3.5a — Foundation:**
   - Local accounts (Admin / QA / Developer) with scrypt password hashing and DB sessions, using a hashed token in an httpOnly cookie.
   - Forced password change at first sign-in, a login rate limit, and Admin → Users.
   - An admin-editable **module → sub-module directory** (`ErpArea`) with leads, developers and QA (`AreaMember`).
   - The nav regrouped into Tickets / Admin / AI workbench.
-  - LAN run scripts, SQLite WAL mode, and a backup script. See `docs/OPERATIONS.md`.
+  - A backup script. See `docs/OPERATIONS.md`.
 - **3.5b — Tickets**, built in slices:
   1. ✅ Tickets (bug / suggestion / improvement) with status workflow `NEW → IN_PROGRESS → FIXED → VERIFIED → CLOSED`
      (plus `REOPENED`, `NEED_INFO`, `REJECTED`, `DUPLICATE`, `WONT_FIX`). QA picks the developer. A conversation
      thread with image attachments (paste, pick or drop) and a timeline of every change.
-  2. ✅ Videos up to 3 min / 150 MB in `UPLOAD_DIR`, served through an auth-checked route with Range support.
+  2. ✅ Videos up to 3 min / 50 MB (free plan) in Supabase Storage, served through an auth-checked route.
   3. A built-in screenshot markup tool (box, arrow, pen, text, blur).
   4. An inbox with unread badges, a ticket dashboard, and CSV/XLSX export.
   - Extra, done: ✅ **My DAR**, the QA testers' half-month Daily Accomplishment Report, filled from ticket work and
-    downloaded as Excel or PDF (admin template under Admin → DAR template).
+    downloaded as Excel or printed (admin template under Admin → DAR template).
 
 This replaces the planned Phase 9 Defects *screen*. The `Defect` model stays for the traceability code and is merged
 into tickets in Phase 9.
 **Done when:** a QA tester on one LAN machine files a ticket with a marked-up screenshot and a video for a developer on
 another, they talk it through in the thread, the developer marks it fixed, QA verifies and closes it, and the timeline
 shows every step.
+
+### Cloud move — Vercel + Supabase ✅ (2026-10-31)
+- QA Hub left the laptop: Vercel hosting (`sin1`), Supabase Postgres and a private Storage bucket (Singapore).
+- AI workbench, DAR PDF, LAN setup and the SQLite database removed; started fresh in Supabase.
+- Direct-to-Storage uploads with server-side checks, a daily cron clean-up, nightly backups to the QA laptop with a restore script.
+- Details: `docs/CHANGELOG.md` (2026-10-31) and `docs/OPERATIONS.md`.
 
 ### Phase 3.6 — Test library, manual runs, then record & replay ★ next
 The AI workbench is being dropped. Testers' own ChatGPT Plus/Pro plans **cannot** power QA Hub: they include no API

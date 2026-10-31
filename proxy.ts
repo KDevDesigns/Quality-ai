@@ -19,7 +19,7 @@ export function proxy(req: NextRequest) {
 
 // Skips the sign-in page, Next's assets and the static images in public/ (the seal must load before sign-in).
 // Also skips /api/cron, which Vercel Cron calls without a cookie; that route checks CRON_SECRET itself.
-// Ticket files are never in public/; they go through an auth-checked route (CLAUDE.md rule 13).
+// Ticket files are never in public/; they go through an auth-checked route (CLAUDE.md rule 4).
 export const config = {
   matcher: ["/((?!login|api/cron|_next/static|_next/image|favicon.ico|.*\\.(?:png|svg|ico)$).*)"],
 };

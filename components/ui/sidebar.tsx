@@ -162,7 +162,11 @@ function Sidebar({
   variant?: "sidebar" | "floating" | "inset"
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
-  const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const { state, openMobile, setOpenMobile } = useSidebar()
+  // Read here, not from the provider: the app layout streams the sidebar in behind Suspense, after the provider has
+  // already hydrated and learned the real width. Its own hook answers "not mobile" while this part hydrates, like
+  // the server did, and switches to the mobile sheet right after, so a narrow window no longer causes a mismatch.
+  const isMobile = useIsMobile()
 
   if (collapsible === "none") {
     return (
