@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useActionState, useCallback, useState, useTransition } from "react";
 import { CheckIcon, CopyIcon, EyeIcon, EyeOffIcon, KeyRoundIcon, PencilIcon, PlusIcon } from "lucide-react";
 import { closeAllowed, CloseGuardProvider, useCloseGuard, useCloseGuardRef } from "@/components/close-guard";
-import { Field, FormMessage, nativeSelectClass } from "@/components/form-field";
+import { Field, FormMessage } from "@/components/form-field";
+import { SelectField } from "@/components/select-field";
 import { FormDialog } from "@/components/form-dialog";
 import { InlineAlert } from "@/components/inline-alert";
 import { Button } from "@/components/ui/button";
@@ -61,15 +62,11 @@ function UserForm({ user, isSelf, onDone }: { user?: UserValues; isSelf?: boolea
         <Input id="email" name="email" type="email" defaultValue={user?.email} required maxLength={200} aria-invalid={!!err.email} />
       </Field>
       <Field label="Role" htmlFor="role" error={err.role} required>
-        <select id="role" name="role" defaultValue={user?.role ?? "DEV"} className={nativeSelectClass}>
-          {ROLES.map((r) => (
-            <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-          ))}
-        </select>
+        <SelectField id="role" name="role" defaultValue={user?.role ?? "DEV"} options={ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))} />
       </Field>
       {user ? (
         <label className="flex items-center gap-2.5 text-sm">
-          <input type="checkbox" name="active" defaultChecked={user.active} disabled={isSelf} className="size-4 accent-acc" />
+          <input type="checkbox" name="active" defaultChecked={user.active} disabled={isSelf} />
           Account is active
           {isSelf ? <input type="hidden" name="active" value="on" /> : null}
         </label>

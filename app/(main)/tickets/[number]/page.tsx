@@ -13,7 +13,7 @@ import {
   PencilLineIcon,
   UserRoundIcon,
 } from "lucide-react";
-import { LoadingBlock } from "@/components/page-header";
+import { TicketPageSkeleton } from "@/components/skeletons";
 import { ImageGallery } from "./image-viewer";
 import { MarkRead } from "./mark-read";
 import { Attachments, galleryImages, Thread } from "./conversation";
@@ -47,7 +47,7 @@ const tickets = ticketStore(db);
 
 export default function TicketPage({ params }: PageProps<"/tickets/[number]">) {
   return (
-    <Suspense fallback={<LoadingBlock />}>
+    <Suspense fallback={<TicketPageSkeleton />}>
       <TicketView params={params} />
     </Suspense>
   );

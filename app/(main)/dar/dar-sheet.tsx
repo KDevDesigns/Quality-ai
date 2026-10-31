@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { DatePicker } from "@/components/date-picker";
 import type { DarCells } from "@/lib/dar/autofill";
 import { longDate, periodLabel } from "@/lib/dar/period";
 import type { DarReportData } from "@/lib/dar/store";
@@ -109,19 +110,21 @@ export function DarSheet({
             <label htmlFor="dateSubmitted" className="text-right">
               Date Submitted :
             </label>
-            <span className="relative text-right font-bold underline">
-              {longDate(dateSubmitted)}
-              {/* The visible text is the form's date format; the native picker sits on top of it, invisible. */}
-              <input
-                id="dateSubmitted"
-                type="date"
-                value={dateSubmitted}
-                required
-                onChange={(e) => e.target.value && onDateSubmitted(e.target.value)}
-                className="absolute inset-0 cursor-pointer opacity-0"
-                title="Change the date submitted"
-              />
-            </span>
+            <DatePicker
+              value={dateSubmitted}
+              onChange={onDateSubmitted}
+              label="Date submitted"
+              trigger={
+                <button
+                  id="dateSubmitted"
+                  type="button"
+                  title="Change the date submitted"
+                  className="cursor-pointer rounded-sm text-right font-bold underline decoration-dotted underline-offset-2 transition-colors hover:text-acc focus-visible:ring-3 focus-visible:ring-acc/25 focus-visible:outline-none"
+                >
+                  {longDate(dateSubmitted)}
+                </button>
+              }
+            />
             <span className="text-right">Actual No. of Days Attended :</span>
             <span className="text-right font-bold underline tabular-nums">{daysAttended} Days</span>
           </div>

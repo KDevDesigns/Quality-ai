@@ -2,11 +2,12 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { Field, FormMessage } from "@/components/form-field";
+import { SelectField } from "@/components/select-field";
 import { InlineAlert } from "@/components/inline-alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { initialFormState } from "@/lib/form";
+import { ampm, hhmm, timeOptions } from "@/lib/time-options";
 import { cn } from "@/lib/utils";
 import { savePreviews, saveTone, saveWorkHours, sendTestPush } from "./actions";
 import { currentSubscription, deviceState, turnOffDevice, turnOnDevice, type DeviceState } from "./device-push";
@@ -101,9 +102,7 @@ export function DeviceNotificationsCard() {
 }
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const hhmm = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
-/** 720 → "12:00 PM", 0 → "12:00 AM": in words, so noon and midnight can't be mixed up. */
-const ampm = (min: number) => `${((Math.floor(min / 60) + 11) % 12) + 1}:${String(min % 60).padStart(2, "0")} ${min < 720 ? "AM" : "PM"}`;
+
 
 export function WorkHoursCard({ initial }: { initial: { pushWorkHoursOnly: boolean; workStartMin: number; workEndMin: number; workDays: number } }) {
   const [state, action, pending] = useActionState(saveWorkHours, initialFormState);
@@ -119,7 +118,7 @@ export function WorkHoursCard({ initial }: { initial: { pushWorkHoursOnly: boole
       <CardContent>
         <form action={action} className="grid gap-4">
           <label className="flex items-center gap-2.5 text-sm">
-            <input type="checkbox" name="pushWorkHoursOnly" checked={limited} onChange={(e) => setLimited(e.target.checked)} className="size-4 accent-acc" />
+            <input type="checkbox" name="pushWorkHoursOnly" checked={limited} onChange={(e) => setLimited(e.target.checked)} />
             Only notify me during work hours
           </label>
           {initial.pushWorkHoursOnly ? (
@@ -131,10 +130,10 @@ export function WorkHoursCard({ initial }: { initial: { pushWorkHoursOnly: boole
           <fieldset disabled={!limited} className="grid gap-4 disabled:opacity-60">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="From" htmlFor="workStart" error={err.workStartMin}>
-                <Input id="workStart" name="workStart" type="time" required defaultValue={hhmm(initial.workStartMin)} aria-invalid={!!err.workStartMin} />
+                <SelectField id="workStart" name="workStart" required defaultValue={hhmm(initial.workStartMin)} options={timeOptions(30, initial.workStartMin)} disabled={!limited} aria-invalid={!!err.workStartMin} />
               </Field>
               <Field label="To" htmlFor="workEnd" error={err.workEndMin}>
-                <Input id="workEnd" name="workEnd" type="time" required defaultValue={hhmm(initial.workEndMin)} aria-invalid={!!err.workEndMin} />
+                <SelectField id="workEnd" name="workEnd" required defaultValue={hhmm(initial.workEndMin)} options={timeOptions(30, initial.workEndMin)} disabled={!limited} aria-invalid={!!err.workEndMin} />
               </Field>
             </div>
             <fieldset className="grid gap-2">
@@ -142,7 +141,7 @@ export function WorkHoursCard({ initial }: { initial: { pushWorkHoursOnly: boole
               <div className="flex flex-wrap gap-x-5 gap-y-2">
                 {DAYS.map((d, i) => (
                   <label key={d} className="flex items-center gap-2.5 text-sm">
-                    <input type="checkbox" name="days" value={i} defaultChecked={!!(initial.workDays & (1 << i))} className="size-4 accent-acc" />
+                    <input type="checkbox" name="days" value={i} defaultChecked={!!(initial.workDays & (1 << i))} />
                     {d}
                   </label>
                 ))}
@@ -199,7 +198,7 @@ export function ToneCard({ initial }: { initial: { tone: string; previews: boole
           </Field>
           <div className="grid gap-1.5">
             <label className="flex items-center gap-2.5 text-sm">
-              <input type="checkbox" checked={previews} onChange={(e) => setPreviews(e.target.checked)} className="size-4 accent-acc" />
+              <input type="checkbox" checked={previews} onChange={(e) => setPreviews(e.target.checked)} />
               Show message previews
             </label>
             <p className="pl-[26px] text-[12.5px] text-muted-foreground">

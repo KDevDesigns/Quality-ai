@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { parseSnapshot, restoreSnapshot, snapshotFiles, takeSnapshot, type Snapshot } from "@/lib/backup";
+import { LEGACY_TEMPLATE } from "@/lib/dar/template";
 import type { PrismaClient } from "@/lib/generated/prisma/client";
 import { createTestDb } from "./helpers/test-db";
 
@@ -81,6 +82,25 @@ describe("backup and restore", () => {
     await restoreSnapshot(fresh.db, old);
     const tones = (await fresh.db.user.findMany({ select: { notifyTone: true } })).map((u) => u.notifyTone).sort();
     expect(tones).toEqual(["tone-1", "tone-3"]);
+  });
+
+  it("restores a backup from before everyone set up their own DAR, keeping what each DAR showed", async () => {
+    const old = asFile(await takeSnapshot(source));
+    const ben = old.tables.user.find((u) => u.role === "DEV")!.id;
+    const NEW = ["department", "unit", "confirmedByName", "confirmedByTitle", "notedByName", "notedByTitle"];
+    old.tables.darProfile = old.tables.darProfile.map((p) => Object.fromEntries(Object.entries(p).filter(([k]) => !NEW.includes(k))));
+    old.tables.darReport = [...old.tables.darReport, { ...old.tables.darReport[0], id: "r2", userId: ben }];
+    old.tables.setting = [...old.tables.setting, { key: "dar.template", value: { unit: "QA Unit" }, updatedAt: old.takenAt }];
+    const fresh = await createTestDb();
+    cleanups.push(fresh.cleanup);
+
+    await restoreSnapshot(fresh.db, old);
+    const profiles = await fresh.db.darProfile.findMany({ include: { user: { select: { name: true } } } });
+    const ana = profiles.find((p) => p.user.name === "Ana")!;
+    expect(ana).toMatchObject({ fullName: "Ana Cruz", position: LEGACY_TEMPLATE.position, unit: "QA Unit", confirmedByName: LEGACY_TEMPLATE.confirmedBy.name });
+    expect(ana.coreFunctions).toEqual(LEGACY_TEMPLATE.coreFunctions);
+    expect(profiles.find((p) => p.user.name === "Ben")).toMatchObject({ fullName: null, department: LEGACY_TEMPLATE.department });
+    expect(await fresh.db.setting.findUnique({ where: { key: "dar.template" } })).toBeNull();
   });
 
   it("rejects files that aren't a QA Hub backup", () => {

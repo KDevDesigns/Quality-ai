@@ -64,8 +64,7 @@ describe("permissions", () => {
     "users.manage": ["ADMIN"],
     "projects.manage": ["ADMIN"],
     "workspace.manage": ["ADMIN"],
-    "dar.use": ["QA", "ADMIN"],
-    "dar.template": ["ADMIN"],
+    "dar.use": ["QA", "DEV", "ADMIN"],
   };
 
   it("covers every action in the matrix", () => {

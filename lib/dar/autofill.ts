@@ -1,11 +1,13 @@
-// Fills a DAR's day cells from what the tester did in QA Hub: each day lists the modules of the tickets they filed,
-// replied on or moved that day ("QA - BCA / CRM"); a day with no activity is a rest day. Pure functions, unit-tested.
+// Fills a DAR's day cells from what the person did in QA Hub: each day lists the modules of the tickets they filed,
+// replied on or moved that day ("QA - BCA / CRM", or "DEV - …" for developers); a day with no activity is a rest
+// day. Pure functions, unit-tested.
 
 import type { DarFunction } from "./template";
 import { manilaDay, type PeriodDay } from "./period";
 
 export const REST_DAY = "REST DAY";
-export const PREFIX = "QA";
+/** What a day's entry starts with: developers write "DEV - BCA", QA testers and admins "QA - BCA". */
+export const prefixFor = (role: string) => (role === "DEV" ? "DEV" : "QA");
 
 export type ActivityArea = { name: string; code: string | null; parent: { name: string; code: string | null } | null } | null;
 export type Activity = { at: Date; area: ActivityArea };
@@ -19,7 +21,7 @@ export function areaLabel(area: NonNullable<ActivityArea>): string {
 }
 
 /** What to write for each day: "QA - BCA / CRM", "QA" (tickets without a module) or "REST DAY". */
-export function dayEntries(activity: Activity[], days: PeriodDay[]): string[] {
+export function dayEntries(activity: Activity[], days: PeriodDay[], prefix = "QA"): string[] {
   const byDay = new Map<string, Activity[]>();
   for (const a of [...activity].sort((x, y) => x.at.getTime() - y.at.getTime())) {
     const d = manilaDay(a.at);
@@ -29,7 +31,7 @@ export function dayEntries(activity: Activity[], days: PeriodDay[]): string[] {
     const acts = byDay.get(date);
     if (!acts?.length) return REST_DAY;
     const labels = [...new Set(acts.flatMap((a) => (a.area ? [areaLabel(a.area)] : [])))];
-    return labels.length ? `${PREFIX} - ${labels.join(" / ")}` : PREFIX;
+    return labels.length ? `${prefix} - ${labels.join(" / ")}` : prefix;
   });
 }
 

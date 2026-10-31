@@ -1,0 +1,49 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { connection } from "next/server";
+import { Suspense } from "react";
+import { FileSpreadsheetIcon } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { FormSkeleton } from "@/components/skeletons";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { requireAction } from "@/lib/auth/session";
+import { darStore } from "@/lib/dar/store";
+import { db } from "@/lib/db";
+import { DarSetupForm } from "./setup-form";
+
+export const metadata: Metadata = { title: "My DAR set-up" };
+
+const dar = darStore(db);
+
+export default function DarSetupPage() {
+  return (
+    <>
+      <PageHeader
+        title="My DAR set-up"
+        description="The fixed text on your Daily Accomplishment Report: your name, office, signatories, and the duties and MFOs. Saved once and used for every period."
+        actions={
+          <Button variant="outline" nativeButton={false} render={<Link href="/dar" />}>
+            <FileSpreadsheetIcon /> My DAR
+          </Button>
+        }
+      />
+      <Suspense fallback={<FormSkeleton sections={4} />}>
+        <SetupBody />
+      </Suspense>
+    </>
+  );
+}
+
+async function SetupBody() {
+  await connection();
+  const me = await requireAction("dar.use");
+  const [header, profile] = await Promise.all([dar.header(me), dar.profile(me.id)]);
+  return (
+    <Card>
+      <CardContent>
+        <DarSetupForm header={header} hasFullName={!!profile?.fullName} />
+      </CardContent>
+    </Card>
+  );
+}

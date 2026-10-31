@@ -1,38 +1,33 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CheckIcon, FileSpreadsheetIcon, PrinterIcon, RefreshCwIcon, SaveIcon, UserPenIcon } from "lucide-react";
-import { Field, FormMessage, nativeSelectClass } from "@/components/form-field";
-import { FormDialog } from "@/components/form-dialog";
+import { Field, FormMessage } from "@/components/form-field";
+import { SelectField } from "@/components/select-field";
 import { InlineAlert } from "@/components/inline-alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { daysAttended, REST_DAY, type DarCells } from "@/lib/dar/autofill";
 import { darHtml, PRINT_PAGE, PRINT_PAPER } from "@/lib/dar/html";
 import type { DarReportData } from "@/lib/dar/store";
-import type { DarTemplate } from "@/lib/dar/template";
+import { isEmptySetup } from "@/lib/dar/template";
 import { initialFormState, type FormState } from "@/lib/form";
 import { cn } from "@/lib/utils";
-import { submitKeepingInput } from "../tickets/ticket-form";
-import { refillDar, saveDar, saveDarProfile } from "./actions";
+import { refillDar, saveDar } from "./actions";
 import { DarSheet } from "./dar-sheet";
-import { FunctionsEditor } from "./functions-editor";
 
 type PeriodOption = { start: string; label: string; saved: boolean };
-type ProfileValues = { fullName: string; position: string; ownFunctions: boolean };
 
 export function DarEditor({
   report,
   periods,
-  template,
-  profile,
+  hasFullName,
   accountName,
 }: {
   report: DarReportData;
   periods: PeriodOption[];
-  template: DarTemplate;
-  profile: ProfileValues;
+  hasFullName: boolean;
   accountName: string;
 }) {
   const router = useRouter();
@@ -46,6 +41,7 @@ export function DarEditor({
   const attended = daysAttended(cells);
   const period = report.period.start;
   const h = report.header;
+  const empty = isEmptySetup(h);
 
   // Unsaved edits are lost on leaving; let the browser ask first.
   useEffect(() => {
@@ -139,48 +135,51 @@ export function DarEditor({
   return (
     // data-full-width lets the page use the whole width (see app/(main)/layout.tsx), so the sheet fills it.
     <div className="grid gap-5" data-full-width>
-      {!profile.fullName ? (
+      {!hasFullName && !empty ? (
         <InlineAlert tone="warn">
-          Your report shows your QA Hub nickname, <strong>{accountName}</strong>. Add your full name as it appears on official forms under <strong>My details</strong>.
+          Your report shows your QA Hub nickname, <strong>{accountName}</strong>. Add your full name as it appears on official forms under{" "}
+          <Link href="/dar/setup" className="font-semibold underline underline-offset-2">
+            My details
+          </Link>
+          .
         </InlineAlert>
       ) : null}
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-wrap items-end gap-4">
           <Field label="Period" htmlFor="period" className="w-72">
-            <select
+            <SelectField
               id="period"
               value={period}
-              className={nativeSelectClass}
-              onChange={(e) => {
+              onValueChange={(v) => {
                 if (dirty && !window.confirm("You have unsaved changes. Leave this period without saving?")) return;
                 setDirty(false);
-                router.push(`/dar?period=${e.target.value}`);
+                router.push(`/dar?period=${v}`);
               }}
-            >
-              {periods.map((p) => (
-                <option key={p.start} value={p.start}>
-                  {p.label}
-                  {p.saved ? " · saved" : ""}
-                </option>
-              ))}
-            </select>
+              options={periods.map((p) => ({ value: p.start, label: `${p.label}${p.saved ? " · saved" : ""}` }))}
+            />
           </Field>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <DetailsDialog profile={profile} template={template} header={h} onSaved={() => router.refresh()} />
-          <Button variant="outline" onClick={refill} disabled={busy}>
-            <RefreshCwIcon className={cn(busy && "animate-spin")} /> Refill from tickets
+          <Button variant="outline" nativeButton={false} render={<Link href="/dar/setup" />}>
+            <UserPenIcon /> My details
           </Button>
-          <Button variant="outline" onClick={() => startTransition(async () => void (await save()))} disabled={busy || !dirty}>
-            {dirty ? <SaveIcon /> : <CheckIcon />} {dirty ? "Save" : report.saved || note?.ok ? "Saved" : "Save"}
-          </Button>
-          <Button variant="outline" onClick={print}>
-            <PrinterIcon /> Print
-          </Button>
-          <Button onClick={download} disabled={downloading}>
-            <FileSpreadsheetIcon /> {downloading ? "Preparing…" : "Excel"}
-          </Button>
+          {empty ? null : (
+            <>
+              <Button variant="outline" onClick={refill} disabled={busy}>
+                <RefreshCwIcon className={cn(busy && "animate-spin")} /> Refill from tickets
+              </Button>
+              <Button variant="outline" onClick={() => startTransition(async () => void (await save()))} disabled={busy || !dirty}>
+                {dirty ? <SaveIcon /> : <CheckIcon />} {dirty ? "Save" : report.saved || note?.ok ? "Saved" : "Save"}
+              </Button>
+              <Button variant="outline" onClick={print}>
+                <PrinterIcon /> Print
+              </Button>
+              <Button onClick={download} disabled={downloading}>
+                <FileSpreadsheetIcon /> {downloading ? "Preparing…" : "Excel"}
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -191,87 +190,37 @@ export function DarEditor({
         </p>
       ) : null}
 
-      <DarSheet
-        report={report}
-        cells={cells}
-        dateSubmitted={dateSubmitted}
-        daysAttended={attended}
-        onCell={setCell}
-        onDateSubmitted={(d) => {
-          setDateSubmitted(d);
-          setDirty(true);
-        }}
-      />
-      <p className="-mt-2 text-[12.5px] text-muted-foreground">
-        Click any day to type in it. Rows marked <span className="font-medium text-acc">↻ from my ticket work</span> are filled from the tickets you filed, replied to
-        or moved each day, using the module Codes in Team &amp; modules. A day with nothing is {REST_DAY}; type over it if you worked outside QA Hub (e.g. HR201,
-        encoding). Click the date submitted to change it.
-      </p>
-    </div>
-  );
-}
-
-function DetailsDialog({ profile, template, header, onSaved }: { profile: ProfileValues; template: DarTemplate; header: DarReportData["header"]; onSaved: () => void }) {
-  return (
-    <FormDialog
-      wide
-      title="My DAR details"
-      description="What appears on your report. Leave a field empty to use the admin's template."
-      trigger={
-        <Button variant="outline">
-          <UserPenIcon /> My details
-        </Button>
-      }
-    >
-      {(close) => (
-        <DetailsForm
-          profile={profile}
-          template={template}
-          header={header}
-          onDone={() => {
-            close();
-            onSaved();
-          }}
-        />
-      )}
-    </FormDialog>
-  );
-}
-
-function DetailsForm({ profile, template, header, onDone }: { profile: ProfileValues; template: DarTemplate; header: DarReportData["header"]; onDone: () => void }) {
-  const [useTemplate, setUseTemplate] = useState(!profile.ownFunctions);
-  const [state, action, pending] = useActionState(async (prev: FormState, fd: FormData) => {
-    const r = await saveDarProfile(prev, fd);
-    if (r.ok) onDone();
-    return r;
-  }, initialFormState);
-  const err = state.fieldErrors ?? {};
-
-  return (
-    <form onSubmit={submitKeepingInput(action)} className="grid gap-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Full name" htmlFor="fullName" error={err.fullName} hint="As on official forms, e.g. Juan D. Dela Cruz.">
-          <Input id="fullName" name="fullName" defaultValue={profile.fullName} maxLength={120} autoFocus />
-        </Field>
-        <Field label="Position title" htmlFor="position" error={err.position} hint={`Empty uses “${template.position}”.`}>
-          <Input id="position" name="position" defaultValue={profile.position} maxLength={120} placeholder={template.position} />
-        </Field>
-      </div>
-      <label className="flex items-center gap-2.5 text-sm font-medium">
-        <input type="checkbox" name="useTemplate" checked={useTemplate} onChange={(e) => setUseTemplate(e.target.checked)} className="size-4 accent-acc" />
-        Use the template&apos;s duties and MFOs
-      </label>
-      {!useTemplate ? (
+      {empty ? (
+        <div className="grid justify-items-start gap-3 rounded-[12px] border border-dashed border-line2 bg-card px-5 py-6">
+          <h2 className="text-base font-semibold">Set up your DAR</h2>
+          <p className="max-w-prose text-sm text-ink2">
+            Add your full name, position, office, who confirms and notes your report, and your core and support duties. You do this once; it&apos;s used
+            for every period after, and you can change it anytime under <strong>My details</strong>.
+          </p>
+          <Button nativeButton={false} render={<Link href="/dar/setup" />}>
+            <UserPenIcon /> Set up my DAR
+          </Button>
+        </div>
+      ) : (
         <>
-          <FunctionsEditor name="coreFunctions" label="A.) Core functions" initial={header.core} />
-          <FunctionsEditor name="supportFunctions" label="B.) Support functions" initial={header.support} />
-          {err.coreFunctions || err.supportFunctions ? <p className="text-[12.5px] font-medium text-destructive">Every row needs a duty.</p> : null}
+          <DarSheet
+            report={report}
+            cells={cells}
+            dateSubmitted={dateSubmitted}
+            daysAttended={attended}
+            onCell={setCell}
+            onDateSubmitted={(d) => {
+              setDateSubmitted(d);
+              setDirty(true);
+            }}
+          />
+          <p className="-mt-2 text-[12.5px] text-muted-foreground">
+            Click any day to type in it. Rows marked <span className="font-medium text-acc">↻ from my ticket work</span> are filled from the tickets you filed, replied to
+            or moved each day, using the module Codes in Team &amp; modules. A day with nothing is {REST_DAY}; type over it if you worked outside QA Hub (e.g. HR201,
+            encoding). Click the date submitted to change it.
+          </p>
         </>
-      ) : null}
-      <FormMessage state={state} />
-      <div className="flex justify-end">
-        <Button type="submit" disabled={pending}>{pending ? "Saving…" : "Save details"}</Button>
-      </div>
-    </form>
+      )}
+    </div>
   );
 }

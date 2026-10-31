@@ -12,7 +12,7 @@ import { fromZodError, jsonField, text, type FormState } from "@/lib/form";
 const dar = darStore(db);
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-/** Saves the day cells and date submitted. Only ever the signed-in tester's own report. */
+/** Saves the day cells and date submitted. Only ever the signed-in person's own report. */
 export async function saveDar(_prev: FormState, fd: FormData): Promise<FormState> {
   const me = await requireAction("dar.use");
   const period = parsePeriod(text(fd, "period"));
@@ -34,17 +34,22 @@ export async function refillDar(_prev: FormState, fd: FormData): Promise<FormSta
   return { ok: true, message: "Filled in again from your ticket work.", cells };
 }
 
+/** My details: everything fixed on the person's own report, used for every period. */
 export async function saveDarProfile(_prev: FormState, fd: FormData): Promise<FormState> {
   const me = await requireAction("dar.use");
-  const own = fd.get("useTemplate") !== "on";
   const parsed = darProfileInput.safeParse({
     fullName: text(fd, "fullName"),
     position: text(fd, "position"),
-    coreFunctions: own ? jsonField(fd, "coreFunctions") : null,
-    supportFunctions: own ? jsonField(fd, "supportFunctions") : null,
+    department: text(fd, "department"),
+    unit: text(fd, "unit"),
+    confirmedBy: { name: text(fd, "confirmedName"), title: text(fd, "confirmedTitle") },
+    notedBy: { name: text(fd, "notedName"), title: text(fd, "notedTitle") },
+    coreFunctions: jsonField(fd, "coreFunctions") ?? [],
+    supportFunctions: jsonField(fd, "supportFunctions") ?? [],
   });
   if (!parsed.success) return fromZodError(parsed.error);
   await dar.saveProfile(me.id, parsed.data);
   revalidatePath("/dar");
-  return { ok: true, message: "Saved." };
+  revalidatePath("/dar/setup");
+  return { ok: true, message: "Saved. Your DAR uses it from now on." };
 }

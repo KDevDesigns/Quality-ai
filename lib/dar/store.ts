@@ -1,14 +1,13 @@
 import { Prisma, type PrismaClient } from "@/lib/generated/prisma/client";
 import { buildCells, dayEntries, daysAttended, fitCells, refillCells, type Activity, type DarCells } from "./autofill";
 import { manilaDay, periodDays, periodRange, type Period, type PeriodDay } from "./period";
-import { readDarTemplate, resolveHeader, type DarHeader, type DarProfileInput, type DarTemplate } from "./template";
+import { prefixFor } from "./autofill";
+import { resolveHeader, type DarHeader, type DarProfileInput } from "./template";
 
 // Prisma glue for DARs. Every read and write is for one person's own reports; nobody, admins included, reads
-// another tester's DAR. Takes the client as a parameter so tests can run it against a throwaway SQLite file.
+// another person's DAR. Takes the client as a parameter so tests can run it against a throwaway database.
 
-const TEMPLATE_KEY = "dar.template";
-
-export type DarUser = { id: string; name: string };
+export type DarUser = { id: string; name: string; role: string };
 
 /** Everything needed to show, edit or export one DAR. */
 export type DarReportData = {
@@ -24,14 +23,8 @@ export type DarReportData = {
 const AREA = { select: { name: true, code: true, parent: { select: { name: true, code: true } } } } as const;
 
 export function darStore(db: PrismaClient, now: () => Date = () => new Date()) {
-  async function template(): Promise<DarTemplate> {
-    const row = await db.setting.findUnique({ where: { key: TEMPLATE_KEY } });
-    return readDarTemplate(row?.value);
-  }
-
   async function header(user: DarUser): Promise<DarHeader> {
-    const [t, profile] = await Promise.all([template(), db.darProfile.findUnique({ where: { userId: user.id } })]);
-    return resolveHeader(t, profile, user);
+    return resolveHeader(await db.darProfile.findUnique({ where: { userId: user.id } }), user);
   }
 
   /** What the person did in QA Hub during the period: tickets filed, replies, and status, assignment or field changes. */
@@ -52,7 +45,7 @@ export function darStore(db: PrismaClient, now: () => Date = () => new Date()) {
   }
 
   async function fresh(user: DarUser, p: Period, h: DarHeader, days: PeriodDay[]): Promise<DarCells> {
-    return buildCells(h, dayEntries(await activity(user.id, p), days));
+    return buildCells(h, dayEntries(await activity(user.id, p), days, prefixFor(user.role)));
   }
 
   async function write(user: DarUser, p: Period, cells: DarCells, dateSubmitted: string) {
@@ -65,24 +58,25 @@ export function darStore(db: PrismaClient, now: () => Date = () => new Date()) {
   }
 
   return {
-    template,
     header,
     activity,
-
-    async saveTemplate(t: DarTemplate): Promise<void> {
-      await db.setting.upsert({ where: { key: TEMPLATE_KEY }, update: { value: t }, create: { key: TEMPLATE_KEY, value: t } });
-    },
 
     async profile(userId: string) {
       return db.darProfile.findUnique({ where: { userId } });
     },
 
-    /** Empty fields and empty function lists are stored as null, so they follow the template. */
+    /** Empty fields are stored as null and come back empty. */
     async saveProfile(userId: string, input: DarProfileInput): Promise<void> {
-      const fns = (v: DarProfileInput["coreFunctions"]) => (v?.length ? (v as Prisma.InputJsonValue) : Prisma.DbNull);
+      const fns = (v: DarProfileInput["coreFunctions"]) => (v.length ? (v as Prisma.InputJsonValue) : Prisma.DbNull);
       const data = {
         fullName: input.fullName || null,
         position: input.position || null,
+        department: input.department || null,
+        unit: input.unit || null,
+        confirmedByName: input.confirmedBy.name || null,
+        confirmedByTitle: input.confirmedBy.title || null,
+        notedByName: input.notedBy.name || null,
+        notedByTitle: input.notedBy.title || null,
         coreFunctions: fns(input.coreFunctions),
         supportFunctions: fns(input.supportFunctions),
       };
@@ -98,7 +92,7 @@ export function darStore(db: PrismaClient, now: () => Date = () => new Date()) {
       return { period: p, days, header: h, cells, dateSubmitted: row?.dateSubmitted ?? manilaDay(now()), daysAttended: daysAttended(cells), saved: !!row };
     },
 
-    /** Saves what the tester typed, shaped to the current functions and days. */
+    /** Saves what they typed, shaped to the current functions and days. */
     async save(user: DarUser, p: Period, cells: unknown, dateSubmitted: string): Promise<void> {
       const days = periodDays(p);
       const h = await header(user);

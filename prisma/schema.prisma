@@ -294,19 +294,26 @@ model PendingUpload {
 
 // ── QA Hub: Daily Accomplishment Report (DAR) ──
 
-/// A QA tester's own DAR details. Empty fields fall back to the admin's template (Setting "dar.template").
+/// A person's own DAR set-up (My DAR → My details): everything fixed on their report. There is no shared template;
+/// empty fields stay empty on the report.
 model DarProfile {
   userId           String   @id
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   fullName         String? // the formal name on the report; accounts only hold a nickname
   position         String?
+  department       String?
+  unit             String?
+  confirmedByName  String? // the immediate supervisor
+  confirmedByTitle String?
+  notedByName      String?
+  notedByTitle     String?
   coreFunctions    Json? // [{ duty, mfo, autofill }]
   supportFunctions Json?
   updatedAt        DateTime @updatedAt
 }
 
-/// One tester's DAR for one half-month period. Only what the tester typed is stored; the header comes from the
-/// template and profile when the file is made.
+/// One person's DAR for one half-month period. Only what they typed is stored; the header comes from their
+/// DarProfile when the file is made.
 model DarReport {
   id            String   @id @default(cuid())
   userId        String

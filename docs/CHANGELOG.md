@@ -1,5 +1,41 @@
 # Changelog
 
+## UI polish: DAR set-up page, type colours, preloader, account tabs, styled controls (2026-11-01)
+
+- **My DAR → My details** opens a full **My DAR set-up** page, laid out like the old DAR template page (Header,
+  Signatories, Duties and MFOs), instead of a pop-up. Each person still has their own.
+- **Ticket types have colours:** Bug red, Suggestion amber, Improvement blue: a coloured chip on every ticket, a stripe
+  down the left of each row in the list, and coloured choices on the new-ticket form.
+- **QA Hub preloader:** once per browser session, when QA Hub opens or after signing in, a full-screen preloader in the
+  style of the DCWD ERP's Module preloader: the QA Hub emblem filling with water as it loads, rippling rings and waves.
+- **Loading skeletons:** while a page loads it shows grey shapes like the page itself (ticket rows, the conversation,
+  the DAR sheet) with a soft shimmer, instead of "Loading…".
+- **My account in sections:** tabs on the left (a row on phones) for Profile, Password, Notifications, Sound and Work
+  hours. `/account?tab=sound` opens one directly.
+- **No more browser-default controls:** every dropdown is QA Hub's own (animated list, tick on the choice, type to
+  jump), the DAR's date submitted opens a calendar, work hours are picked from half-hour lists, checkboxes and radios
+  are restyled, and scrollbars are thin and quiet.
+- **Motion:** pages rise in gently, lists come in one after another, dialogs and menus grow in, dashboard tiles lift
+  on hover, unread dots pop. All of it stops when the computer or phone is set to reduce motion.
+- Code: `components/preloader.tsx`, `app-splash.tsx`, `skeletons.tsx`, `select-field.tsx`, `date-picker.tsx`,
+  `components/ui/select.tsx`; `lib/calendar.ts`, `lib/time-options.ts`, `lib/splash.ts`; `app/(main)/dar/setup/`,
+  `app/(main)/account/account-tabs.tsx`; `app/globals.css`.
+
+## My DAR for everyone, each set up their own (2026-11-01)
+
+- **Developers have My DAR too.** Everyone (QA testers, developers, admins) gets it in the sidebar. A developer's days
+  read "DEV - BCA / CRM"; QA testers' and admins' still read "QA - …".
+- **No more shared DAR template.** Admin → DAR template is gone. Each person sets up their whole report once under
+  **My details**: full name, position, department, unit, the Confirmed by and Noted by signatories, and their core and
+  support duties with MFOs. A new account starts empty with a **Set up my DAR** button.
+- **Nothing changes for people already using it:** the migration copies the template's values into the details of
+  everyone who had a DAR, wherever they hadn't set their own, so their reports look the same. Restoring an older
+  backup does the same.
+- **Setup:** migration `dar_own_details` (`npm run db:deploy`), run **before** merging (the new code reads the new
+  columns; the old code ignores them).
+- Code: `lib/dar/template.ts`, `lib/dar/store.ts`, `lib/dar/autofill.ts`, `lib/backup.ts`,
+  `app/(main)/dar/dar-editor.tsx`; removed `app/(main)/admin/dar/`.
+
 ## Lighter on the free plan (2026-11-01)
 
 Supabase's logs showed about 945 MB of file downloads in one day, almost all from one video loaded again on every

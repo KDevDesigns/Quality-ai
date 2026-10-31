@@ -5,8 +5,9 @@ import { Suspense } from "react";
 import { UsersRoundIcon } from "lucide-react";
 import { DeleteButton } from "@/components/delete-button";
 import { EmptyState } from "@/components/empty-state";
-import { nativeSelectClass } from "@/components/form-field";
-import { LoadingBlock, PageHeader } from "@/components/page-header";
+import { SelectField } from "@/components/select-field";
+import { PageHeader } from "@/components/page-header";
+import { TeamSkeleton } from "@/components/skeletons";
 import { StatusPill } from "@/components/status-pill";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,7 @@ type Member = { userId: string; name: string; role: Role; isLead: boolean };
 
 export default function TeamPage({ searchParams }: PageProps<"/team">) {
   return (
-    <Suspense fallback={<LoadingBlock />}>
+    <Suspense fallback={<TeamSkeleton />}>
       <TeamBody searchParams={searchParams} />
     </Suspense>
   );
@@ -86,12 +87,14 @@ async function TeamBody({ searchParams }: { searchParams: Promise<SearchParams> 
 
       <form action="/team" className="flex flex-wrap items-center gap-2">
         <label htmlFor="person" className="text-sm text-muted-foreground">Show modules for</label>
-        <select id="person" name="person" defaultValue={person} className={cn(nativeSelectClass, "h-9 w-64 text-sm")}>
-          <option value="">Everyone</option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>{u.name} · {ROLE_LABELS[u.role as Role]}</option>
-          ))}
-        </select>
+        <SelectField
+          id="person"
+          name="person"
+          defaultValue={person}
+          size="sm"
+          className="w-64"
+          options={[{ value: "", label: "Everyone" }, ...users.map((u) => ({ value: u.id, label: `${u.name} · ${ROLE_LABELS[u.role as Role]}` }))]}
+        />
         <Button type="submit" variant="outline" size="sm">Show</Button>
         {person ? <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/team" />}>Clear</Button> : null}
       </form>
@@ -131,7 +134,7 @@ async function TeamBody({ searchParams }: { searchParams: Promise<SearchParams> 
                   {admin ? <TableHead className="w-28"><span className="sr-only">Actions</span></TableHead> : null}
                 </TableRow>
               </TableHeader>
-              <TableBody>
+              <TableBody className="stagger">
                 <AreaRow label="Whole module" muted members={mod.members} person={person} admin={admin} />
                 {mod.children.map((sub) => (
                   <AreaRow

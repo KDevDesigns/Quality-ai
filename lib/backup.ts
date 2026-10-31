@@ -1,3 +1,4 @@
+import { adoptLegacyTemplate } from "@/lib/dar/template";
 import { Prisma, type PrismaClient } from "@/lib/generated/prisma/client";
 
 // Supabase Free has no backups, so the laptop takes its own each night (scripts/backup.ts) as one JSON file.
@@ -89,7 +90,7 @@ export async function restoreSnapshot(db: PrismaClient, s: Snapshot): Promise<Re
     return u;
   });
   // Prisma wants DbNull, not null, for an empty optional Json column.
-  const darProfile = t.darProfile.map((p) => ({
+  const darProfile = ownDarDetails(t).map((p) => ({
     ...p,
     coreFunctions: p.coreFunctions ?? Prisma.DbNull,
     supportFunctions: p.supportFunctions ?? Prisma.DbNull,
@@ -97,6 +98,8 @@ export async function restoreSnapshot(db: PrismaClient, s: Snapshot): Promise<Re
   // A ticket can point at another as its duplicate; those links go in after every ticket exists, keeping updatedAt.
   const duplicates = t.ticket.filter((x) => x.duplicateOfId).map((x) => ({ id: String(x.id), duplicateOfId: String(x.duplicateOfId), updatedAt: x.updatedAt as string }));
   const ticket = t.ticket.map((x) => ({ ...x, duplicateOfId: null }));
+
+  const setting = t.setting.filter((x) => x.key !== LEGACY_DAR_TEMPLATE);
 
   return db.$transaction(
     async (tx) => {
@@ -114,11 +117,25 @@ export async function restoreSnapshot(db: PrismaClient, s: Snapshot): Promise<Re
       await insert(t.attachment, (data) => tx.attachment.createMany({ data: data as Prisma.AttachmentCreateManyInput[] }));
       await insert(darProfile, (data) => tx.darProfile.createMany({ data: data as Prisma.DarProfileCreateManyInput[] }));
       await insert(t.darReport, (data) => tx.darReport.createMany({ data: data as Prisma.DarReportCreateManyInput[] }));
-      await insert(t.setting, (data) => tx.setting.createMany({ data: data as Prisma.SettingCreateManyInput[] }));
+      await insert(setting, (data) => tx.setting.createMany({ data: data as Prisma.SettingCreateManyInput[] }));
       return Object.fromEntries(SNAPSHOT_TABLES.map((name) => [name, t[name].length])) as Record<SnapshotTable, number>;
     },
     { timeout: 5 * 60_000, maxWait: 30_000 },
   );
+}
+
+const LEGACY_DAR_TEMPLATE = "dar.template";
+
+/**
+ * Backups from before 2026-11-01 had one shared DAR template and profiles holding only overrides. Like migration
+ * dar_own_details, everyone who had a DAR gets the template's values in their own empty fields, so it looks the same.
+ */
+function ownDarDetails(t: Snapshot["tables"]): Record<string, unknown>[] {
+  if (t.darProfile.some((p) => "department" in p)) return t.darProfile;
+  const template = t.setting.find((x) => x.key === LEGACY_DAR_TEMPLATE)?.value;
+  const have = new Set(t.darProfile.map((p) => p.userId));
+  const missing = [...new Set(t.darReport.map((r) => r.userId))].filter((id) => !have.has(id)).map((userId) => ({ userId, updatedAt: new Date().toISOString() }));
+  return [...t.darProfile, ...missing].map((p) => adoptLegacyTemplate(p, template));
 }
 
 /** Splits the module tree into levels: top-level modules, then their sub-modules, and so on. */

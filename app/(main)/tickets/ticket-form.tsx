@@ -1,14 +1,17 @@
 "use client";
 
 import { startTransition, useActionState, useState } from "react";
-import { Field, FormMessage, FormSection, nativeSelectClass } from "@/components/form-field";
+import { Field, FormMessage, FormSection } from "@/components/form-field";
+import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ROLE_LABELS, type Role } from "@/lib/auth/permissions";
 import { initialFormState, type FormState } from "@/lib/form";
 import { PRIORITIES, PRIORITY_LABELS, SEVERITIES, SEVERITY_LABELS, TICKET_TYPES, TYPE_LABELS, type SeverityValue, type TicketType } from "@/lib/tickets/workflow";
+import { cn } from "@/lib/utils";
 import { createTicket, editTicket } from "./actions";
+import { TYPE_ICON, typeStyle } from "./ticket-bits";
 import { ImagePicker, useImageAttachments } from "./image-picker";
 import { useVideoUpload, VideoPicker } from "./video-picker";
 
@@ -48,17 +51,19 @@ const TYPE_HINTS: Record<TicketType, string> = {
 
 export function AreaSelect({ areas, value, onChange, id = "areaId" }: { areas: AreaOption[]; value: string; onChange: (v: string) => void; id?: string }) {
   return (
-    <select id={id} name="areaId" value={value} onChange={(e) => onChange(e.target.value)} className={nativeSelectClass}>
-      <option value="">— Not sure —</option>
-      {areas.map((m) => (
-        <optgroup key={m.id} label={m.name}>
-          <option value={m.id}>{m.name} (whole module)</option>
-          {m.children.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </optgroup>
-      ))}
-    </select>
+    <SelectField
+      id={id}
+      name="areaId"
+      value={value}
+      onValueChange={onChange}
+      groups={[
+        { options: [{ value: "", label: "— Not sure —" }] },
+        ...areas.map((m) => ({
+          label: m.name,
+          options: [{ value: m.id, label: `${m.name} (whole module)` }, ...m.children.map((c) => ({ value: c.id, label: c.name }))],
+        })),
+      ]}
+    />
   );
 }
 
@@ -86,21 +91,17 @@ export function AssigneeSelect({
     `${p.name}${p.leadAreaIds.some((x) => scope.includes(x)) ? " · lead" : ""}${p.role === "ADMIN" ? ` · ${ROLE_LABELS.ADMIN}` : ""}`;
 
   return (
-    <select id={id} name="assigneeId" defaultValue={defaultValue ?? ""} key={areaId} className={nativeSelectClass}>
-      <option value="">— Not assigned yet —</option>
-      {inArea.length ? (
-        <optgroup label="Works on this module">
-          {inArea.map((p) => (
-            <option key={p.id} value={p.id}>{label(p)}</option>
-          ))}
-        </optgroup>
-      ) : null}
-      <optgroup label={inArea.length ? "Everyone else" : "Developers"}>
-        {others.map((p) => (
-          <option key={p.id} value={p.id}>{label(p)}</option>
-        ))}
-      </optgroup>
-    </select>
+    <SelectField
+      key={areaId}
+      id={id}
+      name="assigneeId"
+      defaultValue={defaultValue ?? ""}
+      groups={[
+        { options: [{ value: "", label: "— Not assigned yet —" }] },
+        ...(inArea.length ? [{ label: "Works on this module", options: inArea.map((p) => ({ value: p.id, label: label(p) })) }] : []),
+        { label: inArea.length ? "Everyone else" : "Developers", options: others.map((p) => ({ value: p.id, label: label(p) })) },
+      ]}
+    />
   );
 }
 
@@ -144,18 +145,24 @@ export function TicketForm({
           <fieldset className="grid gap-2">
             <legend className="mb-2 text-sm font-medium">What is it?</legend>
             <div className="grid gap-2.5 sm:grid-cols-3">
-              {TICKET_TYPES.map((t) => (
+              {TICKET_TYPES.map((t) => {
+                const Icon = TYPE_ICON[t];
+                return (
                 <label
                   key={t}
-                  className="flex cursor-pointer items-start gap-2.5 rounded-[10px] border border-line p-3 text-sm transition-colors hover:border-acc-b has-checked:border-acc has-checked:bg-acc-t2"
+                  className={cn("flex cursor-pointer items-start gap-2.5 rounded-[10px] border border-line p-3 text-sm transition-[border-color,background-color,transform] duration-200 active:scale-[0.99]", typeStyle(t).choice)}
                 >
-                  <input type="radio" name="type" value={t} checked={type === t} onChange={() => setType(t)} className="mt-0.5 size-4 accent-acc" />
+                  <input type="radio" name="type" value={t} checked={type === t} onChange={() => setType(t)} className="mt-0.5" />
                   <span>
-                    <span className="block font-medium">{TYPE_LABELS[t]}</span>
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <Icon className={cn("size-4", typeStyle(t).icon)} aria-hidden />
+                      {TYPE_LABELS[t]}
+                    </span>
                     <span className="text-[12.5px] text-muted-foreground">{TYPE_HINTS[t]}</span>
                   </span>
                 </label>
-              ))}
+                );
+              })}
             </div>
           </fieldset>
 
@@ -205,19 +212,11 @@ export function TicketForm({
             </Field>
             {type === "BUG" ? (
               <Field label="Severity" htmlFor="severity" error={err.severity} hint="How bad the effect is: S1 blocks work or gets money wrong.">
-                <select id="severity" name="severity" defaultValue={ticket?.severity ?? "S3"} className={nativeSelectClass}>
-                  {SEVERITIES.map((s) => (
-                    <option key={s} value={s}>{SEVERITY_LABELS[s]}</option>
-                  ))}
-                </select>
+                <SelectField id="severity" name="severity" defaultValue={ticket?.severity ?? "S3"} options={SEVERITIES.map((s) => ({ value: s, label: SEVERITY_LABELS[s] }))} />
               </Field>
             ) : null}
             <Field label="Priority" htmlFor="priority" error={err.priority} hint="How soon it should be looked at.">
-              <select id="priority" name="priority" defaultValue={ticket?.priority ?? "P3"} className={nativeSelectClass}>
-                {PRIORITIES.map((p) => (
-                  <option key={p} value={p}>{PRIORITY_LABELS[p]}</option>
-                ))}
-              </select>
+              <SelectField id="priority" name="priority" defaultValue={ticket?.priority ?? "P3"} options={PRIORITIES.map((p) => ({ value: p, label: PRIORITY_LABELS[p] }))} />
             </Field>
             {!ticket && canAssign ? (
               <Field label="Developer" htmlFor="assigneeId" error={err.assigneeId} hint="Who should fix it. You can change it later.">

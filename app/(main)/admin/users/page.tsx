@@ -3,7 +3,8 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { KeyRoundIcon, UserPlusIcon, UsersIcon } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
-import { LoadingBlock, PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/page-header";
+import { TableSkeleton } from "@/components/skeletons";
 import { StatusPill } from "@/components/status-pill";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +21,7 @@ export const metadata: Metadata = { title: "Users" };
 export default function UsersPage() {
   // The header sits inside the guarded component so non-admins never see the page frame.
   return (
-    <Suspense fallback={<LoadingBlock />}>
+    <Suspense fallback={<TableSkeleton />}>
       <UsersBody />
     </Suspense>
   );
@@ -70,7 +71,7 @@ async function UsersBody() {
             <CardDescription>They signed up on the sign-in page. Check that each one is really on the team before approving: approved users can see every ticket.</CardDescription>
           </CardHeader>
           <Table>
-            <TableBody>
+            <TableBody className="stagger">
               {requests.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-semibold">{r.name}</TableCell>
@@ -94,7 +95,7 @@ async function UsersBody() {
             <CardDescription>They used &ldquo;Forgot your password?&rdquo; on the sign-in page. Reset gives you a temporary password to hand over in person; check it&apos;s really them first.</CardDescription>
           </CardHeader>
           <Table>
-            <TableBody>
+            <TableBody className="stagger">
               {resets.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-semibold">{r.name}</TableCell>
@@ -123,7 +124,7 @@ async function UsersBody() {
                 <TableHead className="w-24"><span className="sr-only">Actions</span></TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="stagger">
               {users.map((u) => (
                 <TableRow key={u.id} className={u.active ? undefined : "opacity-60"}>
                   <TableCell className="font-semibold">
