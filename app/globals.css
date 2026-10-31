@@ -486,12 +486,9 @@
   from { transform: translate3d(0, 0, 0); }
   to { transform: translate3d(-50%, 0, 0); }
 }
-.qa-splash .bar-shine {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
-  transform: translate3d(-100%, 0, 0);
-  animation: skeleton-sweep 1.8s ease-in-out infinite;
+/* Full-screen waves: 4000 px wide (components/preloader.tsx explains the size), so no gap opens as they drift. */
+.qa-splash .wave {
+  width: 4000px;
 }
 .qa-splash {
   transition: opacity 420ms var(--ease-out), transform 420ms var(--ease-out);
@@ -515,8 +512,7 @@ html:not(.qa-splash-on) .qa-splash {
     transition-duration: 1ms !important;
     scroll-behavior: auto !important;
   }
-  .skeleton-shine::after,
-  .qa-splash .bar-shine {
+  .skeleton-shine::after {
     display: none;
   }
 }

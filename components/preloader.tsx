@@ -5,10 +5,17 @@ import { cn } from "@/lib/utils";
 // white ring that fills with water as loading goes on, inside slowly rippling rings, with waves along the bottom. The
 // rings, ripples, float and waves reuse the sign-in brand pane's styles and colours (.auth-brand in globals.css).
 
+/**
+ * A wave 2000 units long that repeats every 400. Drawn 4000 px wide (.qa-splash .wave), one repeat is 800 px: exactly
+ * how far auth-drift slides it, so the loop is seamless and still covers a 3200 px-wide screen. (The sign-in pane's
+ * waves are only 1600 px, which leaves a gap on the right of a full-screen preloader.)
+ */
+const wave = (y: number, crest: number) => `M0 ${y} Q 200 ${crest} 400 ${y}${[800, 1200, 1600, 2000].map((x) => ` T ${x} ${y}`).join("")} V220 H0 Z`;
+
 const WAVES = [
-  { cls: "w1", d: "M0 104 Q 200 54 400 104 T 800 104 T 1200 104 T 1600 104 V220 H0 Z", fill: "var(--ab-wave-1)" },
-  { cls: "w2", d: "M0 146 Q 200 112 400 146 T 800 146 T 1200 146 T 1600 146 V220 H0 Z", fill: "var(--ab-wave-2)" },
-  { cls: "w3", d: "M0 184 Q 200 164 400 184 T 800 184 T 1200 184 T 1600 184 V220 H0 Z", fill: "var(--ab-wave-3)" },
+  { cls: "w1", d: wave(104, 54), fill: "var(--ab-wave-1)" },
+  { cls: "w2", d: wave(146, 112), fill: "var(--ab-wave-2)" },
+  { cls: "w3", d: wave(184, 164), fill: "var(--ab-wave-3)" },
 ];
 
 /** A wavy water surface, twice as wide as the ring so it can slide sideways forever. */
@@ -76,16 +83,11 @@ export function Preloader({ progress, status, done, className }: { progress: num
         <p className="mt-2 text-[15px] text-(--ab-text)" aria-live="polite">
           {status}
         </p>
-        <div className="relative mt-5 h-1.5 w-56 overflow-hidden rounded-full bg-(--ab-ring-3)" aria-hidden>
-          <div className="relative h-full overflow-hidden rounded-full bg-[#4f56d3] transition-[width] duration-500 ease-(--ease-out)" style={{ width: `${pct}%` }}>
-            <span className="bar-shine" />
-          </div>
-        </div>
       </div>
 
       {WAVES.map((w) => (
-        <div key={w.cls} className="absolute inset-x-0 bottom-0 h-[220px]" aria-hidden>
-          <svg className={`wave ${w.cls}`} viewBox="0 0 1600 220" preserveAspectRatio="none">
+        <div key={w.cls} className="absolute inset-x-0 bottom-0 h-[220px] overflow-hidden" aria-hidden>
+          <svg className={`wave ${w.cls}`} viewBox="0 0 2000 220" preserveAspectRatio="none">
             <path d={w.d} style={{ fill: w.fill }} />
           </svg>
         </div>
