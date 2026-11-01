@@ -239,7 +239,16 @@ Check usage in Supabase → **Organization → Usage** about once a month.
   - Add one with **Win+Shift+S** then **Ctrl+V** (anywhere on the page outside a text box, or after clicking the
     **Screenshots** box), **Add images**, drag-and-drop, or **Capture screen**
     (Chrome and Edge on a PC: pick the ERP tab or window; one picture is taken and sharing stops at once).
-  - Tools: **Box**, **Arrow**, **Pen**, **Text**, **Hide** and **Crop** (keys B, A, P, T, H, C; Ctrl+Z / Ctrl+Y undo and redo).
+  - Tools (key in brackets): **Select** (V), **Box** (B), **Circle** (E), **Arrow** (A), **Pen** (P), **Highlight**
+    (M, see-through yellow), **Text** (T), **Steps** (N: click to drop 1, 2, 3…), **Callout** (K: drag from the thing
+    to where the note goes, then type), **Hide** (H) and **Crop** (C).
+  - **Select** a mark to drag it, pull a round handle to resize it (text, steps and callouts grow or shrink), change
+    its colour or text size, or press **Delete**. Double-click a note or callout to retype it; arrow keys nudge it.
+  - **Text size:** S / M / L / XL buttons, or **[** and **]**. Colours: buttons or keys **1–4**.
+  - **Zoom:** **Ctrl + mouse wheel** zooms the screenshot (not the page), as do **− / +** and **Fit** (Ctrl+0). Hold
+    **Space** and drag, or drag with the wheel button, to move around when zoomed.
+  - **Shortcuts** lists every key; **?** shows it too. Ctrl+Z / Ctrl+Y undo and redo, Ctrl+Enter uses the image, Esc
+    cancels what you're drawing or deselects.
   - **Hide** paints a solid black box. It's not a blur on purpose: blurred or pixelated text can be read back by tools.
     Only the marked-up copy is uploaded, so hidden names, account numbers and amounts never leave the PC.
   - **Use original** uploads the picture unchanged; **Remove** drops it. The pencil on a thumbnail marks it up again.

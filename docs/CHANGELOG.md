@@ -1,5 +1,19 @@
 # Changelog
 
+## Screenshot markup: more QA tools, Select, zoom and shortcuts (2026-11-01)
+
+- **New tools:** Circle, Highlight (see-through yellow, under the other marks), Steps (numbered 1, 2, 3… circles) and
+  Callout (a note in a box with an arrow to the thing).
+- **Select:** click any mark to move it, resize it from its handles (text, steps and callouts change size), recolour
+  it or delete it; double-click a note or callout to retype it; arrow keys nudge. Each change is one Undo step.
+- **Text:** works with a single click (it used to need the mouse button held), S / M / L / XL sizes (Medium is 1.6×
+  the old size), typed in place in its real colour and size, and kept when you press Use image while still typing.
+- **Zoom:** Ctrl + mouse wheel zooms the screenshot at the cursor instead of the whole page; − / + / Fit buttons,
+  Ctrl+= / Ctrl+− / Ctrl+0; Space + drag or the wheel button to move around.
+- **Shortcuts** on every tool (V B E A P M T N K H C), colours 1–4, [ ] text size, Delete, Ctrl+Enter, and a list
+  under **Shortcuts** or **?**.
+- Code: `lib/markup/` (`shapes`, `geometry`, `draw`, `view`, tested) and `app/(main)/tickets/markup/`.
+
 ## UI polish: DAR set-up page, type colours, preloader, account tabs, styled controls (2026-11-01)
 
 - **My DAR → My details** opens a full **My DAR set-up** page, laid out like the old DAR template page (Header,
