@@ -32,7 +32,8 @@ async function NewTicket() {
       <InlineAlert tone="info">
         Screenshots often show customer names, account numbers and amounts. They stay on this office server and are never sent to any AI service.
       </InlineAlert>
-      <Card>
+      {/* Not clipped on phones, so the File ticket bar can stick to the bottom of the screen. */}
+      <Card className="max-md:overflow-visible">
         <CardContent>
           <TicketForm areas={areas} people={people} canAssign={can(me, "tickets.assign")} />
         </CardContent>

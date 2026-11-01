@@ -19,7 +19,10 @@ export const metadata: Metadata = { title: "My account" };
 export default function AccountPage() {
   return (
     <>
-      <PageHeader title="My account" description="Your profile, password and how QA Hub notifies you." />
+      {/* On a phone the top bar names the page and Settings lists the sections. */}
+      <div className="max-md:hidden">
+        <PageHeader title="My account" description="Your profile, password and how QA Hub notifies you." />
+      </div>
       <Suspense fallback={<AccountSkeleton />}>
         <AccountBody />
       </Suspense>

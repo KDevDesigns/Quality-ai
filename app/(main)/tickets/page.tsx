@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { ChevronLeftIcon, ChevronRightIcon, MessageSquareIcon, PlusIcon, TicketIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, MessageSquareIcon, PlusIcon, SearchIcon, TicketIcon } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
+import { Field } from "@/components/form-field";
 import { SelectField } from "@/components/select-field";
 import { InlineAlert } from "@/components/inline-alert";
 import { PageHeader } from "@/components/page-header";
@@ -22,7 +23,9 @@ import { notificationStore } from "@/lib/tickets/notifications";
 import { PAGE_SIZE, ticketStore } from "@/lib/tickets/store";
 import { STATUS_LABELS, TICKET_TYPES, TYPE_LABELS, type SeverityValue } from "@/lib/tickets/workflow";
 import { cn } from "@/lib/utils";
+import { FilterSheet } from "./filter-sheet";
 import { SeverityTag, TicketStatusPill, TicketTypeLabel, typeStyle, UnreadDot } from "./ticket-bits";
+import { PhoneTicketGroups } from "./ticket-card";
 
 export const metadata: Metadata = { title: "Tickets" };
 
@@ -97,23 +100,108 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
   const filtered = !!(f.type || f.area || f.q || (f.assignee && f.assignee !== "me"));
   const canFile = can(me, "tickets.create");
 
+  const options = {
+    type: [{ value: "", label: "All types" }, ...TICKET_TYPES.map((t) => ({ value: t, label: TYPE_LABELS[t] }))],
+    area: [
+      { options: [{ value: "", label: "All modules" }] },
+      ...buildTree(areas).map((m) => ({
+        label: m.name,
+        options: [{ value: m.id, label: `${m.name} (all)` }, ...m.children.map((c) => ({ value: c.id, label: c.name }))],
+      })),
+    ],
+    assignee: [
+      { value: "", label: "Any developer" },
+      ...(me.role === "ADMIN" ? [{ value: "me", label: "Me" }] : []),
+      { value: "none", label: "Not assigned" },
+      ...people.map((p) => ({ value: p.id, label: p.name })),
+    ],
+  };
+  // The view the list is in (stage, reporter) rides along when the filters are applied.
+  const keep = (
+    <>
+      {f.group !== "open" ? <input type="hidden" name="group" value={f.group} /> : null}
+      {f.status ? <input type="hidden" name="status" value={f.status} /> : null}
+      {f.reporter ? <input type="hidden" name="reporter" value={f.reporter} /> : null}
+    </>
+  );
+  const clearHref = hrefWith(f, { q: null, type: null, area: null, assignee: null });
+  const activeFilters = [f.type, f.area, f.assignee && f.assignee !== "me" ? f.assignee : null].filter(Boolean).length;
+
   return (
     <>
-      <PageHeader title={me.role === "ADMIN" ? "All tickets" : "My tickets"} description={SCOPE_TEXT[me.role]} actions={canFile ? <NewTicketButton /> : null} />
+      <PageHeader
+        title={me.role === "ADMIN" ? "All tickets" : "My tickets"}
+        description={SCOPE_TEXT[me.role]}
+        actions={
+          <>
+            {canFile ? (
+              <span className="max-md:hidden">
+                <NewTicketButton />
+              </span>
+            ) : null}
+            <span className="md:hidden">
+              <FilterSheet active={activeFilters}>
+                <form action="/tickets" className="grid gap-4">
+                  {keep}
+                  {f.q ? <input type="hidden" name="q" value={f.q} /> : null}
+                  <Field label="Type" htmlFor="ftype">
+                    <SelectField id="ftype" name="type" defaultValue={f.type ?? ""} options={options.type} />
+                  </Field>
+                  <Field label="Module" htmlFor="farea">
+                    <SelectField id="farea" name="area" defaultValue={f.area ?? ""} groups={options.area} />
+                  </Field>
+                  {me.role !== "DEV" ? (
+                    <Field label="Developer" htmlFor="fassignee">
+                      <SelectField id="fassignee" name="assignee" defaultValue={f.assignee ?? ""} options={options.assignee} />
+                    </Field>
+                  ) : null}
+                  <div className="grid grid-cols-2 gap-2.5 pt-1">
+                    <Button variant="outline" size="lg" nativeButton={false} render={<Link href={clearHref} />}>
+                      Clear
+                    </Button>
+                    <Button type="submit" size="lg">Apply</Button>
+                  </div>
+                </form>
+              </FilterSheet>
+            </span>
+          </>
+        }
+      />
       {deleted ? (
         <InlineAlert tone="ok" role="status">
           Ticket #{deleted} was deleted permanently.
         </InlineAlert>
       ) : null}
-      <nav aria-label="Ticket views" className="flex flex-wrap gap-1.5">
+
+      {/* Phones: one search field; the rest of the filters are in the sheet. */}
+      <form action="/tickets" role="search" className="relative md:hidden">
+        {keep}
+        {f.type ? <input type="hidden" name="type" value={f.type} /> : null}
+        {f.area ? <input type="hidden" name="area" value={f.area} /> : null}
+        {f.assignee ? <input type="hidden" name="assignee" value={f.assignee} /> : null}
+        <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-[1.125rem] -translate-y-1/2 text-muted-foreground" aria-hidden />
+        <Input
+          type="search"
+          name="q"
+          defaultValue={f.q}
+          enterKeyHint="search"
+          placeholder="Search tickets or #number"
+          aria-label="Search tickets"
+          className="h-11 rounded-xl border-transparent pl-10 shadow-[0_0.0625rem_0.125rem_rgba(20,22,40,0.06),0_0.125rem_0.5rem_rgba(20,22,40,0.04)]"
+        />
+      </form>
+
+      <nav aria-label="Ticket views" className="flex flex-wrap gap-1.5 max-md:-mx-5 max-md:flex-nowrap max-md:gap-2 max-md:overflow-x-auto max-md:px-5 max-md:[scrollbar-width:none]">
         {QUICK.map((v) => (
           <Link
             key={v.label}
             href={hrefWith(f, v.patch)}
             aria-current={isQuick(v.patch) ? "page" : undefined}
             className={cn(
-              "rounded-full border px-3.5 py-1.5 text-[0.8438rem] font-medium transition-colors",
-              isQuick(v.patch) ? "border-acc bg-acc text-primary-foreground" : "border-line bg-card text-ink2 hover:border-acc-b hover:text-foreground",
+              "rounded-full border px-3.5 py-1.5 text-[0.8438rem] font-medium whitespace-nowrap transition-colors max-md:flex max-md:h-9 max-md:shrink-0 max-md:items-center max-md:px-4 max-md:text-sm",
+              isQuick(v.patch)
+                ? "border-acc bg-acc text-primary-foreground"
+                : "border-line bg-card text-ink2 hover:border-acc-b hover:text-foreground max-md:border-transparent max-md:shadow-[0_0.0625rem_0.125rem_rgba(20,22,40,0.06),0_0.125rem_0.5rem_rgba(20,22,40,0.04)]",
             )}
           >
             {v.label}
@@ -121,52 +209,16 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
         ))}
       </nav>
 
-      <form action="/tickets" className="flex flex-wrap items-end gap-2">
-        {f.group !== "open" ? <input type="hidden" name="group" value={f.group} /> : null}
-        {f.status ? <input type="hidden" name="status" value={f.status} /> : null}
-        {f.reporter ? <input type="hidden" name="reporter" value={f.reporter} /> : null}
+      <form action="/tickets" className="flex flex-wrap items-end gap-2 max-md:hidden">
+        {keep}
         <Input name="q" defaultValue={f.q} placeholder="Search title, text or #number" aria-label="Search" className="h-9 w-64 text-sm" />
-        <SelectField
-          name="type"
-          defaultValue={f.type ?? ""}
-          aria-label="Type"
-          size="sm"
-          className="w-40"
-          options={[{ value: "", label: "All types" }, ...TICKET_TYPES.map((t) => ({ value: t, label: TYPE_LABELS[t] }))]}
-        />
-        <SelectField
-          name="area"
-          defaultValue={f.area ?? ""}
-          aria-label="Module"
-          size="sm"
-          className="w-56"
-          groups={[
-            { options: [{ value: "", label: "All modules" }] },
-            ...buildTree(areas).map((m) => ({
-              label: m.name,
-              options: [{ value: m.id, label: `${m.name} (all)` }, ...m.children.map((c) => ({ value: c.id, label: c.name }))],
-            })),
-          ]}
-        />
+        <SelectField name="type" defaultValue={f.type ?? ""} aria-label="Type" size="sm" className="w-40" options={options.type} />
+        <SelectField name="area" defaultValue={f.area ?? ""} aria-label="Module" size="sm" className="w-56" groups={options.area} />
         {/* A developer's list is already "assigned to me". */}
-        {me.role !== "DEV" ? (
-          <SelectField
-            name="assignee"
-            defaultValue={f.assignee ?? ""}
-            aria-label="Developer"
-            size="sm"
-            className="w-48"
-            options={[
-              { value: "", label: "Any developer" },
-              ...(me.role === "ADMIN" ? [{ value: "me", label: "Me" }] : []),
-              { value: "none", label: "Not assigned" },
-              ...people.map((p) => ({ value: p.id, label: p.name })),
-            ]}
-          />
-        ) : null}
+        {me.role !== "DEV" ? <SelectField name="assignee" defaultValue={f.assignee ?? ""} aria-label="Developer" size="sm" className="w-48" options={options.assignee} /> : null}
         <Button type="submit" variant="outline" size="sm">Filter</Button>
         {filtered ? (
-          <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={hrefWith(f, { q: null, type: null, area: null, assignee: null })} />}>
+          <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={clearHref} />}>
             Clear
           </Button>
         ) : null}
@@ -186,7 +238,13 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
               : "File the first one: a bug, a suggestion or an improvement."}
         </EmptyState>
       ) : (
-        <Card>
+        <>
+        <PhoneTicketGroups
+          tickets={rows.map((t) => ({ ...t, person: me.role === "DEV" ? `from ${t.reporter.name}` : (t.assignee?.name ?? "Not assigned") }))}
+          unread={unread}
+          now={now}
+        />
+        <Card className="max-md:hidden">
           <Table>
             <TableHeader>
               <TableRow>
@@ -232,10 +290,21 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
             </TableBody>
           </Table>
         </Card>
+        </>
       )}
 
+      {/* Phones: New ticket floats above the tab bar, in thumb reach. */}
+      {canFile ? (
+        <Link
+          href="/tickets/new"
+          className="fixed right-5 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-20 flex h-14 items-center gap-2 rounded-[1.125rem] bg-acc pr-5 pl-4 text-[0.9375rem] font-semibold text-primary-foreground shadow-[0_0.625rem_1.5rem_color-mix(in_srgb,var(--acc)_40%,transparent)] outline-none focus-visible:ring-3 focus-visible:ring-acc/40 active:scale-95 md:hidden"
+        >
+          <PlusIcon className="size-5" aria-hidden /> New ticket
+        </Link>
+      ) : null}
+
       {total > 0 ? (
-        <div className="flex items-center justify-between text-[0.8125rem] text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-3 text-[0.8125rem] text-muted-foreground">
           <span>
             {total} ticket{total === 1 ? "" : "s"}
             {pages > 1 ? ` · page ${f.page} of ${pages}` : ""}

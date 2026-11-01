@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { AppSplash } from "@/components/app-splash";
 import { AppSidebar, AppSidebarShell, type SidebarUser } from "@/components/app-sidebar";
 import { AppTopbar, AppTopbarShell } from "@/components/app-topbar";
+import { BottomNav } from "@/components/bottom-nav";
 import { NotificationsProvider } from "@/components/notifications";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { getCurrentUser } from "@/lib/auth/session";
@@ -24,12 +25,18 @@ export default function MainLayout({ children }: LayoutProps<"/">) {
           <Suspense fallback={<AppTopbarShell />}>
             <SessionTopbar />
           </Suspense>
-          <main className="page-enter mx-auto w-full max-w-[82.5rem] flex-1 space-y-6 px-4 py-7 has-data-full-width:max-w-none md:px-10">{children}</main>
-          <footer className="flex h-[3.25rem] shrink-0 items-center justify-center border-t border-line2 px-4 text-center text-[0.8125rem] tracking-[0.02em] text-muted-foreground">
+          <main data-main className="page-enter mx-auto w-full max-w-[82.5rem] flex-1 space-y-6 px-4 py-7 has-data-full-width:max-w-none max-md:px-5 max-md:py-5 md:px-10">
+            {children}
+          </main>
+          <footer className="flex h-[3.25rem] shrink-0 items-center justify-center border-t border-line2 px-4 text-center text-[0.8125rem] tracking-[0.02em] text-muted-foreground max-md:hidden">
             Davao City Water District · QA Hub for the in-house ERP
           </footer>
         </SidebarInset>
       </SidebarProvider>
+      {/* Phones: the tab bar. It reads the URL, so it's inside Suspense too. */}
+      <Suspense fallback={null}>
+        <SessionBottomNav />
+      </Suspense>
       {/* It reads the URL, which Cache Components only allows inside Suspense. */}
       <Suspense fallback={null}>
         <PushPrompt />
@@ -50,4 +57,9 @@ async function SessionSidebar() {
 
 async function SessionTopbar() {
   return <AppTopbar user={await sessionUser()} />;
+}
+
+async function SessionBottomNav() {
+  const user = await sessionUser();
+  return user ? <BottomNav role={user.role} /> : null;
 }

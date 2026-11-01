@@ -46,6 +46,8 @@
   --color-line2: var(--ln2);
   --color-surface2: var(--sf2);
   --color-surface3: var(--sf3);
+  /* Phones: the grey page behind rounded white cards, like a phone's own Settings app. */
+  --color-grouped: var(--grouped);
   --color-ink2: var(--tx2);
   --color-acc: var(--acc);
   --color-acc-t: var(--acc-t);
@@ -101,6 +103,7 @@
   --sf: #ffffff;
   --sf2: #fafafb;
   --sf3: #f4f5f8;
+  --grouped: #f2f3f7;
   --tx: #18181b;
   --tx2: #3f3f46;
   --mu: #6b6b74;
@@ -186,6 +189,7 @@
   --sf: #171a22;
   --sf2: #1c2029;
   --sf3: #232733;
+  --grouped: #0b0d12;
   --tx: #eceef4;
   --tx2: #c9ccd6;
   --mu: #9a9dab;
@@ -507,6 +511,26 @@
 /* Shown before React runs only when this session hasn't seen it yet (the inline script in components/app-splash.tsx). */
 html:not(.qa-splash-on) .qa-splash {
   display: none;
+}
+
+/* Phones (below md): an app look. A grey page with rounded white cards, the end of the page kept clear of the bottom
+   tab bar (components/bottom-nav.tsx) and the home bar, and the top clear of the notch on pages without a top bar. */
+@media (width < 48rem) {
+  body,
+  [data-slot="sidebar-inset"] {
+    background: var(--grouped);
+  }
+  body:has([data-bottom-nav]) [data-main] {
+    padding-top: calc(0.75rem + env(safe-area-inset-top));
+    padding-bottom: calc(7rem + env(safe-area-inset-bottom));
+  }
+  /* Inner pages: the slim top bar names the page, so the large title goes (and the whole header when it has no buttons). */
+  body:not(:has([data-bottom-nav])) [data-page-title] {
+    display: none;
+  }
+  body:not(:has([data-bottom-nav])) [data-page-header]:not(:has(> :nth-child(2))) {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

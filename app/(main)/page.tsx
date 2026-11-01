@@ -14,17 +14,19 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { InlineAlert } from "@/components/inline-alert";
+import { NotificationBell } from "@/components/notifications";
 import { PageHeader } from "@/components/page-header";
 import { DashboardSkeleton } from "@/components/skeletons";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { can, ROLE_LABELS, type Role } from "@/lib/auth/permissions";
 import { auth, requireUser } from "@/lib/auth/session";
 import { db } from "@/lib/db";
-import { timeAgo } from "@/lib/format";
+import { TIME_ZONE, timeAgo } from "@/lib/format";
 import { notificationStore } from "@/lib/tickets/notifications";
 import { ticketStore } from "@/lib/tickets/store";
 import { cn } from "@/lib/utils";
 import { TicketStatusPill, UnreadDot } from "./tickets/ticket-bits";
+import { PhoneTicketList } from "./tickets/ticket-card";
 
 const tickets = ticketStore(db);
 const notifications = notificationStore(db);
@@ -32,7 +34,10 @@ const notifications = notificationStore(db);
 export default function DashboardPage() {
   return (
     <>
-      <PageHeader title="Overview" description="Tickets, the conversation with developers and the module directory, in one place." />
+      {/* Phones greet the person instead (in Overview, which knows who it is). */}
+      <div className="max-md:hidden">
+        <PageHeader title="Overview" description="Tickets, the conversation with developers and the module directory, in one place." />
+      </div>
       <Suspense fallback={<DashboardSkeleton />}>
         <Overview />
       </Suspense>
@@ -65,6 +70,13 @@ async function Overview() {
 
   return (
     <>
+      <div className="flex items-end justify-between gap-3 md:hidden">
+        <div className="min-w-0">
+          <p className="text-sm text-muted-foreground">{TODAY.format(new Date())}</p>
+          <h1 className="truncate text-[2rem] leading-tight font-bold tracking-[-0.025em]">Hi, {me.name.split(/\s+/)[0]}</h1>
+        </div>
+        <NotificationBell />
+      </div>
       {waiting.length ? (
         <InlineAlert tone="warn" role="status">
           <span className="font-semibold">
@@ -105,6 +117,8 @@ async function Overview() {
     </>
   );
 }
+
+const TODAY = new Intl.DateTimeFormat("en-PH", { timeZone: TIME_ZONE, weekday: "long", day: "numeric", month: "long" });
 
 const MODULES_TEXT: Record<Role, string> = {
   ADMIN: "Where you’ll receive or file tickets",
@@ -189,8 +203,29 @@ const TICKET_STATS: Record<Role, (c: Counts) => Stat[]> = {
 
 function RecentTickets({ rows, role, unread }: { rows: Awaited<ReturnType<typeof tickets.recent>>; role: Role; unread: Set<string> }) {
   const now = new Date();
+  const title = role === "ADMIN" ? "Recent activity" : role === "DEV" ? "My assigned tickets" : "My tickets";
   return (
-    <Card>
+    <>
+    {/* Phones: a section heading over a rounded card of ticket rows. */}
+    <section className="grid gap-2 md:hidden" aria-label={title}>
+      <div className="flex items-baseline justify-between px-1">
+        <h2 className="text-[0.8125rem] font-semibold tracking-[0.04em] text-muted-foreground uppercase">{title}</h2>
+        <Link href="/tickets?group=all" className="text-sm font-medium text-acc-ink">See all</Link>
+      </div>
+      {rows.length ? (
+        <PhoneTicketList
+          tickets={rows.map((t) => ({ ...t, person: role === "DEV" ? `from ${t.reporter.name}` : (t.assignee?.name ?? "Not assigned") }))}
+          unread={unread}
+          now={now}
+        />
+      ) : (
+        <p className="rounded-2xl bg-card px-4 py-5 text-sm text-muted-foreground">
+          {role === "DEV" ? "Nothing is assigned to you yet." : "No tickets yet."}{" "}
+          {role !== "DEV" ? <Link href="/tickets/new" className="font-medium text-acc-ink">File a ticket</Link> : null}
+        </p>
+      )}
+    </section>
+    <Card className="max-md:hidden">
       <CardHeader>
         <CardTitle>{role === "ADMIN" ? "Recent activity" : role === "DEV" ? "My assigned tickets" : "My tickets"}</CardTitle>
         <CardDescription>
@@ -231,12 +266,38 @@ function RecentTickets({ rows, role, unread }: { rows: Awaited<ReturnType<typeof
         </ul>
       )}
     </Card>
+    </>
   );
 }
 
 function StatRow({ stats }: { stats: Stat[] }) {
   return (
-    <div className="stagger grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <>
+    {/* Phones: cards that swipe sideways, the first (the one to act on) in the accent colour. */}
+    <div className="-mx-5 flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto px-5 pb-1 [scrollbar-width:none] md:hidden">
+      {stats.map(({ label, value, href, icon: Icon, note }, i) => (
+        <Link
+          key={label}
+          href={href}
+          className={cn(
+            "grid w-[9.5rem] shrink-0 snap-start content-start gap-2.5 rounded-[1.125rem] p-4 outline-none focus-visible:ring-3 focus-visible:ring-acc/40 active:scale-[0.98]",
+            i === 0
+              ? "bg-acc text-primary-foreground shadow-[0_0.5rem_1.25rem_color-mix(in_srgb,var(--acc)_35%,transparent)]"
+              : "bg-card shadow-[0_0.0625rem_0.125rem_rgba(20,22,40,0.06),0_0.125rem_0.5rem_rgba(20,22,40,0.04)]",
+          )}
+        >
+          <span className={cn("flex size-8 items-center justify-center rounded-[0.5625rem]", i === 0 ? "bg-primary-foreground/20" : "bg-acc-t text-acc-ink")} aria-hidden>
+            <Icon className="size-[1.125rem]" />
+          </span>
+          <span className="text-[1.875rem] leading-none font-bold tracking-[-0.03em] tabular-nums">{value}</span>
+          <span className={cn("text-[0.8438rem] leading-snug font-medium", i === 0 ? "text-primary-foreground/85" : "text-ink2")}>
+            {label}
+            {note ? <span className="sr-only">, {note}</span> : null}
+          </span>
+        </Link>
+      ))}
+    </div>
+    <div className="stagger grid grid-cols-1 gap-4 max-md:hidden sm:grid-cols-3">
       {stats.map(({ label, value, href, icon: Icon, note }) => (
         <Link
           key={label}
@@ -257,5 +318,6 @@ function StatRow({ stats }: { stats: Stat[] }) {
         </Link>
       ))}
     </div>
+    </>
   );
 }

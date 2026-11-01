@@ -307,13 +307,39 @@ shows every step.
 QA testers test the Investigator app and other mobile apps on their own or company phones. They should file the bug
 **on the same phone**, right after it happens, instead of sending the screenshot to a laptop first. Since the cloud
 move QA Hub is reachable from any phone over HTTPS, so this is about making it work well on a small touch screen.
-Can be built before 3.6, because tickets already exist.
+Can be built before 3.6, because tickets already exist. Built in three parts, each reviewed before the next:
+**3.7a** the mobile UI rework, **3.7b** filing from the phone, **3.7c** the installed app (PWA).
 
-- **Layout on phones** (≤ 640 px wide): the sidebar is already a slide-out drawer; check every page for it.
-  - Tables (ticket list, team, admin) turn into stacked cards; filters go into a "Filter" sheet.
-  - Dialogs open as full-screen sheets, with the main button kept at the bottom above the keyboard.
-  - Touch targets at least 44 px; form inputs at 16 px text so iPhones don't zoom in.
-  - A floating **+ New ticket** button on the ticket pages.
+#### 3.7a — Mobile UI rework (no database changes)
+Today most pages only shrink on a phone (the ticket list, Team, Admin → Users and My DAR have no phone layout). This
+part makes QA Hub feel like a phone app. Applies below 768 px wide (Tailwind `md`, where the sidebar already turns
+into a drawer); tablets in portrait and up, laptops and big screens stay as they are.
+
+- **Bottom tab bar** (all roles), replacing the slide-out sidebar on phones:
+  **Home · Tickets · Inbox · DAR · Settings**. **Inbox** is the raised main button in the middle, with the unread
+  count. The active tab is highlighted; the bar hides while typing so the keyboard has room.
+  - **Settings** holds My account (Profile, Password, Notifications, Sound, Work hours), **Team**, **Admin → Users**
+    (admins only) and **Sign out**, as a list of rows like a phone's settings app.
+  - The top bar gets smaller: page title (with a back arrow on inner pages), the bell, the avatar.
+- **Home:** stat tiles in a swipe row; "My open tickets" as a short card list.
+- **Tickets:** each ticket a card (number, type stripe, title, status chip, assignee, time); search and filters in a
+  bottom sheet (no pull-to-refresh: the 30-second poll already refreshes live pages); a floating **+ New ticket** button (for people who can file).
+- **Ticket page:** the conversation is the main view, Messenger-style, with the reply box fixed above the keyboard.
+  Details, status buttons, Reassign and the activity log go in a collapsible header / **Details** sheet. Images open
+  full-screen with swipe and pinch.
+- **Inbox:** the list first; a conversation opens full-screen with a back arrow instead of side-by-side panes.
+- **New ticket / edit:** one field per row, the type picker as big buttons, a sticky **File ticket** button.
+- **My DAR on phones is view-only, for everyone:** the sheet as expandable day cards, readable and scrollable.
+  Editing, Refill from tickets and the set-up page stay on the laptop (a short note says so).
+- **Team, Admin → Users:** person cards (name, role, modules) instead of tables; admin actions in a "⋯" menu.
+- **Login:** the waves and form fit at 375 px and stay clear of the keyboard.
+- **Everywhere:** dialogs become bottom sheets; nothing that only works on hover; touch targets at least 44 px; form
+  inputs at 16 px text so iPhones don't zoom in; room for the iPhone notch and home bar (safe areas).
+
+**3.7a done when:** at 375 px, in light and dark mode, every page works with no sideways scrolling; the bottom bar
+reaches every page for each role; a person can read and reply to a ticket one-handed; a laptop looks unchanged.
+
+#### 3.7b — Filing a ticket from the phone
 - **Filing a ticket from the phone:**
   - **Take photo** / **Choose from gallery** for screenshots. Check that iPhone HEIC photos arrive as JPEG; convert in
     the browser if not.
@@ -326,13 +352,20 @@ Can be built before 3.6, because tickets already exist.
   - Uploads over mobile data: a progress bar, a clear retry when the signal drops, and a warning before a big video
     on mobile data. Same 50 MB limit and server-side checks as now.
   - The screenshot markup tool (3.5b slice 3) works with a finger: pointer events, pinch to zoom, big tool buttons.
+- **Phones and sensitive data:** screenshots stay in the phone's gallery after upload. Add a reminder after filing
+  ("Delete the screenshot from your gallery"), keep **Sign out** easy to reach on shared company phones (Settings
+  tab), and let an admin end a user's sessions if a phone is lost.
+
+#### 3.7c — Install as an app (PWA)
 - **Install as an app (PWA)**, in this order (each step ships on its own):
   1. **Icons and manifest:** the manifest (`app/manifest.ts`, done in 3.8c) gets 192 and 512 px icons plus a
      *maskable* one (the seal on a solid background with a safe margin) so Android doesn't put it in a white square, an
      Apple touch icon for iPhone, and `id`, `scope` and the brand colours. No database change.
   2. **Install QA Hub button:** Android/Chrome/Edge: one tap (`beforeinstallprompt`). iPhone: a short guide
      (Share → Add to Home Screen) with pictures. Shown in My account → Notifications and in the sign-in notification
-     prompt; hidden once QA Hub runs installed (`display-mode: standalone`).
+     prompt; hidden once QA Hub runs installed (`display-mode: standalone`). Includes a **Windows: start with my PC**
+     tip (Edge `edge://apps` / Chrome app settings → *Start app when you sign in*, or a shortcut in `shell:startup`),
+     which also keeps the browser running so notifications arrive all day.
   3. **Unread count on the icon:** the bell's count on the QA Hub icon (`navigator.setAppBadge`), updated when the
      bell polls and by the service worker when a push arrives (the push carries the count, no ticket text). Android and
      iPhone 16.4+ installed apps; ignored elsewhere.
@@ -347,11 +380,8 @@ Can be built before 3.6, because tickets already exist.
 - **Test runs on the phone** (3.6a): the checklist works on a phone, but while testing an app on the same phone the
   tester keeps switching apps. Suggest the laptop for the checklist and the phone for the app; **Fail** still files
   from either.
-- **Phones and sensitive data:** screenshots stay in the phone's gallery after upload. Add a reminder after filing
-  ("Delete the screenshot from your gallery"), keep a "Sign out" button easy to reach on shared company phones, and
-  let an admin end a user's sessions if a phone is lost.
 
-**Done when:** on a real Android phone and an iPhone, a tester logs in, takes a screenshot of the Investigator app,
+**3.7 done when:** on a real Android phone and an iPhone, a tester logs in, takes a screenshot of the Investigator app,
 shares or picks it into a new ticket (Android: Share → QA Hub from the installed app), marks it up with a finger, adds a phone screen recording and device details,
 loses signal mid-upload and retries, files the ticket, and a developer on a laptop sees it all. Every page works at
 375 px wide with no sideways scrolling. Installed QA Hub shows the seal without a white square, and its icon shows the

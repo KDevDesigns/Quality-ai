@@ -1,8 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { formatBytes, formatDateTime, formatDuration, initials, timeAgo } from "@/lib/format";
+import { dayGroup, formatBytes, formatDateTime, formatDuration, initials, shortAgo, timeAgo } from "@/lib/format";
 
 describe("format", () => {
   const now = new Date("2026-10-29T01:00:00Z");
+
+  it("has a short form for phones", () => {
+    expect(shortAgo(new Date(now.getTime() - 20_000), now)).toBe("now");
+    expect(shortAgo(new Date(now.getTime() - 5 * 60_000), now)).toBe("5m");
+    expect(shortAgo(new Date(now.getTime() - 3 * 3_600_000), now)).toBe("3h");
+    expect(shortAgo(new Date(now.getTime() - 2 * 86_400_000), now)).toBe("2d");
+    expect(shortAgo(new Date("2026-08-01T00:00:00Z"), now)).toBe("Aug 1");
+  });
+
+  it("groups by the Philippine calendar day", () => {
+    // now is 09:00 on Oct 29 in Manila.
+    expect(dayGroup(new Date("2026-10-28T17:00:00Z"), now)).toBe("Today"); // 01:00 Oct 29 Manila
+    expect(dayGroup(new Date("2026-10-28T15:00:00Z"), now)).toBe("Yesterday"); // 23:00 Oct 28 Manila
+    expect(dayGroup(new Date("2026-10-26T15:00:00Z"), now)).toBe("Earlier");
+  });
 
   it("shows relative times, then the date", () => {
     expect(timeAgo(new Date(now.getTime() - 20_000), now)).toBe("just now");

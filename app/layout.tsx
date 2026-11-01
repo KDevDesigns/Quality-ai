@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,6 +19,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: { default: "QA Hub", template: "%s · QA Hub" },
   description: "QA tickets and QA↔developer communication for the in-house ERP",
+};
+
+// viewportFit "cover" lets the page reach under an iPhone's notch and home bar; the top bar, bottom tab bar and sheets
+// pad themselves with env(safe-area-inset-*). The theme colours tint the phone's status bar to match the page.
+export const viewport: Viewport = {
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f1218" },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useTransition } from "react";
 import { Menu } from "@base-ui/react/menu";
 import { useTheme } from "next-themes";
-import { CheckIcon, ChevronDownIcon, LogOutIcon, MonitorIcon, MoonIcon, SunIcon, UserRoundCogIcon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, LogOutIcon, UserRoundCogIcon } from "lucide-react";
 import { logout } from "@/app/login/actions";
+import { MODES } from "@/components/appearance-picker";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { setAccent, useAccent } from "@/components/theme";
 import { ROLE_LABELS } from "@/lib/auth/permissions";
 import { initials } from "@/lib/format";
@@ -19,6 +21,7 @@ const item =
 /** The signed-in person in the topbar: initials avatar, name and role. Opens My account and Sign out. */
 export function UserMenu({ user, active }: { user: SidebarUser; active: boolean }) {
   const [signingOut, startTransition] = useTransition();
+  const mobile = useIsMobile();
   return (
     <Menu.Root>
       <Menu.Trigger
@@ -50,8 +53,9 @@ export function UserMenu({ user, active }: { user: SidebarUser; active: boolean 
             <Menu.Separator className="-mx-1.5 my-1 h-px bg-line2" />
             <Appearance />
             <Menu.Separator className="-mx-1.5 my-1 h-px bg-line2" />
-            <Menu.Item className={item} render={<Link href="/account" />}>
-              <UserRoundCogIcon /> My account
+            {/* On a phone, Settings is the list of everything My account has (and the bottom bar's tab). */}
+            <Menu.Item className={item} render={<Link href={mobile ? "/settings" : "/account"} />}>
+              <UserRoundCogIcon /> {mobile ? "Settings" : "My account"}
             </Menu.Item>
             <Menu.Item className={item} disabled={signingOut} onClick={() => startTransition(() => logout())}>
               <LogOutIcon /> {signingOut ? "Signing out…" : "Sign out"}
@@ -62,12 +66,6 @@ export function UserMenu({ user, active }: { user: SidebarUser; active: boolean 
     </Menu.Root>
   );
 }
-
-const MODES = [
-  { value: "light", label: "Light", icon: SunIcon },
-  { value: "dark", label: "Dark", icon: MoonIcon },
-  { value: "system", label: "System", icon: MonitorIcon },
-] as const;
 
 /** Light / dark / follow Windows, and the theme colour. Both are remembered in this browser only. */
 function Appearance() {

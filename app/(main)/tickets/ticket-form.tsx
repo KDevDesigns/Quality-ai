@@ -147,21 +147,25 @@ export function TicketForm({
         <div className="grid min-w-0 gap-5">
           <fieldset className="grid gap-2">
             <legend className="mb-2 text-sm font-medium">What is it?</legend>
-            <div className="grid gap-2.5 sm:grid-cols-3">
+            {/* Phones: three compact buttons side by side (icon over name); the picked one is outlined and bold. */}
+            <div className="grid grid-cols-3 gap-2.5">
               {TICKET_TYPES.map((t) => {
                 const Icon = TYPE_ICON[t];
                 return (
                 <label
                   key={t}
-                  className={cn("flex cursor-pointer items-start gap-2.5 rounded-[0.625rem] border border-line p-3 text-sm transition-[border-color,background-color,transform] duration-200 active:scale-[0.99]", typeStyle(t).choice)}
+                  className={cn(
+                    "flex cursor-pointer items-start gap-2.5 rounded-[0.625rem] border border-line p-3 text-sm transition-[border-color,background-color,transform] duration-200 active:scale-[0.99] has-focus-visible:ring-3 has-focus-visible:ring-acc/25 max-md:flex-col max-md:items-center max-md:gap-1.5 max-md:rounded-xl max-md:border-[0.125rem] max-md:px-2 max-md:py-3 max-md:text-center max-md:has-checked:font-semibold",
+                    typeStyle(t).choice,
+                  )}
                 >
-                  <input type="radio" name="type" value={t} checked={type === t} onChange={() => setType(t)} className="mt-0.5" />
-                  <span>
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <Icon className={cn("size-4", typeStyle(t).icon)} aria-hidden />
+                  <input type="radio" name="type" value={t} checked={type === t} onChange={() => setType(t)} className="mt-0.5 max-md:sr-only" />
+                  <span className="max-md:contents">
+                    <span className="flex items-center gap-1.5 font-medium max-md:flex-col max-md:gap-1.5">
+                      <Icon className={cn("size-4 max-md:size-6", typeStyle(t).icon)} aria-hidden />
                       {TYPE_LABELS[t]}
                     </span>
-                    <span className="text-[0.7813rem] text-muted-foreground">{TYPE_HINTS[t]}</span>
+                    <span className="text-[0.7813rem] text-muted-foreground max-md:hidden">{TYPE_HINTS[t]}</span>
                   </span>
                 </label>
                 );
@@ -228,8 +232,10 @@ export function TicketForm({
             ) : null}
           </div>
           <FormMessage state={state} />
-          <div className="flex justify-end gap-2 @4xl:grid">
-            <Button type="submit" disabled={pending || video.busy || images.busy} size="lg">
+          {/* Phones: the main button stays at the bottom of the screen, full width, clear of the home bar. */}
+          <div className="flex justify-end gap-2 @4xl:grid max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-5 max-md:-mb-5 max-md:border-t max-md:border-line2 max-md:bg-card/90 max-md:px-5 max-md:pt-3 max-md:pb-[calc(0.75rem+env(safe-area-inset-bottom))] max-md:backdrop-blur-xl">
+            <Button type="submit" disabled={pending || video.busy || images.busy} size="lg" className="max-md:h-12 max-md:w-full max-md:rounded-[0.875rem] max-md:text-base">
+
               {video.busy ? "Uploading video…" : images.busy ? "Uploading…" : pending ? "Saving…" : ticket ? "Save changes" : "File ticket"}
             </Button>
           </div>
