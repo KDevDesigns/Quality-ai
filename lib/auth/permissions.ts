@@ -23,13 +23,25 @@ const MATRIX = {
   "workspace.manage": ["ADMIN"],
   /** Your own Daily Accomplishment Report, set up under My details. Each person sees only their own, admins included. */
   "dar.use": ["QA", "DEV", "ADMIN"],
+  /** Sending UI/UX designs for approval: no role has it by itself, only the Designer tick-box (FLAG_GRANTS). */
+  "designs.create": [],
+  /** Every design review, not just the ones you design or approve. */
+  "designs.viewAll": ["ADMIN"],
 } as const satisfies Record<string, readonly Role[]>;
 
 export type Action = keyof typeof MATRIX;
 export const ACTIONS = Object.keys(MATRIX) as Action[];
 
-export function can(user: { role: Role } | null | undefined, action: Action): boolean {
-  return !!user && (MATRIX[action] as readonly Role[]).includes(user.role);
+/** Ticked on the account in Admin → Users, on top of the role. */
+type Flag = "designer";
+
+/** Actions an account's tick-box grants whatever its role. */
+const FLAG_GRANTS: Partial<Record<Action, Flag>> = { "designs.create": "designer" };
+
+export function can(user: { role: Role; designer?: boolean } | null | undefined, action: Action): boolean {
+  if (!user) return false;
+  const flag = FLAG_GRANTS[action];
+  return (MATRIX[action] as readonly Role[]).includes(user.role) || (!!flag && user[flag] === true);
 }
 
 export function isRole(v: unknown): v is Role {

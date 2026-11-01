@@ -59,6 +59,8 @@ model User {
   email              String             @unique // stored lower-case
   passwordHash       String
   role               UserRole
+  /// Can send UI/UX designs for approval (Design reviews), on top of their role.
+  designer           Boolean            @default(false)
   active             Boolean            @default(true)
   /// Signed up on the sign-in page and waiting for an admin. Pending accounts are also inactive, so they can't sign in.
   pending            Boolean            @default(false)

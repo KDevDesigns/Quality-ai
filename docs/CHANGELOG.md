@@ -1,5 +1,17 @@
 # Changelog
 
+## Delete user and the Designer tick-box (2026-11-01)
+
+- **Delete user** (Admin → Users, red bin): deletes the account and everything it made: tickets they filed with every
+  reply on them, their replies and timeline entries elsewhere, their files in Storage, DAR and devices. Tickets
+  assigned to them stay, unassigned. The dialog counts what goes and asks for their email. Not yourself, not the last
+  admin. Turning an account off is still the way to keep history.
+- **Designer:** a tick-box on any account, shown as a badge in Admin → Users and on the Team page. It will let that
+  person send UI/UX designs for approval (Design reviews, next).
+- **Setup:** migration `user_designer` (`npm run db:deploy`).
+- Code: `lib/users/delete.ts` (tested), `lib/auth/permissions.ts` (`FLAG_GRANTS`), `app/(main)/admin/users/`.
+  `removeObjects` now deletes in batches of 100.
+
 ## Notifications: each status change, kept for 3 days, a choice outside work hours (2026-11-01)
 
 - **Each status change is its own notification**, so "Fixed" and then "Closed" both stay in the phone or PC's list and

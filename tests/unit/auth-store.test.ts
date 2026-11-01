@@ -32,7 +32,9 @@ describe("authStore", () => {
     expect(u.passwordHash).not.toContain("temp-pass-123");
     expect(u.mustChangePassword).toBe(true);
 
-    expect(await store.checkCredentials("ANA@example.gov.ph", "temp-pass-123")).toMatchObject({ name: "Ana QA", role: "QA", mustChangePassword: true });
+    expect(await store.checkCredentials("ANA@example.gov.ph", "temp-pass-123")).toMatchObject({ name: "Ana QA", role: "QA", designer: false, mustChangePassword: true });
+    await store.createUser({ name: "Kevin", email: "kevin@example.gov.ph", role: "QA", designer: true, password: "temp-pass-123" });
+    expect(await store.checkCredentials("kevin@example.gov.ph", "temp-pass-123")).toMatchObject({ role: "QA", designer: true });
     expect(await store.checkCredentials("ana@example.gov.ph", "wrong")).toBeNull();
     expect(await store.checkCredentials("nobody@example.gov.ph", "temp-pass-123")).toBeNull();
   });

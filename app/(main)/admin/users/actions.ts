@@ -6,6 +6,10 @@ import { auth, requireAction } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { fromDbError, fromZodError, text, type FormState } from "@/lib/form";
 import { userInput, userUpdateInput } from "@/lib/schemas/user";
+import { removeObjects } from "@/lib/uploads/storage";
+import { UserDeleteError, userDeletion, type DeletionPreview } from "@/lib/users/delete";
+
+const deletion = userDeletion(db);
 
 /** The temporary password is returned once, shown to the admin, and never stored in plain text. */
 export type UserFormState = FormState & { tempPassword?: string; email?: string };
@@ -18,7 +22,7 @@ function duplicateEmail(e: unknown): UserFormState | null {
 
 export async function createUser(_prev: UserFormState, fd: FormData): Promise<UserFormState> {
   await requireAction("users.manage");
-  const parsed = userInput.safeParse({ name: text(fd, "name"), email: text(fd, "email"), role: text(fd, "role") });
+  const parsed = userInput.safeParse({ name: text(fd, "name"), email: text(fd, "email"), role: text(fd, "role"), designer: fd.get("designer") === "on" });
   if (!parsed.success) return fromZodError(parsed.error);
 
   const tempPassword = generateTempPassword();
@@ -35,7 +39,13 @@ export async function createUser(_prev: UserFormState, fd: FormData): Promise<Us
 export async function updateUser(_prev: UserFormState, fd: FormData): Promise<UserFormState> {
   const me = await requireAction("users.manage");
   const id = text(fd, "id");
-  const parsed = userUpdateInput.safeParse({ name: text(fd, "name"), email: text(fd, "email"), role: text(fd, "role"), active: fd.get("active") === "on" });
+  const parsed = userUpdateInput.safeParse({
+    name: text(fd, "name"),
+    email: text(fd, "email"),
+    role: text(fd, "role"),
+    designer: fd.get("designer") === "on",
+    active: fd.get("active") === "on",
+  });
   if (!parsed.success) return fromZodError(parsed.error);
 
   if (id === me.id && !parsed.data.active) return { ok: false, message: "You can't turn off your own account." };
@@ -53,6 +63,30 @@ export async function updateUser(_prev: UserFormState, fd: FormData): Promise<Us
   if (!parsed.data.active) await auth.deleteUserSessions(id);
   revalidatePath("/admin/users");
   revalidatePath("/team");
+  return { ok: true };
+}
+
+/** What deleting this account would remove, for the confirmation dialog. */
+export async function deletionPreview(id: string): Promise<DeletionPreview | null> {
+  await requireAction("users.manage");
+  return deletion.preview(id);
+}
+
+/** Deletes the account and everything it made (lib/users/delete.ts). The admin types the account's email to confirm. */
+export async function deleteUser(_prev: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireAction("users.manage");
+  let files: string[];
+  try {
+    ({ files } = await deletion.deleteEverything(me, text(fd, "id"), text(fd, "confirm")));
+  } catch (e) {
+    if (e instanceof UserDeleteError) return { ok: false, message: e.message };
+    throw e;
+  }
+  // The rows are gone, so a file left behind would only waste space; don't fail the delete over it.
+  if (files.length) await removeObjects(files).catch((e) => console.error("[users] couldn't remove a deleted user's files:", e instanceof Error ? e.message : e));
+  revalidatePath("/admin/users");
+  revalidatePath("/team");
+  revalidatePath("/tickets");
   return { ok: true };
 }
 
