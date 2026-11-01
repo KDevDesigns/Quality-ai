@@ -11,7 +11,8 @@ function Card({
       data-slot="card"
       data-size={size}
       className={cn(
-        "group/card flex flex-col overflow-hidden rounded-xl border border-line bg-card text-sm text-card-foreground",
+        // Phones: a rounded white card floating on the grey page, with a soft shadow instead of a border.
+        "group/card flex flex-col overflow-hidden rounded-xl border border-line bg-card text-sm text-card-foreground max-md:rounded-2xl max-md:border-transparent max-md:shadow-[0_0.0625rem_0.125rem_rgba(20,22,40,0.06),0_0.125rem_0.5rem_rgba(20,22,40,0.04)]",
         className
       )}
       {...props}

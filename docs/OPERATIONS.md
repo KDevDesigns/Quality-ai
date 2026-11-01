@@ -120,7 +120,17 @@ missed*, so a night with the laptop off is caught up the next morning. Check `ba
 - **The only admin is locked out:** on a PC with `.env.local`, run
   `npx tsx scripts/reset-password.ts --email you@davao-water.gov.ph`. It prints a temporary password once.
 - **Someone leaves:** edit the user and untick *Account is active*. They are signed out at once, and their tickets and
-  comments stay.
+  comments stay. This is the usual choice.
+- **Deleting an account** (the red bin in Admin → Users): removes the account **and everything it made**, for good:
+  the tickets they filed with every reply on them (other people's too), their replies and timeline entries on other
+  tickets, their files in Storage, their DAR and devices. Tickets only assigned to them stay, unassigned. The dialog
+  counts what goes; type their email to confirm. You can't delete yourself or the last admin. Only the laptop's
+  nightly backup has a copy afterwards.
+- **Designer:** a tick-box on any account (Admin → Users → edit). It lets that person send UI/UX designs for approval
+  in **Design reviews**, on top of their role (e.g. a QA tester who also designs). Admins and the Team page show a
+  *Designer* badge.
+- **Handing the admin role over:** create the new admin's account (role Admin), let them sign in and change the
+  temporary password, then they edit your account to your new role (e.g. QA tester, with Designer ticked).
 - **Failed sign-ins:** after 5 failed sign-ins in 15 minutes, that email is locked out for the rest of the window.
 - **Lock-out protection:** at least one active admin must always remain. The app refuses changes that would remove the last one.
 
@@ -179,10 +189,14 @@ missed*, so a night with the laptop off is caught up the next morning. Check `ba
   - **iPhone:** Settings → Notifications → **Show Previews → When Unlocked**.
   - **Android:** Settings → Notifications → **Notifications on lock screen → Hide sensitive content** (or don't show).
   - **Windows:** Settings → System → Notifications → untick **Show notifications on the lock screen**.
-- **Work hours** (My account → Work hours, picked in half hours): with *Only notify me during work hours*, devices stay
-  quiet outside the chosen hours
-  and days (Philippine time). Nothing is lost: the bell and My inbox still show it. The device's own Do Not Disturb or
-  Focus also mutes them.
+- **Work hours** (My account → Work hours, picked in half hours, Philippine time). Each person chooses what happens
+  outside their hours and days: **Notify me with sound** (the default), **Notify me silently** (no sound or vibration,
+  it waits in the device's notification list; iPhones ignore this and still play their sound) or **Don't notify me**.
+  Nothing is lost either way: the bell and My inbox still show it. The device's own Do Not Disturb or Focus also mutes
+  them.
+- **Each status change is its own notification** (Fixed, then Closed, both stay in the list); replies, edits and
+  assignment share one per ticket. A device that's off or offline gets what it missed for up to **3 days**. Opening the
+  ticket clears its notifications.
 - **When they arrive with QA Hub closed:**
 
   | Device | Needs |

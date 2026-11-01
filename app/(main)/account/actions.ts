@@ -70,7 +70,7 @@ export async function sendTestPush(endpoint: string): Promise<FormState> {
 export async function saveWorkHours(_prev: FormState, fd: FormData): Promise<FormState> {
   const me = await requireUser();
   const parsed = workHoursInput.safeParse({
-    pushWorkHoursOnly: fd.get("pushWorkHoursOnly") === "on",
+    offHoursPush: text(fd, "offHoursPush"),
     workStartMin: text(fd, "workStart"),
     workEndMin: text(fd, "workEnd"),
     days: fd.getAll("days").map(Number),

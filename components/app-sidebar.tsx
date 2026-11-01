@@ -80,7 +80,7 @@ function SidebarView({ pathname, user }: { pathname: string | null; user: Sideba
             width={40}
             height={40}
             priority
-            className={cn("shrink-0 transition-transform duration-700 ease-(--sidebar-ease)", "group-data-[collapsible=icon]:-rotate-[360deg]")}
+            className="shrink-0"
           />
           <span className={cn("flex flex-col whitespace-nowrap", brandText)} style={{ "--d": "120ms" } as React.CSSProperties}>
             <span className="text-[1.375rem] leading-none font-bold tracking-[-0.01em] text-acc">DCWD</span>

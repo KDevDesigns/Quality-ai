@@ -4,8 +4,9 @@ import { useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-// My account as sections: a list of tabs on the left (a scrolling row on phones) and one section at a time. The chosen
-// tab is in the URL (?tab=sound), so links, refresh and Back keep it.
+// My account as sections: a list of tabs on the left and one section at a time. The chosen tab is in the URL
+// (?tab=sound), so links, refresh and Back keep it. Phones have no tab list here: the Settings tab lists the sections
+// and opens one, and the top bar's back arrow returns to it.
 
 export type AccountTab = { id: string; label: string; hint: string; icon: React.ReactNode; content: React.ReactNode };
 
@@ -38,7 +39,7 @@ export function AccountTabs({ tabs, initial }: { tabs: AccountTab[]; initial: st
         aria-label="Account settings"
         aria-orientation="vertical"
         onKeyDown={onKeyDown}
-        className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 md:sticky md:top-20 md:mx-0 md:grid md:overflow-visible md:px-0 md:pb-0"
+        className="hidden md:sticky md:top-20 md:grid md:gap-1.5"
       >
         {tabs.map((t) => {
           const on = t.id === current;

@@ -354,7 +354,17 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
         where: scopeWhere(actor),
         orderBy: [{ lastActivityAt: "desc" }, { number: "desc" }],
         take,
-        select: { id: true, number: true, title: true, status: true, type: true, lastActivityAt: true, assignee: { select: { name: true } }, reporter: { select: { name: true } } },
+        select: {
+          id: true,
+          number: true,
+          title: true,
+          status: true,
+          type: true,
+          lastActivityAt: true,
+          area: { select: { name: true, parent: { select: { name: true } } } },
+          assignee: { select: { name: true } },
+          reporter: { select: { name: true } },
+        },
       });
     },
 

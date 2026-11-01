@@ -21,14 +21,15 @@ const buttonVariants = cva(
       },
       size: {
         default:
-          "h-10 gap-2 px-4 text-[0.9375rem] has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
+          "h-10 gap-2 px-4 pointer-coarse:h-11 text-[0.9375rem] has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
         xs: "h-6 gap-1 rounded-[min(var(--radius-md),0.625rem)] px-2 text-xs in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-9 gap-1.5 px-3.5 text-sm [&_svg:not([class*='size-'])]:size-3.5",
+        // On touch screens the small sizes grow to 44 px, the minimum comfortable finger target.
+        sm: "h-9 gap-1.5 px-3.5 text-sm pointer-coarse:h-11 [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-11 gap-2 px-[1.125rem] text-[0.9375rem]",
-        icon: "size-10",
+        icon: "size-10 pointer-coarse:size-11",
         "icon-xs":
           "size-6 rounded-[min(var(--radius-md),0.625rem)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
-        "icon-sm": "size-9",
+        "icon-sm": "size-9 pointer-coarse:size-11",
         "icon-lg": "size-11",
       },
     },

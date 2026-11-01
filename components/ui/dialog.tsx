@@ -5,6 +5,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { cn } from "cn"
 
 import { Button } from "@/components/ui/button"
+import { Grabber } from "@/components/ui/grabber"
 import { XIcon } from "lucide-react"
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
@@ -53,11 +54,15 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-5 rounded-2xl bg-popover p-6 text-sm text-popover-foreground shadow-[0_1.5rem_3.75rem_rgba(20,18,30,0.3)] duration-200 ease-(--ease-out) outline-none sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-open:slide-in-from-bottom-2 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          // Phones (below md): a sheet that slides up from the bottom, full width, clear of the home bar, scrolling
+          // when tall. From md up: the centred dialog.
+          "fixed inset-x-0 bottom-0 z-50 mx-auto grid max-h-[92dvh] w-full gap-5 overflow-y-auto overscroll-contain rounded-t-[1.75rem] bg-popover p-6 pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-sm text-popover-foreground shadow-[0_1.5rem_3.75rem_rgba(20,18,30,0.3)] duration-200 ease-(--ease-out) outline-none sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom-full data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-bottom-full",
+          "md:inset-x-auto md:top-1/2 md:bottom-auto md:left-1/2 md:mx-0 md:max-h-none md:w-[calc(100%-2rem)] md:-translate-x-1/2 md:-translate-y-1/2 md:overflow-visible md:rounded-2xl md:pt-6 md:pb-6 md:data-open:zoom-in-95 md:data-open:slide-in-from-bottom-2 md:data-closed:zoom-out-95 md:data-closed:slide-out-to-bottom-0",
           className
         )}
         {...props}
       >
+        <Grabber className="md:hidden" />
         {children}
         {showCloseButton && (
           <DialogPrimitive.Close
@@ -102,7 +107,7 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-6 -mb-6 flex flex-col-reverse gap-2.5 rounded-b-2xl border-t border-line2 px-6 py-4 sm:flex-row sm:justify-end",
+        "-mx-6 -mb-[calc(1.5rem+env(safe-area-inset-bottom))] flex flex-col-reverse gap-2.5 border-t border-line2 px-6 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:flex-row sm:justify-end md:-mb-6 md:rounded-b-2xl md:pb-4",
         className
       )}
       {...props}

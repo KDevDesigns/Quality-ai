@@ -1,5 +1,31 @@
 # Changelog
 
+## Delete user and the Designer tick-box (2026-11-01)
+
+- **Delete user** (Admin → Users, red bin): deletes the account and everything it made: tickets they filed with every
+  reply on them, their replies and timeline entries elsewhere, their files in Storage, DAR and devices. Tickets
+  assigned to them stay, unassigned. The dialog counts what goes and asks for their email. Not yourself, not the last
+  admin. Turning an account off is still the way to keep history.
+- **Designer:** a tick-box on any account, shown as a badge in Admin → Users and on the Team page. It will let that
+  person send UI/UX designs for approval (Design reviews, next).
+- **Setup:** migration `user_designer` (`npm run db:deploy`).
+- Code: `lib/users/delete.ts` (tested), `lib/auth/permissions.ts` (`FLAG_GRANTS`), `app/(main)/admin/users/`.
+  `removeObjects` now deletes in batches of 100.
+
+## Notifications: each status change, kept for 3 days, a choice outside work hours (2026-11-01)
+
+- **Each status change is its own notification**, so "Fixed" and then "Closed" both stay in the phone or PC's list and
+  show what the developer did. Replies, edits and assignment still share one notification per ticket. Opening the
+  ticket clears all of them.
+- **Missed notifications wait up to 3 days** (was 12 hours) for a device that's off or offline, so changes from the
+  evening or a weekend are there in the morning.
+- **Outside my work hours and days** (My account → Work hours) replaces *Only notify me during work hours*: **Notify
+  me with sound** (default), **Notify me silently** (no sound or vibration, still in the list; iPhones still ring), or
+  **Don't notify me**. The hours and days can always be edited. People who had the old switch on get *Don't notify
+  me*, so nothing changes for them.
+- Database: `User.offHoursPush` (`SOUND`/`SILENT`/`NONE`) replaces `pushWorkHoursOnly`
+  (migration `20261101000400_off_hours_push`).
+
 ## UI polish: DAR set-up page, type colours, preloader, account tabs, styled controls (2026-11-01)
 
 - **My DAR → My details** opens a full **My DAR set-up** page, laid out like the old DAR template page (Header,
@@ -18,7 +44,7 @@
 - **Motion:** pages rise in gently, lists come in one after another, dialogs and menus grow in, dashboard tiles lift
   on hover, unread dots pop. All of it stops when the computer or phone is set to reduce motion.
 - **Minimise the sidebar** (the toggle in the top bar, or Ctrl+B): it springs down to a centred rail of icons; the
-  brand text and labels slide away in turn, the seal turns, counts become red dots, and each icon shows its name on
+  brand text and labels slide away in turn, the seal stays still, counts become red dots, and each icon shows its name on
   hover.
 - **Sized for big screens:** the whole interface is in rem and grows with the screen past 1920 px wide, so a
   2560 × 1440 monitor shows it at the same proportions as 1920 × 1080 (up to twice the size on 4K). Phones and laptops

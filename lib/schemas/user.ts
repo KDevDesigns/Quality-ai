@@ -41,6 +41,7 @@ export const userInput = z.object({
   name: nickname,
   email,
   role: z.enum(ROLES, "Pick a role"),
+  designer: z.boolean().default(false),
 });
 
 export const userUpdateInput = userInput.extend({
