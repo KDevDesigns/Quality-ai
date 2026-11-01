@@ -326,12 +326,24 @@ Can be built before 3.6, because tickets already exist.
   - Uploads over mobile data: a progress bar, a clear retry when the signal drops, and a warning before a big video
     on mobile data. Same 50 MB limit and server-side checks as now.
   - The screenshot markup tool (3.5b slice 3) works with a finger: pointer events, pinch to zoom, big tool buttons.
-- **Install as an app (PWA):** a web manifest and icon (the DCWD seal) so testers can **Add to Home Screen** and open
-  QA Hub full-screen like an app. On Android, **Share → QA Hub** from the gallery opens a new ticket with the
-  screenshot attached (Web Share Target; iPhone doesn't support it, so iPhone users pick from Photos). No offline
-  copy of ticket data is kept on the phone.
-- **Notifications on the phone** (optional, later): web push when a developer replies or marks a ticket fixed.
-  Android works in the browser; iPhone needs the installed app (iOS 16.4+).
+- **Install as an app (PWA)**, in this order (each step ships on its own):
+  1. **Icons and manifest:** the manifest (`app/manifest.ts`, done in 3.8c) gets 192 and 512 px icons plus a
+     *maskable* one (the seal on a solid background with a safe margin) so Android doesn't put it in a white square, an
+     Apple touch icon for iPhone, and `id`, `scope` and the brand colours. No database change.
+  2. **Install QA Hub button:** Android/Chrome/Edge: one tap (`beforeinstallprompt`). iPhone: a short guide
+     (Share → Add to Home Screen) with pictures. Shown in My account → Notifications and in the sign-in notification
+     prompt; hidden once QA Hub runs installed (`display-mode: standalone`).
+  3. **Unread count on the icon:** the bell's count on the QA Hub icon (`navigator.setAppBadge`), updated when the
+     bell polls and by the service worker when a push arrives (the push carries the count, no ticket text). Android and
+     iPhone 16.4+ installed apps; ignored elsewhere.
+  4. **Share → QA Hub (Android):** `share_target` in the manifest. A screenshot or screen recording shared from the
+     gallery opens **New ticket** with it attached. The shared file is taken by the service worker and goes through the
+     normal upload (signed URL, generated name, type, size and video-length checks, 50 MB). Not signed in: sign in
+     first, then the file is still waiting. iPhone has no share target, so iPhone users pick from Photos.
+  - Not included: an offline copy of tickets (no ticket data is kept on the phone), custom notification sounds
+    (browsers can't), app stores.
+- **Notifications on the phone:** done in 3.8c (web push). Android works in the browser; iPhone needs the installed
+  app (iOS 16.4+), which step 2 above makes easy to find.
 - **Test runs on the phone** (3.6a): the checklist works on a phone, but while testing an app on the same phone the
   tester keeps switching apps. Suggest the laptop for the checklist and the phone for the app; **Fail** still files
   from either.
@@ -340,22 +352,25 @@ Can be built before 3.6, because tickets already exist.
   let an admin end a user's sessions if a phone is lost.
 
 **Done when:** on a real Android phone and an iPhone, a tester logs in, takes a screenshot of the Investigator app,
-shares or picks it into a new ticket, marks it up with a finger, adds a phone screen recording and device details,
+shares or picks it into a new ticket (Android: Share → QA Hub from the installed app), marks it up with a finger, adds a phone screen recording and device details,
 loses signal mid-upload and retries, files the ticket, and a developer on a laptop sees it all. Every page works at
-375 px wide with no sideways scrolling.
+375 px wide with no sideways scrolling. Installed QA Hub shows the seal without a white square, and its icon shows the
+unread count.
 
 ### Phase 3.8c — Device notifications (Web Push) ✅ (2026-10-31, awaiting device tests)
 Testers and developers asked for notifications outside the browser tab. Web Push: a service worker (`public/sw.js`),
 one `PushSubscription` row per device, VAPID-signed pushes sent after each ticket action (`lib/push/`).
 - Text: ticket title, `Ana: <message>` and module (no photo since 2026-11-01); replies stack. Per-person
   "Show message previews" switch (off: no ticket text) plus a lock-screen guide. Same recipients as the bell.
-- Mute: on/off per device, and per-person work hours (Philippine time). The device's Do Not Disturb also applies.
+- Mute: on/off per device, and per-person work hours (Philippine time); outside them each person picks sound, silent
+  or none (2026-11-01). The device's Do Not Disturb also applies.
+- Each status change is its own notification; missed ones wait up to 3 days for a device that's off (2026-11-01).
 - Sound: Tone 1–11 or Silent (own uploads removed 2026-11-01), played by an open tab (the service worker asks it); closed → device sound.
 - Limits: Windows/Mac need the browser running; iPhone needs iOS 16.4+ and Add to Home Screen; best-effort delivery;
   the office firewall must allow the push services (`docs/OPERATIONS.md` §5b).
 
 **Done when:** on Windows, Android and an iPhone, a person turns it on, closes QA Hub, and gets a notification within
-seconds when someone else replies; clicking opens the ticket; outside their work hours nothing arrives.
+seconds when someone else replies; clicking opens the ticket; outside their work hours it arrives as they chose.
 
 ### Phase 3.10 — UI polish ✅ (2026-11-01)
 Kevin's requests after DAR for everyone. No database changes.

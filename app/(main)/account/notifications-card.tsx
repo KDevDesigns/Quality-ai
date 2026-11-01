@@ -7,6 +7,7 @@ import { InlineAlert } from "@/components/inline-alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { initialFormState } from "@/lib/form";
+import type { OffHoursPush } from "@/lib/schemas/push";
 import { ampm, hhmm, timeOptions } from "@/lib/time-options";
 import { cn } from "@/lib/utils";
 import { savePreviews, saveTone, saveWorkHours, sendTestPush } from "./actions";
@@ -103,60 +104,60 @@ export function DeviceNotificationsCard() {
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+const OFF_HOURS: { value: OffHoursPush; label: string; hint: string }[] = [
+  { value: "SOUND", label: "Notify me with sound", hint: "The same as during work hours." },
+  { value: "SILENT", label: "Notify me silently", hint: "No sound or vibration; it waits in your notification list. iPhones still play their sound." },
+  { value: "NONE", label: "Don't notify me", hint: "Nothing on your devices. You'll see it in the bell and My inbox." },
+];
 
-export function WorkHoursCard({ initial }: { initial: { pushWorkHoursOnly: boolean; workStartMin: number; workEndMin: number; workDays: number } }) {
+export function WorkHoursCard({ initial }: { initial: { offHoursPush: OffHoursPush; workStartMin: number; workEndMin: number; workDays: number } }) {
   const [state, action, pending] = useActionState(saveWorkHours, initialFormState);
-  const [limited, setLimited] = useState(initial.pushWorkHoursOnly);
   const err = state.fieldErrors ?? {};
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Work hours</CardTitle>
-        <CardDescription>Outside these hours your devices stay quiet. Everything still shows in the bell and My inbox. Philippine time.</CardDescription>
+        <CardDescription>Choose what your devices do outside these hours and days. Everything still shows in the bell and My inbox. Philippine time.</CardDescription>
       </CardHeader>
       <CardContent>
         <form action={action} className="grid gap-4">
-          <label className="flex items-center gap-2.5 text-sm">
-            <input type="checkbox" name="pushWorkHoursOnly" checked={limited} onChange={(e) => setLimited(e.target.checked)} />
-            Only notify me during work hours
-          </label>
-          {initial.pushWorkHoursOnly ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="From" htmlFor="workStart" error={err.workStartMin}>
+              <SelectField id="workStart" name="workStart" required defaultValue={hhmm(initial.workStartMin)} options={timeOptions(30, initial.workStartMin)} aria-invalid={!!err.workStartMin} />
+            </Field>
+            <Field label="To" htmlFor="workEnd" error={err.workEndMin}>
+              <SelectField id="workEnd" name="workEnd" required defaultValue={hhmm(initial.workEndMin)} options={timeOptions(30, initial.workEndMin)} aria-invalid={!!err.workEndMin} />
+            </Field>
+          </div>
+          {initial.workEndMin <= initial.workStartMin ? (
             <p className="text-[0.8125rem] text-muted-foreground">
-              Saved: notifications from <strong className="text-foreground">{ampm(initial.workStartMin)}</strong> to <strong className="text-foreground">{ampm(initial.workEndMin)}</strong>
-              {initial.workEndMin <= initial.workStartMin ? " (the next day)" : ""}. Quiet the rest of the time.
+              Saved: {ampm(initial.workStartMin)} to {ampm(initial.workEndMin)} the next day.
             </p>
           ) : null}
-          <fieldset disabled={!limited} className="grid gap-4 disabled:opacity-60">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="From" htmlFor="workStart" error={err.workStartMin}>
-                <SelectField id="workStart" name="workStart" required defaultValue={hhmm(initial.workStartMin)} options={timeOptions(30, initial.workStartMin)} disabled={!limited} aria-invalid={!!err.workStartMin} />
-              </Field>
-              <Field label="To" htmlFor="workEnd" error={err.workEndMin}>
-                <SelectField id="workEnd" name="workEnd" required defaultValue={hhmm(initial.workEndMin)} options={timeOptions(30, initial.workEndMin)} disabled={!limited} aria-invalid={!!err.workEndMin} />
-              </Field>
+          <fieldset className="grid gap-2">
+            <legend className="mb-2 text-sm font-medium">Days</legend>
+            <div className="flex flex-wrap gap-x-5 gap-y-2">
+              {DAYS.map((d, i) => (
+                <label key={d} className="flex items-center gap-2.5 text-sm">
+                  <input type="checkbox" name="days" value={i} defaultChecked={!!(initial.workDays & (1 << i))} />
+                  {d}
+                </label>
+              ))}
             </div>
-            <fieldset className="grid gap-2">
-              <legend className="mb-2 text-sm font-medium">Days</legend>
-              <div className="flex flex-wrap gap-x-5 gap-y-2">
-                {DAYS.map((d, i) => (
-                  <label key={d} className="flex items-center gap-2.5 text-sm">
-                    <input type="checkbox" name="days" value={i} defaultChecked={!!(initial.workDays & (1 << i))} />
-                    {d}
-                  </label>
-                ))}
-              </div>
-              {err.days?.length ? <p className="text-[0.7813rem] font-medium text-destructive">{err.days.join(" ")}</p> : null}
-            </fieldset>
+            {err.days?.length ? <p className="text-[0.7813rem] font-medium text-destructive">{err.days.join(" ")}</p> : null}
           </fieldset>
-          {/* A disabled fieldset sends no values; keep the saved hours when the switch is off. */}
-          {!limited ? (
-            <>
-              <input type="hidden" name="workStart" value={hhmm(initial.workStartMin)} />
-              <input type="hidden" name="workEnd" value={hhmm(initial.workEndMin)} />
-              {DAYS.map((d, i) => (initial.workDays & (1 << i) ? <input key={d} type="hidden" name="days" value={i} /> : null))}
-            </>
-          ) : null}
+          <fieldset className="grid gap-2.5">
+            <legend className="mb-2 text-sm font-medium">Outside my work hours and days</legend>
+            {OFF_HOURS.map((o) => (
+              <label key={o.value} className="grid grid-cols-[auto_1fr] items-baseline gap-x-2.5 text-sm">
+                <input type="radio" name="offHoursPush" value={o.value} defaultChecked={initial.offHoursPush === o.value} />
+                {o.label}
+                <span className="col-start-2 text-[0.7813rem] text-muted-foreground">{o.hint}</span>
+              </label>
+            ))}
+            {err.offHoursPush?.length ? <p className="text-[0.7813rem] font-medium text-destructive">{err.offHoursPush.join(" ")}</p> : null}
+          </fieldset>
           <FormMessage state={state} />
           <div className="flex items-center justify-end gap-3">
             <span aria-live="polite" className={cn("text-[0.8125rem] text-muted-foreground", !state.ok && "sr-only")}>{state.ok ? state.message : ""}</span>

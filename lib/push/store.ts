@@ -25,7 +25,7 @@ export function pushStore(db: PrismaClient) {
     },
 
     async workHours(userId: string) {
-      return db.user.findUniqueOrThrow({ where: { id: userId }, select: { pushWorkHoursOnly: true, workStartMin: true, workEndMin: true, workDays: true } });
+      return db.user.findUniqueOrThrow({ where: { id: userId }, select: { offHoursPush: true, workStartMin: true, workEndMin: true, workDays: true } });
     },
 
     async setWorkHours(userId: string, w: WorkHoursInput): Promise<void> {

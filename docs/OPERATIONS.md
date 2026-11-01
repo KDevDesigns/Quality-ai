@@ -179,10 +179,14 @@ missed*, so a night with the laptop off is caught up the next morning. Check `ba
   - **iPhone:** Settings → Notifications → **Show Previews → When Unlocked**.
   - **Android:** Settings → Notifications → **Notifications on lock screen → Hide sensitive content** (or don't show).
   - **Windows:** Settings → System → Notifications → untick **Show notifications on the lock screen**.
-- **Work hours** (My account → Work hours, picked in half hours): with *Only notify me during work hours*, devices stay
-  quiet outside the chosen hours
-  and days (Philippine time). Nothing is lost: the bell and My inbox still show it. The device's own Do Not Disturb or
-  Focus also mutes them.
+- **Work hours** (My account → Work hours, picked in half hours, Philippine time). Each person chooses what happens
+  outside their hours and days: **Notify me with sound** (the default), **Notify me silently** (no sound or vibration,
+  it waits in the device's notification list; iPhones ignore this and still play their sound) or **Don't notify me**.
+  Nothing is lost either way: the bell and My inbox still show it. The device's own Do Not Disturb or Focus also mutes
+  them.
+- **Each status change is its own notification** (Fixed, then Closed, both stay in the list); replies, edits and
+  assignment share one per ticket. A device that's off or offline gets what it missed for up to **3 days**. Opening the
+  ticket clears its notifications.
 - **When they arrive with QA Hub closed:**
 
   | Device | Needs |

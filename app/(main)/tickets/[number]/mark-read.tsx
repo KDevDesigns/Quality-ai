@@ -2,15 +2,20 @@
 
 import { useEffect } from "react";
 import { useNotifications } from "@/components/notifications";
+import { ticketTag } from "@/lib/push/message";
 import { markTicketRead } from "../actions";
 
-/** Closes this ticket's device notification, so its "3 new replies" count starts again from what's unread. */
-function closeDeviceNotification(number: number) {
+/**
+ * Closes this ticket's device notifications (its replies and each status change), so its "3 new replies" count starts
+ * again from what's unread.
+ */
+function closeDeviceNotifications(number: number) {
   if (!("serviceWorker" in navigator)) return;
+  const tag = ticketTag(number);
   navigator.serviceWorker
     .getRegistration("/")
-    .then((reg) => reg?.getNotifications({ tag: `ticket-${number}` }))
-    .then((shown) => shown?.forEach((n) => n.close()), () => {});
+    .then((reg) => reg?.getNotifications())
+    .then((shown) => shown?.filter((n) => n.tag === tag || n.tag.startsWith(`${tag}-`)).forEach((n) => n.close()), () => {});
 }
 
 /**
@@ -21,7 +26,7 @@ export function MarkRead({ ticketId, number, lastActivityAt }: { ticketId: strin
   const { poll } = useNotifications();
   useEffect(() => {
     let live = true;
-    closeDeviceNotification(number);
+    closeDeviceNotifications(number);
     markTicketRead(ticketId).then(() => live && poll(), () => {});
     return () => {
       live = false;

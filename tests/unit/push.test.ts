@@ -3,7 +3,7 @@ import type { PrismaClient } from "@/lib/generated/prisma/client";
 import { deviceLabel } from "@/lib/push/device";
 import { base64UrlToBytes } from "@/lib/push/key";
 import { clip, pushMessage } from "@/lib/push/message";
-import { inWorkHours, pickRecipients, type WorkHours } from "@/lib/push/recipients";
+import { delivery, inWorkHours, pickRecipients, type WorkHours } from "@/lib/push/recipients";
 import { notifyTicket, type PushSender } from "@/lib/push/send";
 import { pushStore } from "@/lib/push/store";
 import { DEFAULT_TONE, effectiveTone, isTone, toneSrc } from "@/lib/push/tones";
@@ -13,8 +13,9 @@ import { ticketStore } from "@/lib/tickets/store";
 import type { Actor } from "@/lib/tickets/workflow";
 import { createTestDb } from "./helpers/test-db";
 
-const always: WorkHours = { pushWorkHoursOnly: false, workStartMin: 420, workEndMin: 1080, workDays: 62 };
-const office: WorkHours = { ...always, pushWorkHoursOnly: true };
+const always: WorkHours = { offHoursPush: "SOUND", workStartMin: 420, workEndMin: 1080, workDays: 62 };
+const office: WorkHours = { ...always, offHoursPush: "NONE" };
+const quiet: WorkHours = { ...always, offHoursPush: "SILENT" };
 /** A UTC instant from a Manila wall-clock time (UTC+8). */
 const manila = (iso: string) => new Date(new Date(iso + "Z").getTime() - 8 * 3600_000);
 
@@ -67,11 +68,30 @@ describe("pushMessage", () => {
     expect(pushMessage({ kind: "edited" }, { ...t, areaName: null }).body).toBe("Edited by Ana\nModule: none");
     expect(pushMessage({ kind: "edited" }, t).stack).toBeUndefined(); // only replies stack
   });
+
+  it("gives each status change its own notification, while the rest share the ticket's", () => {
+    const at = (iso: string) => ({ ...t, at: new Date(iso) });
+    const fixed = pushMessage({ kind: "status", to: "FIXED" }, at("2026-11-01T09:00:00Z")).tag;
+    const closed = pushMessage({ kind: "status", to: "CLOSED" }, at("2026-11-01T09:05:00Z")).tag;
+    expect(fixed).not.toBe(closed);
+    expect(fixed.startsWith("ticket-12-")).toBe(true);
+    expect(fixed.length).toBeLessThanOrEqual(32); // also the push topic, which allows 32 characters
+    expect(pushMessage({ kind: "edited" }, at("2026-11-01T09:00:00Z")).tag).toBe("ticket-12");
+  });
 });
 
-describe("inWorkHours", () => {
-  it("is always true when the person didn't limit it", () => {
-    expect(inWorkHours(always, manila("2026-11-01T23:00:00"))).toBe(true);
+describe("inWorkHours and delivery", () => {
+  it("rings at any hour for someone who chose sound", () => {
+    expect(delivery(always, manila("2026-11-01T23:00:00"))).toBe("sound");
+  });
+
+  it("outside work hours goes silent or stays off, as each person chose", () => {
+    const night = manila("2026-11-02T22:00:00"); // Monday 22:00
+    const sunday = manila("2026-11-01T10:00:00");
+    expect(delivery(quiet, night)).toBe("silent");
+    expect(delivery(quiet, sunday)).toBe("silent");
+    expect(delivery(office, night)).toBeNull();
+    expect(delivery(quiet, manila("2026-11-02T10:00:00"))).toBe("sound");
   });
 
   it("uses Manila time, weekdays and the end as exclusive", () => {
@@ -101,6 +121,11 @@ describe("pickRecipients", () => {
   it("skips people outside their work hours", () => {
     const got = pickRecipients(ticket, "qa", [c("dev", "DEV", office), c("admin", "ADMIN")], manila("2026-11-02T20:00:00"));
     expect(got.map((r) => r.id)).toEqual(["admin"]);
+  });
+
+  it("marks who gets it silently", () => {
+    const got = pickRecipients(ticket, "qa", [c("dev", "DEV", quiet), c("admin", "ADMIN")], manila("2026-11-02T20:00:00"));
+    expect(got.map((r) => [r.id, r.delivery])).toEqual([["dev", "silent"], ["admin", "sound"]]);
   });
 });
 
@@ -132,11 +157,11 @@ describe("push schemas", () => {
   });
 
   it("turns times and days into minutes and a bitmask", () => {
-    const r = workHoursInput.safeParse({ pushWorkHoursOnly: true, workStartMin: "07:30", workEndMin: "17:00", days: [1, 2, 3, 4, 5] });
-    expect(r.success && r.data).toEqual({ pushWorkHoursOnly: true, workStartMin: 450, workEndMin: 1020, workDays: 62 });
-    expect(workHoursInput.safeParse({ pushWorkHoursOnly: true, workStartMin: "08:00", workEndMin: "08:00", days: [1] }).success).toBe(false);
-    expect(workHoursInput.safeParse({ pushWorkHoursOnly: true, workStartMin: "08:00", workEndMin: "17:00", days: [] }).success).toBe(false);
-    expect(workHoursInput.safeParse({ pushWorkHoursOnly: true, workStartMin: "25:00", workEndMin: "17:00", days: [1] }).success).toBe(false);
+    const r = workHoursInput.safeParse({ offHoursPush: "NONE", workStartMin: "07:30", workEndMin: "17:00", days: [1, 2, 3, 4, 5] });
+    expect(r.success && r.data).toEqual({ offHoursPush: "NONE", workStartMin: 450, workEndMin: 1020, workDays: 62 });
+    expect(workHoursInput.safeParse({ offHoursPush: "NONE", workStartMin: "08:00", workEndMin: "08:00", days: [1] }).success).toBe(false);
+    expect(workHoursInput.safeParse({ offHoursPush: "NONE", workStartMin: "08:00", workEndMin: "17:00", days: [] }).success).toBe(false);
+    expect(workHoursInput.safeParse({ offHoursPush: "NONE", workStartMin: "25:00", workEndMin: "17:00", days: [1] }).success).toBe(false);
   });
 });
 
@@ -209,8 +234,8 @@ describe("pushStore and notifyTicket", () => {
 
   it("saves work hours", async () => {
     const s = pushStore(db);
-    await s.setWorkHours(dev.id, { pushWorkHoursOnly: true, workStartMin: 480, workEndMin: 1020, workDays: 62 });
-    expect(await s.workHours(dev.id)).toEqual({ pushWorkHoursOnly: true, workStartMin: 480, workEndMin: 1020, workDays: 62 });
+    await s.setWorkHours(dev.id, { offHoursPush: "NONE", workStartMin: 480, workEndMin: 1020, workDays: 62 });
+    expect(await s.workHours(dev.id)).toEqual({ offHoursPush: "NONE", workStartMin: 480, workEndMin: 1020, workDays: 62 });
   });
 
   it("keeps each person's sound, from the list only", async () => {
@@ -238,6 +263,20 @@ describe("pushStore and notifyTicket", () => {
 
     const tones = Object.fromEntries(f.sent.map((x) => [x.endpoint.split("/").pop(), JSON.parse(x.payload).tone]));
     expect(tones).toEqual({ dev: "tone-1", admin: "silent" });
+  });
+
+  it("outside work hours sends silently or not at all, as each person chose", async () => {
+    const s = pushStore(db);
+    await s.subscribe(dev.id, sub("dev"), "x");
+    await s.subscribe(admin.id, sub("admin"), "x");
+    await s.setWorkHours(dev.id, { offHoursPush: "SILENT", workStartMin: 420, workEndMin: 1080, workDays: 62 });
+    await s.setWorkHours(admin.id, { offHoursPush: "NONE", workStartMin: 420, workEndMin: 1080, workDays: 62 });
+    const { id } = await newTicket();
+
+    const f = fakeSender();
+    await notifyTicket(db, f.send, { ticketId: id, actorId: qa.id, event: { kind: "status", to: "CLOSED" } }, { now: manila("2026-11-02T22:00:00") });
+
+    expect(f.sent.map((x) => [x.endpoint.split("/").pop(), JSON.parse(x.payload).tone])).toEqual([["dev", "silent"]]);
   });
 
   it("notifies everyone who can see the ticket except the actor", async () => {

@@ -31,7 +31,11 @@ export function clip(s: string, max: number): string {
   return one.length > max ? `${one.slice(0, max - 1).trimEnd()}…` : one;
 }
 
-export function pushMessage(e: PushEvent, t: PushTicket & { actorName: string; forAssignee: boolean; previews: boolean }): PushMessage {
+/** A tag for this ticket: its replies, edits and assignment share `ticket-12`; each status change gets its own. */
+export const ticketTag = (number: number) => `ticket-${number}`;
+
+/** `at` names a status change's own notification, so one about Closed doesn't replace the one about Fixed. */
+export function pushMessage(e: PushEvent, t: PushTicket & { actorName: string; forAssignee: boolean; previews: boolean; at?: Date }): PushMessage {
   const a = t.actorName;
   const detail = `Module: ${t.areaName ?? "none"}`;
   let line: string;
@@ -54,8 +58,9 @@ export function pushMessage(e: PushEvent, t: PushTicket & { actorName: string; f
     title: t.previews ? `#${t.number} · ${clip(t.title, TITLE_MAX)}` : `#${t.number} · ${TYPE_LABELS[t.type]}`,
     body: `${line}\n${detail}`,
     url: `/tickets/${t.number}`,
-    // The same tag replaces an older notification about this ticket instead of piling up.
-    tag: `ticket-${t.number}`,
+    // The same tag replaces an older notification about this ticket instead of piling up. Status changes are the
+    // ticket's history (did the developer get to it?), so each one stays as its own notification.
+    tag: e.kind === "status" ? `${ticketTag(t.number)}-${(t.at ?? new Date()).getTime().toString(36)}` : ticketTag(t.number),
     ...(e.kind === "reply" ? { stack: { line, detail } } : {}),
   };
 }

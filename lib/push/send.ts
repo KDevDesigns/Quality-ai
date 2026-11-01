@@ -9,8 +9,11 @@ import { effectiveTone } from "./tones";
  */
 export type PushSender = (sub: { endpoint: string; p256dh: string; auth: string }, payload: string, opts: { ttl: number; topic: string }) => Promise<void>;
 
-/** A notification older than this is dropped instead of arriving the next morning. */
-const TTL_SECONDS = 12 * 60 * 60;
+/**
+ * How long a push service holds a notification for a device that's off or offline. Three days, so a change made in the
+ * evening or over a weekend is waiting when the PC or phone comes back.
+ */
+const TTL_SECONDS = 3 * 24 * 60 * 60;
 
 type Sub = { id: string; endpoint: string; p256dh: string; auth: string };
 
@@ -85,7 +88,7 @@ export async function notifyTicket(
       select: {
         id: true,
         role: true,
-        pushWorkHoursOnly: true,
+        offHoursPush: true,
         workStartMin: true,
         workEndMin: true,
         workDays: true,
@@ -102,8 +105,9 @@ export async function notifyTicket(
     for (const u of recipients) {
       const facts = { number: ticket.number, title: ticket.title, type: ticket.type, areaName: ticket.area?.name ?? null };
       const msg = {
-        ...pushMessage(event, { ...facts, actorName: actor.name, forAssignee: u.id === ticket.assigneeId, previews: u.pushPreviews }),
-        tone: effectiveTone(u),
+        ...pushMessage(event, { ...facts, actorName: actor.name, forAssignee: u.id === ticket.assigneeId, previews: u.pushPreviews, at: now }),
+        // Outside work hours a "silent" choice arrives without sound or vibration (public/sw.js), still in the list.
+        tone: u.delivery === "silent" ? "silent" : effectiveTone(u),
       };
       const r = await sendTo(db, send, u.pushSubscriptions, msg, now);
       sent += r.sent;

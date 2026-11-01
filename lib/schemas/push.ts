@@ -30,15 +30,19 @@ const time = z
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Pick a time")
   .transform((v) => Number(v.slice(0, 2)) * 60 + Number(v.slice(3)));
 
+/** Outside work hours and days: as usual, without sound, or nothing on the device (the OffHoursPush enum). */
+export const OFF_HOURS_PUSH = ["SOUND", "SILENT", "NONE"] as const;
+export type OffHoursPush = (typeof OFF_HOURS_PUSH)[number];
+
 export const workHoursInput = z
   .object({
-    pushWorkHoursOnly: z.boolean(),
+    offHoursPush: z.enum(OFF_HOURS_PUSH, "Pick what happens outside your work hours"),
     workStartMin: time,
     workEndMin: time,
     /** Weekdays as 0 (Sunday) to 6 (Saturday). */
     days: z.array(z.number().int().min(0).max(6)).max(7),
   })
   .refine((w) => w.workStartMin !== w.workEndMin, { message: "Start and end can't be the same", path: ["workEndMin"] })
-  .refine((w) => !w.pushWorkHoursOnly || w.days.length > 0, { message: "Pick at least one day", path: ["days"] })
+  .refine((w) => w.offHoursPush === "SOUND" || w.days.length > 0,{ message: "Pick at least one day", path: ["days"] })
   .transform(({ days, ...w }) => ({ ...w, workDays: days.reduce((m, d) => m | (1 << d), 0) }));
 export type WorkHoursInput = z.infer<typeof workHoursInput>;

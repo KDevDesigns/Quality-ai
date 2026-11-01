@@ -46,6 +46,13 @@ enum UserRole {
   DEV
 }
 
+/// Device notifications outside someone's work hours and days: as usual, without sound, or not at all (the bell only).
+enum OffHoursPush {
+  SOUND
+  SILENT
+  NONE
+}
+
 model User {
   id                 String             @id @default(cuid())
   name               String
@@ -58,8 +65,8 @@ model User {
   mustChangePassword Boolean            @default(true)
   /// Set when they asked for a new password on the sign-in page; cleared when an admin resets or dismisses it.
   resetRequestedAt   DateTime?
-  /// Device notifications only between workStartMin and workEndMin (minutes after midnight, Asia/Manila) on workDays.
-  pushWorkHoursOnly  Boolean            @default(false)
+  /// What device notifications do outside workStartMin–workEndMin (minutes after midnight, Asia/Manila) on workDays.
+  offHoursPush       OffHoursPush       @default(SOUND)
   workStartMin       Int                @default(420)
   workEndMin         Int                @default(1080)
   /// Bitmask of weekdays, bit 0 = Sunday … bit 6 = Saturday. 62 = Monday to Friday.
