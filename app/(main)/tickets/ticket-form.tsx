@@ -176,17 +176,22 @@ export function TicketForm(props: TicketFormProps) {
         else if (raw) s.removeItem(draftKey(draftUserId));
       });
       setDefaultDevice(isDeviceType(remembered) ? remembered : guessDevice(navigator.userAgent, navigator.maxTouchPoints));
-      // Share → QA Hub: collected here, after the draft is settled, because restoring one starts the fields again.
+      // Share → QA Hub: collected here, after the draft is settled, because restoring one starts the fields again. Whatever
+      // the address says: signing in can land somewhere else first, and the file should still be here when they come.
       const url = new URL(window.location.href);
       const share = url.searchParams.get("shared");
       if (share) {
         url.searchParams.delete("shared");
         window.history.replaceState(null, "", url);
-        (share === "1" ? takeSharedFiles() : Promise.resolve([])).then(
-          (files) => setShared({ files }),
-          () => setShared({ files: [] }),
-        );
       }
+      ("caches" in window ? takeSharedFiles() : Promise.resolve([])).then(
+        (files) => {
+          if (files.length || share) setShared({ files });
+        },
+        () => {
+          if (share) setShared({ files: [] });
+        },
+      );
     });
   }, [ticket, draftUserId]);
 

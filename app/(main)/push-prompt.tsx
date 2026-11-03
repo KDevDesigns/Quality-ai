@@ -48,8 +48,9 @@ export function PushPrompt() {
   const { canInstall, install } = useInstallPrompt();
 
   useEffect(() => {
-    // My account has the full card, and the forced password change happens there.
-    if (pathname === "/account") return;
+    // My account has the full card, and the forced password change happens there. On New ticket it would interrupt filing,
+    // or sit on top of the markup editor when a shared screenshot arrives.
+    if (pathname === "/account" || pathname === "/tickets/new") return;
     if (read(() => sessionStorage, SESSION_KEY)) return;
     if (Number(read(() => localStorage, SNOOZE_KEY) ?? 0) > Date.now()) return;
     write(() => sessionStorage, SESSION_KEY, "1");

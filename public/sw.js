@@ -72,6 +72,7 @@ self.addEventListener("push", (event) => {
         await (msg.count > 0 ? self.navigator.setAppBadge?.(msg.count) : self.navigator.clearAppBadge?.())?.catch(() => {});
       }
       await refreshTabs();
+      await dropOldShares();
     })(),
   );
 });
@@ -81,6 +82,20 @@ self.addEventListener("push", (event) => {
 // stores no pages or ticket data.
 const SHARED_CACHE = "qa-hub-shared";
 const MAX_SHARED = 10;
+const SHARED_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+/** Deletes a share nobody collected within the day, even if they never signed in. Runs whenever the app opens or a push arrives. */
+async function dropOldShares() {
+  try {
+    const cache = await caches.open(SHARED_CACHE);
+    for (const key of await cache.keys()) {
+      const res = await cache.match(key);
+      if (!res || Date.now() - Number(res.headers.get("x-shared-at")) > SHARED_MAX_AGE_MS) await cache.delete(key);
+    }
+  } catch {
+    // Browser storage can be unavailable; the next run tries again.
+  }
+}
 
 async function receiveShare(request) {
   const page = (shared) => Response.redirect(new URL(`/tickets/new?shared=${shared}`, self.location.origin).href, 303);
@@ -108,6 +123,7 @@ async function receiveShare(request) {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method === "POST" && new URL(event.request.url).pathname === "/share-target") event.respondWith(receiveShare(event.request));
+  else if (event.request.mode === "navigate") event.waitUntil(dropOldShares());
 });
 
 // Clicking it opens the ticket: in a QA Hub tab that's already open if there is one, otherwise a new one.

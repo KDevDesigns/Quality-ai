@@ -284,6 +284,20 @@ describe("pushStore and notifyTicket", () => {
     expect(counts.admin).toBe(0);
   });
 
+  it("still sends the notification when the unread count can't be read", async () => {
+    await pushStore(db).subscribe(dev.id, sub("dev"), "x");
+    const { id } = await newTicket();
+    const commentId = await ticketStore(db).comment(qa, id, "Hello");
+    const broken = new Proxy(db, { get: (t, k) => (k === "$queryRaw" ? () => Promise.reject(new Error("db")) : Reflect.get(t, k)) });
+
+    const f = fakeSender();
+    await notifyTicket(broken, f.send, { ticketId: id, actorId: qa.id, event: { kind: "reply", commentId } }, { now: at });
+
+    const toDev = f.sent.find((x) => x.endpoint.endsWith("/dev"));
+    expect(toDev).toBeDefined();
+    expect(JSON.parse(toDev!.payload).count).toBeUndefined();
+  });
+
   it("outside work hours sends silently or not at all, as each person chose", async () => {
     const s = pushStore(db);
     await s.subscribe(dev.id, sub("dev"), "x");

@@ -8,10 +8,10 @@ No database changes. It keeps no copy of pages or tickets, so offline it shows t
 - **Install QA Hub:** My account → Notifications has a one-tap button on Android, Chrome and Edge, and the steps on iPhone. Windows also gets a tip
   to start it with the PC. The sign-in prompt offers it too. Hidden once QA Hub runs from its own icon.
 - **Unread count on the icon:** updated when the bell checks and when a push arrives, even with the app closed. A push carries the number, no ticket text.
-  Cleared on sign-out.
+  Cleared on sign-out; a device with notifications still on gets it back at its next push.
 - **Share → QA Hub (Android):** a screenshot or recording shared from the gallery opens New ticket with it attached, through the normal markup, upload and
-  checks. If you aren't signed in, it's still waiting after you sign in. The file stays on the phone until New ticket collects it, a day at
-  most, and sign-out deletes it.
+  checks. If you aren't signed in, it's still waiting after you sign in, and New ticket collects it whenever it's next opened. Not collected within a
+  day, it's deleted the next time the app opens or a notification arrives. Sign-out deletes it too.
 - **Service worker:** now registered on every signed-in page, not only when notifications are turned on.
 - Code: `lib/pwa.ts`, `lib/tickets/shared-files.ts` (tested), `hooks/use-install-prompt.ts`, `components/pwa-setup.tsx`, `account/install-card.tsx`,
   `app/share-target/route.ts`, `public/sw.js`, `app/manifest.ts`.

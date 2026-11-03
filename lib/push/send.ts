@@ -110,7 +110,8 @@ export async function notifyTicket(
         ...pushMessage(event, { ...facts, actorName: actor.name, forAssignee: u.id === ticket.assigneeId, previews: u.pushPreviews, at: now }),
         // Outside work hours a "silent" choice arrives without sound or vibration (public/sw.js), still in the list.
         tone: u.delivery === "silent" ? "silent" : effectiveTone(u),
-        count: (await unread.unread(u, 1)).count,
+        // Only for the app icon: if it can't be read, the notification still goes, and the icon keeps its last number.
+        count: await unread.unread(u, 1).then((r) => r.count, () => undefined),
       };
       const r = await sendTo(db, send, u.pushSubscriptions, msg, now);
       sent += r.sent;
