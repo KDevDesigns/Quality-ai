@@ -380,7 +380,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
 
     /** A ticket by number, or null when it doesn't exist or `actor` may not see it. */
     async get(number: number, actor: Actor) {
-      const person = { select: { id: true, name: true, role: true } } as const;
+      const person = { select: { id: true, name: true, role: true, avatarColor: true, avatarName: true } } as const;
       const file = {
         select: { id: true, kind: true, originalName: true, mime: true, size: true, durationSec: true, createdAt: true, uploader: { select: { name: true } } },
         orderBy: { createdAt: "asc" },

@@ -3,6 +3,7 @@
 // longer matches falls back to empty instead of breaking the page.
 
 import { z } from "zod";
+import { parsePeriod } from "./period";
 
 const line = (max: number) => z.string().trim().max(max);
 
@@ -29,6 +30,8 @@ export const darProfileInput = z.object({
   notedBy: signatory,
   coreFunctions: functionList,
   supportFunctions: functionList,
+  /** The start of their first period, which their list of periods starts from. */
+  firstPeriodStart: z.string().refine((v) => v === "" || !!parsePeriod(v), "Pick the month and period of your first DAR.").optional(),
 });
 export type DarProfileInput = z.infer<typeof darProfileInput>;
 

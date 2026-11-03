@@ -1,6 +1,8 @@
 import { ArrowRightLeftIcon, CircleDotIcon, PencilLineIcon, UserRoundIcon } from "lucide-react";
 import { ROLE_LABELS, type Role } from "@/lib/auth/permissions";
-import { formatBytes, formatDateTime, formatDuration, initials, timeAgo } from "@/lib/format";
+import { UserAvatar } from "@/components/user-avatar";
+import type { AvatarPerson } from "@/lib/avatar";
+import { formatBytes, formatDateTime, formatDuration, timeAgo } from "@/lib/format";
 import type { TicketDetail } from "@/lib/tickets/store";
 import { STATUS_LABELS, type TicketStatus } from "@/lib/tickets/workflow";
 import { cn } from "@/lib/utils";
@@ -102,7 +104,7 @@ export function Message({
   body,
   files,
 }: {
-  author: { name: string; role: string };
+  author: AvatarPerson & { role: string };
   mine: boolean;
   at: Date;
   now: Date;
@@ -111,7 +113,7 @@ export function Message({
 }) {
   return (
     <div className={cn("flex items-start gap-3", mine && "flex-row-reverse")}>
-      <Avatar name={author.name} mine={mine} />
+      <UserAvatar person={author} className="size-9 text-[0.8125rem]" />
       <div
         className={cn(
           "max-w-[85%] min-w-0 rounded-2xl border px-4 py-3",
@@ -132,17 +134,6 @@ export function Message({
         ) : null}
       </div>
     </div>
-  );
-}
-
-function Avatar({ name, mine }: { name: string; mine: boolean }) {
-  return (
-    <span
-      aria-hidden
-      className={cn("flex size-9 shrink-0 items-center justify-center rounded-full text-[0.8125rem] font-semibold", mine ? "bg-acc text-primary-foreground" : "bg-acc-t text-acc-ink")}
-    >
-      {initials(name)}
-    </span>
   );
 }
 

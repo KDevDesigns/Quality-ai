@@ -11,6 +11,8 @@ import { TEST_MESSAGE } from "@/lib/push/message";
 import { sendTo } from "@/lib/push/send";
 import { pushStore } from "@/lib/push/store";
 import { webPushSender } from "@/lib/push/web-push";
+import { avatarStore } from "@/lib/users/avatar";
+import { removeObjects } from "@/lib/uploads/storage";
 import { pushSubscriptionInput, workHoursInput } from "@/lib/schemas/push";
 import { passwordChangeInput } from "@/lib/schemas/user";
 
@@ -30,6 +32,30 @@ export async function changePassword(_prev: FormState, fd: FormData): Promise<Fo
   await auth.setPassword(user.id, parsed.data.next, false);
   await auth.deleteUserSessions(user.id, await currentToken());
   redirect("/");
+}
+
+// ── Profile photo. Only ever the signed-in person's own: the user id comes from the session. ──
+
+const avatars = avatarStore(db);
+
+const dropFile = (file: string) => removeObjects([file]).catch((e) => console.error("[account] couldn't delete an old profile photo:", e));
+
+/** Makes an upload they just finished (and the server checked) their photo. */
+export async function saveAvatar(uploadId: string): Promise<FormState> {
+  const me = await requireUser();
+  const r = typeof uploadId === "string" ? await avatars.set(me.id, uploadId) : false;
+  if (!r) return { ok: false, message: "That upload has expired. Add the photo again." };
+  if (r.old) await dropFile(r.old);
+  // The whole layout: the account menu shows it too.
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+export async function removeAvatar(): Promise<void> {
+  const me = await requireUser();
+  const file = await avatars.clear(me.id);
+  if (file) await dropFile(file);
+  revalidatePath("/", "layout");
 }
 
 // ── Device notifications (Web Push). Each person manages only their own devices: the user id comes from the session. ──

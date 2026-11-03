@@ -35,6 +35,8 @@ Build **one phase at a time**, start in plan mode, and stop for review at the en
 4. **Uploads** go to the private bucket under generated names (`YYYY/MM/<random>.<ext>`), never the uploader's file
    name. Their real type, size and video length are checked after upload. They are served only through
    `app/(main)/files/[id]`, which checks the session and ticket scope and then redirects to a short-lived signed URL.
+   Profile photos belong to no ticket, so they go through `app/(main)/files/avatar/[userId]`, which checks the session
+   and redirects the same way: everyone signed in may see them.
 5. Server code that touches Node APIs uses the Node.js runtime (with Cache Components that is the default; don't add a
    `runtime` export).
 6. **RLS stays on** for every table, with no policies, so Supabase's public API can read nothing. Only Prisma (the

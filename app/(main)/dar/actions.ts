@@ -46,6 +46,7 @@ export async function saveDarProfile(_prev: FormState, fd: FormData): Promise<Fo
     notedBy: { name: text(fd, "notedName"), title: text(fd, "notedTitle") },
     coreFunctions: jsonField(fd, "coreFunctions") ?? [],
     supportFunctions: jsonField(fd, "supportFunctions") ?? [],
+    firstPeriodStart: text(fd, "firstPeriodStart"),
   });
   if (!parsed.success) return fromZodError(parsed.error);
   await dar.saveProfile(me.id, parsed.data);

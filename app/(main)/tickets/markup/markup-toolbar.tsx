@@ -16,6 +16,7 @@ const divider = <span className="mx-1 h-6 w-px bg-line2 max-md:shrink-0" aria-hi
 const TOUCH = "max-md:size-11 max-md:shrink-0";
 
 export function MarkupToolbar(p: {
+  className?: string;
   tool: Tool;
   onTool: (t: Tool) => void;
   color: string;
@@ -40,8 +41,8 @@ export function MarkupToolbar(p: {
   onHelp: () => void;
 }) {
   return (
-    <div className="grid gap-2">
-      <div role="toolbar" aria-label="Markup tools" className="flex flex-wrap items-center gap-1 max-md:flex-nowrap max-md:overflow-x-auto max-md:p-0.5 max-md:[scrollbar-width:none]">
+    <div className={cn("grid gap-2", p.className)}>
+      <div role="toolbar" aria-label="Markup tools" className="flex flex-wrap items-center gap-1 max-md:flex-nowrap max-md:short:flex-wrap max-md:overflow-x-auto max-md:p-0.5 max-md:[scrollbar-width:none]">
         {TOOL_BUTTONS.map(({ tool, label, key, icon: Icon, hint }) => (
           <Button
             key={tool}
@@ -58,7 +59,7 @@ export function MarkupToolbar(p: {
           </Button>
         ))}
       </div>
-      <div className="flex flex-wrap items-center gap-1.5 max-md:flex-nowrap max-md:overflow-x-auto max-md:py-0.5 max-md:pl-0.5 max-md:[scrollbar-width:none]">
+      <div className="flex flex-wrap items-center gap-1.5 max-md:flex-nowrap max-md:short:flex-wrap max-md:overflow-x-auto max-md:py-0.5 max-md:pl-0.5 max-md:[scrollbar-width:none]">
         <div role="group" aria-label="Colour" className="flex items-center gap-1.5 max-md:shrink-0">
           {MARK_COLORS.map((c, i) => (
             <button

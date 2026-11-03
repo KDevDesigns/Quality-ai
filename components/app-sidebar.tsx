@@ -1,5 +1,6 @@
 "use client";
 
+import type { AvatarPerson } from "@/lib/avatar";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -20,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { isActive, navGroups } from "./nav";
 import { NavCount, useNotifications } from "./notifications";
 
-export type SidebarUser = { name: string; role: Role };
+export type SidebarUser = AvatarPerson & { role: Role; mustChangePassword: boolean };
 
 // Brand and 40px menu items follow the DCWD Careers (ERP HRMS) sidebar. The signed-in person is in the topbar (user-menu.tsx).
 // Minimised (the topbar's toggle or Ctrl+B), it springs down to a rail of icons: the brand text and the labels fade and

@@ -24,11 +24,14 @@ export function DarEditor({
   periods,
   hasFullName,
   accountName,
+  needsFirstPeriod,
 }: {
   report: DarReportData;
   periods: PeriodOption[];
   hasFullName: boolean;
   accountName: string;
+  /** They haven't chosen their first period and have saved nothing, so only the current period is listed. */
+  needsFirstPeriod: boolean;
 }) {
   const router = useRouter();
   const [cells, setCells] = useState<DarCells>(report.cells);
@@ -133,8 +136,7 @@ export function DarEditor({
   }
 
   return (
-    // data-full-width lets the page use the whole width (see app/(main)/layout.tsx), so the sheet fills it.
-    <div className="grid gap-5" data-full-width>
+    <div className="grid gap-5">
       {!hasFullName && !empty ? (
         <InlineAlert tone="warn">
           Your report shows your QA Hub nickname, <strong>{accountName}</strong>. Add your full name as it appears on official forms under{" "}
@@ -142,6 +144,15 @@ export function DarEditor({
             My details
           </Link>
           .
+        </InlineAlert>
+      ) : null}
+      {needsFirstPeriod && !empty ? (
+        <InlineAlert tone="info">
+          Choose the first period of your DAR under{" "}
+          <Link href="/dar/setup" className="font-semibold underline underline-offset-2">
+            My details
+          </Link>
+          , and your list of periods will start from it.
         </InlineAlert>
       ) : null}
 

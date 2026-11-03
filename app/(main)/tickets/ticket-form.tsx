@@ -200,7 +200,7 @@ function TicketFormFields({
   // Keeps the draft: a moment after typing, when files change, and when a phone hides or unloads the page.
   const save = useRef(() => {});
   // While a ticket is being sent, so a late save can't write it back. The draft itself goes only when the ticket page
-  // confirms it was filed (filed-reminder.tsx): anything else, like a dropped signal, must keep it.
+  // confirms it was filed (draft-cleanup.tsx): anything else, like a dropped signal, must keep it.
   const filing = useRef(false);
   const uploadTimes = useRef(new Map(restored?.files.map((f) => [f.id, f.uploadedAt]) ?? []));
   const [state, action, pending] = useActionState(async (prev: FormState, fd: FormData) => {

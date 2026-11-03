@@ -16,7 +16,7 @@ import {
 import { ScrollToLatest } from "@/components/scroll-to-latest";
 import { TicketPageSkeleton } from "@/components/skeletons";
 import { ImageGallery } from "./image-viewer";
-import { FiledReminder } from "./filed-reminder";
+import { DraftCleanup } from "./draft-cleanup";
 import { MarkRead } from "./mark-read";
 import { Attachments, galleryImages, Thread } from "./conversation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +44,7 @@ import { ticketFormOptions } from "../options";
 import { SeverityTag, TicketStatusPill, TicketTypeLabel } from "../ticket-bits";
 import { AssignControl, CommentForm, DeleteTicketDialog, EditTicketDialog, StatusMoves } from "./ticket-controls";
 import { TicketFlow } from "./ticket-flow";
+import { TicketPane, TicketTabs } from "./ticket-tabs";
 
 export const metadata: Metadata = { title: "Ticket" };
 
@@ -78,7 +79,9 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
   return (
     <>
       <MarkRead ticketId={t.id} number={t.number} lastActivityAt={t.lastActivityAt.toISOString()} />
-      <FiledReminder userId={me.id} />
+      <DraftCleanup userId={me.id} />
+      <TicketTabs replies={t.comments.length}>
+      <TicketPane tab="details">
       <div className="grid gap-3">
         <Link href="/tickets" className="inline-flex w-fit items-center gap-1.5 text-[0.8438rem] text-muted-foreground hover:text-acc">
           <ArrowLeftIcon className="size-3.5" aria-hidden /> {me.role === "ADMIN" ? "All tickets" : "My tickets"}
@@ -135,17 +138,21 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
       </div>
 
       <TicketFlow flow={ticketFlow(t)} now={now} />
+      </TicketPane>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18.75rem]">
         <ImageGallery images={galleryImages(t)}>
           <div className="grid min-w-0 grid-cols-1 content-start gap-6">
+            <TicketPane tab="details">
             <Card>
               <CardContent className="grid gap-4">
                 <p className="text-[0.9375rem] leading-relaxed wrap-anywhere whitespace-pre-wrap">{t.description}</p>
                 <Attachments files={t.attachments} />
               </CardContent>
             </Card>
+            </TicketPane>
 
+            <TicketPane tab="conversation">
             <section aria-label="Conversation and history" className="grid grid-cols-1 gap-3">
               <h2 className="text-xs font-semibold tracking-[0.06em] text-ink2 uppercase">Conversation</h2>
               {/* Messenger-style: past a set height the messages scroll on their own, opened at the newest one, so the
@@ -160,15 +167,19 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
                 <Thread t={t} meId={me.id} now={now} />
               </div>
               <ScrollToLatest targetId="ticket-thread" version={t.lastActivityAt.toISOString()} />
-              <Card>
-                <CardContent>
-                  <CommentForm ticket={ref} />
-                </CardContent>
-              </Card>
+              <div id="ticket-reply" className="scroll-mb-5">
+                <Card>
+                  <CardContent>
+                    <CommentForm ticket={ref} />
+                  </CardContent>
+                </Card>
+              </div>
             </section>
+            </TicketPane>
           </div>
         </ImageGallery>
 
+        <TicketPane tab="details">
         <aside className="grid content-start gap-4">
           <Card>
             <CardHeader>
@@ -197,7 +208,9 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
           </Card>
           <ActivityLog entries={log} />
         </aside>
+        </TicketPane>
       </div>
+      </TicketTabs>
     </>
   );
 }

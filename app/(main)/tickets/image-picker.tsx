@@ -275,6 +275,9 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
       aria-label="Screenshots"
       onPaste={state.onPaste}
       onClick={(e) => {
+        // The markup dialog is this box's child in React, so its clicks arrive here too. Focusing the box for them
+        // would take the keyboard away from the dialog, and with it Ctrl+Z and every other shortcut.
+        if (!e.currentTarget.contains(e.target as Node)) return;
         if (!(e.target as HTMLElement).closest("button, input, a")) e.currentTarget.focus();
       }}
       className={cn(

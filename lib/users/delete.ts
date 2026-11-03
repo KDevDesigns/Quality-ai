@@ -21,13 +21,15 @@ export type DeletionPreview = {
   bytes: number;
 };
 
-/** Every Storage object that belongs to what the person made: files on their tickets, their uploads elsewhere, unsent uploads. */
-async function theirFiles(db: Pick<PrismaClient, "attachment" | "pendingUpload">, userId: string) {
-  const [attached, pending] = await Promise.all([
+/** Every Storage object that belongs to what the person made: files on their tickets, their uploads elsewhere, unsent uploads, their photo. */
+async function theirFiles(db: Pick<PrismaClient, "attachment" | "pendingUpload" | "user">, userId: string) {
+  const [attached, pending, user] = await Promise.all([
     db.attachment.findMany({ where: { OR: [{ ticket: { reporterId: userId } }, { uploaderId: userId }] }, select: { storedName: true, size: true } }),
     db.pendingUpload.findMany({ where: { uploaderId: userId }, select: { storedName: true, size: true } }),
+    db.user.findUnique({ where: { id: userId }, select: { avatarName: true, avatarSize: true } }),
   ]);
-  const byName = new Map([...attached, ...pending].map((f) => [f.storedName, f.size]));
+  const photo = user?.avatarName ? [{ storedName: user.avatarName, size: user.avatarSize ?? 0 }] : [];
+  const byName = new Map([...attached, ...pending, ...photo].map((f) => [f.storedName, f.size]));
   return [...byName].map(([storedName, size]) => ({ storedName, size }));
 }
 

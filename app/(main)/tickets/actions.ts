@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { after } from "next/server";
 import { requireAction, requireUser } from "@/lib/auth/session";
 import { db } from "@/lib/db";
@@ -76,10 +76,10 @@ export async function createTicket(_prev: FormState, fd: FormData): Promise<Form
   const { id, number } = created;
   push(id, me.id, { kind: "filed" });
   refresh();
-  // ?filing: this really is that browser's ticket, filed, so it can delete its draft. ?filed=1: it has files, so someone
-  // on a phone is reminded they're still in the gallery (filed-reminder.tsx).
+  // ?filing: this really is that browser's ticket, filed, so it can delete its draft (draft-cleanup.tsx), and Back goes to
+  // the list. Replaced, so the finished form isn't left in the history.
   const mark = filingMark(fd.get("filing"));
-  redirect(`/tickets/${number}?filed=${files.length ? 1 : 0}${mark ? `&filing=${mark}` : ""}`);
+  redirect(`/tickets/${number}${mark ? `?filing=${mark}` : ""}`, RedirectType.replace);
 }
 
 export async function editTicket(_prev: FormState, fd: FormData): Promise<FormState> {
