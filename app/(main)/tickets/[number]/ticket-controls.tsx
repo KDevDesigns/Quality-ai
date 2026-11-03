@@ -166,7 +166,7 @@ export function CommentForm({ ticket }: { ticket: Ref }) {
     return r;
   }, initialFormState);
   const busy = pending || video.busy || images.busy;
-  const canSend = !busy && (!!body.trim() || images.items.length > 0 || video.upload.status === "done");
+  const canSend = !busy && !images.failed && !video.blocked && (!!body.trim() || images.items.length > 0 || video.upload.status === "done");
 
   return (
     <form onSubmit={submitKeepingInput(action)} className="grid gap-3">
@@ -195,7 +195,7 @@ export function CommentForm({ ticket }: { ticket: Ref }) {
       <FormMessage state={state} />
       <div className="flex justify-end">
         <Button type="submit" disabled={!canSend}>
-          <SendIcon /> {video.busy ? "Uploading video…" : images.busy ? "Uploading…" : pending ? "Sending…" : "Send"}
+          <SendIcon /> {video.busy ? "Uploading video…" : images.busy ? "Uploading…" : images.failed || video.blocked ? "Finish the files above" : pending ? "Sending…" : "Send"}
         </Button>
       </div>
     </form>

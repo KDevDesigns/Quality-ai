@@ -6,6 +6,7 @@ import { Menu } from "@base-ui/react/menu";
 import { useTheme } from "next-themes";
 import { CheckIcon, ChevronDownIcon, LogOutIcon, UserRoundCogIcon } from "lucide-react";
 import { logout } from "@/app/login/actions";
+import { signOutHere } from "@/lib/tickets/sign-out";
 import { MODES } from "@/components/appearance-picker";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { setAccent, useAccent } from "@/components/theme";
@@ -57,7 +58,7 @@ export function UserMenu({ user, active }: { user: SidebarUser; active: boolean 
             <Menu.Item className={item} render={<Link href={mobile ? "/settings" : "/account"} />}>
               <UserRoundCogIcon /> {mobile ? "Settings" : "My account"}
             </Menu.Item>
-            <Menu.Item className={item} disabled={signingOut} onClick={() => startTransition(() => logout())}>
+            <Menu.Item className={item} disabled={signingOut} onClick={() => startTransition(() => signOutHere(logout))}>
               <LogOutIcon /> {signingOut ? "Signing out…" : "Sign out"}
             </Menu.Item>
           </Menu.Popup>

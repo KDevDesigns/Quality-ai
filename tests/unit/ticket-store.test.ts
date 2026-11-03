@@ -21,7 +21,7 @@ const input = (over: Partial<TicketCreate> = {}): TicketCreate => ({
   areaId: null,
   severity: "S2",
   priority: "P2",
-  foundIn: null,
+  foundIn: null, deviceType: null,
   assigneeId: null,
   ...over,
 });
@@ -165,7 +165,7 @@ describe("ticketStore", () => {
   it("edits only as the reporter or an admin, with one event per changed field", async () => {
     const s = ticketStore(db, now);
     const { id } = await s.create(qa, input({ assigneeId: dev.id }));
-    const edit = { type: "BUG" as const, title: "Bill total is wrong for seniors", description: "New text", areaId: billing, severity: "S1" as const, priority: "P2" as const, foundIn: null };
+    const edit = { type: "BUG" as const, title: "Bill total is wrong for seniors", description: "New text", areaId: billing, severity: "S1" as const, priority: "P2" as const, foundIn: null, deviceType: null };
     // The assigned developer sees the ticket but can't edit it.
     await expect(s.update(dev, id, edit)).rejects.toThrow(/Only the person who filed/);
     expect(await s.update(qa, id, edit)).toBe(4);

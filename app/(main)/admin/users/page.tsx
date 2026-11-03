@@ -15,7 +15,7 @@ import { db } from "@/lib/db";
 import { formatDateTime, timeAgo } from "@/lib/format";
 import { ApprovalHost, PendingActions, ResetRequestActions } from "./pending-actions";
 import { DeleteUserDialog } from "./delete-user-dialog";
-import { ResetPasswordButton, UserDialog } from "./user-dialog";
+import { ResetPasswordButton, SignOutDevicesButton, UserDialog } from "./user-dialog";
 
 export const metadata: Metadata = { title: "Users" };
 
@@ -160,6 +160,7 @@ async function UsersBody() {
                     <div className="flex justify-end gap-0.5">
                       <UserDialog user={{ id: u.id, name: u.name, email: u.email, role: u.role as Role, designer: u.designer, active: u.active }} isSelf={u.id === me.id} />
                       {u.id !== me.id ? <ResetPasswordButton id={u.id} name={u.name} /> : null}
+                      {u.id !== me.id ? <SignOutDevicesButton id={u.id} name={u.name} /> : null}
                       {u.id !== me.id ? <DeleteUserDialog user={{ id: u.id, name: u.name, email: u.email }} /> : null}
                     </div>
                   </TableCell>

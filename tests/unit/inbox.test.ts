@@ -22,7 +22,7 @@ const input = (over: Partial<TicketCreate> = {}): TicketCreate => ({
   areaId: null,
   severity: "S2",
   priority: "P2",
-  foundIn: null,
+  foundIn: null, deviceType: null,
   assigneeId: null,
   ...over,
 });

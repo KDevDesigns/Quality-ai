@@ -188,6 +188,7 @@ model Ticket {
   severity         Severity? // bugs only
   priority         Priority        @default(P3)
   foundIn          String? // ERP build or environment, free text
+  deviceType       String? // bugs only: DEVICE_TYPES in lib/tickets/workflow.ts
   areaId           String?
   area             ErpArea?        @relation(fields: [areaId], references: [id], onDelete: SetNull)
   reporterId       String

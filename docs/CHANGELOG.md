@@ -1,5 +1,21 @@
 # Changelog
 
+## Filing tickets from a phone (Phase 3.7b, 2026-11-03)
+
+- **Device type:** a dropdown for bugs (Computer, Android phone, iPhone, Tablet), filled in with the last choice on that
+  device or a guess from the browser. Shown in the ticket's Details and editable.
+- **Take photo** and **Choose from gallery** on touch screens. HEIC photos get a clear message.
+- **Drafts:** New ticket keeps its text, choices and uploaded files in that browser, so switching apps to take more
+  screenshots loses nothing. Cleared when the ticket is filed, on **Clear** or on signing out, and unusable after 24 hours.
+- **Uploads:** a failed image or video stays on screen with **Retry**, and the ticket or reply waits until it's retried
+  or removed. A video over 10 MB on mobile data asks first (Android Chrome).
+- **Markup with a finger:** two fingers zoom and move, and larger tool buttons on phones.
+- **After filing with files on a phone:** a one-time reminder to delete the screenshot from the gallery.
+- **Admin → Users: Sign out all devices**, for a lost phone: ends their sessions and stops device notifications. The
+  person's password stays.
+- **Setup:** migration `ticket_device_type` (`npm run db:deploy`).
+- Code: `lib/tickets/draft.ts` (tested), `hooks/use-touch-screen.ts`, `pinchZoom` in `lib/markup/view.ts`.
+
 ## Delete user and the Designer tick-box (2026-11-01)
 
 - **Delete user** (Admin → Users, red bin): deletes the account and everything it made: tickets they filed with every

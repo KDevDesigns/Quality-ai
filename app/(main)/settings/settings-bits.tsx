@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useTheme } from "next-themes";
 import { ChevronRightIcon, LogOutIcon, MoonIcon } from "lucide-react";
 import { logout } from "@/app/login/actions";
+import { signOutHere } from "@/lib/tickets/sign-out";
 import { AppearancePicker, MODES } from "@/components/appearance-picker";
 import { NavCount, useNotifications } from "@/components/notifications";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -45,7 +46,7 @@ export function SignOutRow() {
     <button
       type="button"
       disabled={pending}
-      onClick={() => start(() => logout())}
+      onClick={() => start(() => signOutHere(logout))}
       className="flex min-h-[3.25rem] w-full items-center justify-center gap-2 px-4 text-base font-semibold text-bad outline-none focus-visible:bg-bad-t active:bg-surface3 disabled:opacity-60"
     >
       <LogOutIcon className="size-[1.125rem]" aria-hidden /> {pending ? "Signing out…" : "Sign out"}

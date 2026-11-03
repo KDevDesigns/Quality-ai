@@ -134,6 +134,18 @@ missed*, so a night with the laptop off is caught up the next morning. Check `ba
 - **Failed sign-ins:** after 5 failed sign-ins in 15 minutes, that email is locked out for the rest of the window.
 - **Lock-out protection:** at least one active admin must always remain. The app refuses changes that would remove the last one.
 
+### A lost phone
+**Admin → Users → Sign out all devices** (the door icon on the person's row) ends all their sessions and stops device
+notifications straight away. Their password stays, so also use **Reset password** if someone else may know it. They
+turn notifications back on after signing in. An unfinished draft stays in that phone's browser until it's next opened;
+it can't be removed from here.
+
+### Drafts on a phone
+**New ticket** keeps an unfinished ticket in that browser for 24 hours, per person: the text, the choices and the ids of
+uploaded files. It's deleted when the ticket is filed, on **Clear**, and on signing out there. Files themselves stay in
+Storage as pending uploads until then. If a phone loses signal while filing, QA Hub can't tell whether the ticket went
+through, so it says so: check **Tickets** before trying again, or the same ticket can be filed twice.
+
 ## 5b. Notifications
 
 - The **bell** in the top bar shows how many tickets have something new for you, and the newest ones, with a link to

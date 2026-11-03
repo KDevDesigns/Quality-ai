@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { checkUploaded, cleanOriginalName, isStoredName, planUpload, sniffImage, UploadError, type UploadedObject } from "@/lib/uploads/files";
-import { IMAGE_MAX_BYTES, VIDEO_MAX_BYTES } from "@/lib/uploads/limits";
+import { IMAGE_MAX_BYTES, MOBILE_DATA_WARN_BYTES, VIDEO_MAX_BYTES, warnOnMobileData } from "@/lib/uploads/limits";
 import { bufferReader } from "@/lib/uploads/video-meta";
 
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]);
@@ -16,6 +16,15 @@ const arrived = (bytes: Uint8Array, patch: Partial<UploadedObject> = {}): Upload
   contentType: "image/png",
   read: bufferReader(bytes),
   ...patch,
+});
+
+describe("warnOnMobileData", () => {
+  it("asks only for a big video on mobile data", () => {
+    expect(warnOnMobileData(MOBILE_DATA_WARN_BYTES + 1, "cellular")).toBe(true);
+    expect(warnOnMobileData(MOBILE_DATA_WARN_BYTES, "cellular")).toBe(false);
+    expect(warnOnMobileData(MOBILE_DATA_WARN_BYTES + 1, "wifi")).toBe(false);
+    expect(warnOnMobileData(MOBILE_DATA_WARN_BYTES + 1, undefined)).toBe(false);
+  });
 });
 
 describe("sniffImage", () => {

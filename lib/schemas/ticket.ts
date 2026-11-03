@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PRIORITIES, SEVERITIES, TICKET_STATUSES, TICKET_TYPES } from "@/lib/tickets/workflow";
+import { DEVICE_TYPES, PRIORITIES, SEVERITIES, TICKET_STATUSES, TICKET_TYPES } from "@/lib/tickets/workflow";
 import { optionalText } from "./common";
 
 const emptyToNull = z
@@ -16,15 +16,16 @@ const ticketFields = z.object({
   severity: z.union([z.enum(SEVERITIES), z.literal("")]).optional().transform((v) => (v ? v : null)),
   priority: z.enum(PRIORITIES).default("P3"),
   foundIn: optionalText(100),
+  deviceType: z.union([z.enum(DEVICE_TYPES), z.literal("")]).nullish().transform((v) => (v ? v : null)),
 });
 
-/** Severity only applies to bugs, so it is dropped for suggestions and improvements. */
-const bugOnlySeverity = <T extends { type: string; severity: string | null }>(v: T): T => (v.type === "BUG" ? v : { ...v, severity: null });
+/** Severity and device type only apply to bugs, so they are dropped for suggestions and improvements. */
+const bugOnly = <T extends { type: string; severity: string | null; deviceType: string | null }>(v: T): T => (v.type === "BUG" ? v : { ...v, severity: null, deviceType: null });
 
-export const ticketCreate = ticketFields.extend({ assigneeId: emptyToNull }).transform(bugOnlySeverity);
+export const ticketCreate = ticketFields.extend({ assigneeId: emptyToNull }).transform(bugOnly);
 export type TicketCreate = z.infer<typeof ticketCreate>;
 
-export const ticketEdit = ticketFields.transform(bugOnlySeverity);
+export const ticketEdit = ticketFields.transform(bugOnly);
 export type TicketEdit = z.infer<typeof ticketEdit>;
 
 export const commentInput = z.object({ body: z.string().trim().max(20000, "At most 20,000 characters") });

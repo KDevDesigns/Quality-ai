@@ -16,6 +16,7 @@ import {
 import { ScrollToLatest } from "@/components/scroll-to-latest";
 import { TicketPageSkeleton } from "@/components/skeletons";
 import { ImageGallery } from "./image-viewer";
+import { FiledReminder } from "./filed-reminder";
 import { MarkRead } from "./mark-read";
 import { Attachments, galleryImages, Thread } from "./conversation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,8 +32,10 @@ import {
   canAssign,
   canDeleteTicket,
   canEditTicket,
+  DEVICE_LABELS,
   isDone,
   PRIORITY_LABELS,
+  type DeviceType,
   SEVERITY_LABELS,
   type SeverityValue,
 } from "@/lib/tickets/workflow";
@@ -75,6 +78,7 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
   return (
     <>
       <MarkRead ticketId={t.id} number={t.number} lastActivityAt={t.lastActivityAt.toISOString()} />
+      <FiledReminder userId={me.id} />
       <div className="grid gap-3">
         <Link href="/tickets" className="inline-flex w-fit items-center gap-1.5 text-[0.8438rem] text-muted-foreground hover:text-acc">
           <ArrowLeftIcon className="size-3.5" aria-hidden /> {me.role === "ADMIN" ? "All tickets" : "My tickets"}
@@ -114,6 +118,7 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
                   severity: t.severity as SeverityValue | null,
                   priority: t.priority,
                   foundIn: t.foundIn,
+                  deviceType: t.deviceType as DeviceType | null,
                 }}
               />
             ) : null}
@@ -182,6 +187,7 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
                 {t.severity ? <Detail label="Severity">{SEVERITY_LABELS[t.severity as SeverityValue]}</Detail> : null}
                 <Detail label="Priority">{PRIORITY_LABELS[t.priority]}</Detail>
                 {t.foundIn ? <Detail label="Found in">{t.foundIn}</Detail> : null}
+                {t.deviceType ? <Detail label="Device type">{DEVICE_LABELS[t.deviceType as DeviceType]}</Detail> : null}
                 <Detail label="Reported by">{t.reporter.name}</Detail>
                 <Detail label="Filed">{formatDateTime(t.createdAt)}</Detail>
                 {t.closedAt ? <Detail label="Closed">{formatDateTime(t.closedAt)}</Detail> : null}

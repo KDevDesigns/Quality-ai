@@ -35,7 +35,7 @@ async function NewTicket() {
       {/* Not clipped on phones, so the File ticket bar can stick to the bottom of the screen. */}
       <Card className="max-md:overflow-visible">
         <CardContent>
-          <TicketForm areas={areas} people={people} canAssign={can(me, "tickets.assign")} />
+          <TicketForm areas={areas} people={people} canAssign={can(me, "tickets.assign")} draftUserId={me.id} />
         </CardContent>
       </Card>
     </div>

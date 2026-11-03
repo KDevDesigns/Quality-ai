@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { fromZodError, text, type FormState } from "@/lib/form";
 import { notifyTicket, type TicketTrigger } from "@/lib/push/send";
 import { webPushSender } from "@/lib/push/web-push";
+import { filingMark } from "@/lib/tickets/draft";
 import { commentInput, ticketCreate, ticketEdit, transitionInput } from "@/lib/schemas/ticket";
 import { notificationStore } from "@/lib/tickets/notifications";
 import { TicketError, ticketStore } from "@/lib/tickets/store";
@@ -50,6 +51,7 @@ function fields(fd: FormData) {
     severity: text(fd, "severity"),
     priority: text(fd, "priority") || undefined,
     foundIn: text(fd, "foundIn"),
+    deviceType: text(fd, "deviceType"),
   };
 }
 
@@ -66,14 +68,18 @@ export async function createTicket(_prev: FormState, fd: FormData): Promise<Form
   if (!parsed.success) return fromZodError(parsed.error);
 
   let created = { id: "", number: 0 };
+  const files = uploadIds(fd);
   const r = await run(async () => {
-    created = await tickets.create(me, parsed.data, uploadIds(fd));
+    created = await tickets.create(me, parsed.data, files);
   });
   if (!r.ok) return r;
   const { id, number } = created;
   push(id, me.id, { kind: "filed" });
   refresh();
-  redirect(`/tickets/${number}`);
+  // ?filing: this really is that browser's ticket, filed, so it can delete its draft. ?filed=1: it has files, so someone
+  // on a phone is reminded they're still in the gallery (filed-reminder.tsx).
+  const mark = filingMark(fd.get("filing"));
+  redirect(`/tickets/${number}?filed=${files.length ? 1 : 0}${mark ? `&filing=${mark}` : ""}`);
 }
 
 export async function editTicket(_prev: FormState, fd: FormData): Promise<FormState> {

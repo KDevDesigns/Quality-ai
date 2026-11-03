@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pinchZoom } from "@/lib/markup/view";
 import { CONVERT_ABOVE_BYTES, convertedName, JPEG, markedName, pickSmallest, PNG, WEBP, worthReplacing } from "@/lib/markup/export";
 import { canRedo, canUndo, emptyHistory, push, redo, undo } from "@/lib/markup/history";
 import { arrowHead, clampRect, cropOf, DEFAULT_TEXT_SIZE, drawOrder, fontSizeFor, isTiny, normalizeRect, strokeFor, TEXT_SIZES, textFontSize, type Shape } from "@/lib/markup/shapes";
@@ -57,6 +58,18 @@ describe("markup shapes", () => {
     const pen: Shape = { kind: "pen", points: [{ x: 1, y: 1 }, { x: 9, y: 9 }], color: "#e5251b" };
     const crop: Shape = { kind: "crop", rect: { x: 0, y: 0, w: 500, h: 500 } };
     expect(drawOrder([hide, pen, crop])).toEqual([pen, hide]);
+  });
+});
+
+describe("pinchZoom", () => {
+  it("follows the fingers", () => {
+    expect(pinchZoom(0.5, 100, 200)).toBe(1);
+    expect(pinchZoom(1, 200, 100)).toBe(0.5);
+    expect(pinchZoom(0.8, 150, 150)).toBe(0.8);
+  });
+
+  it("ignores fingers that landed on the same spot", () => {
+    expect(pinchZoom(0.5, 0, 200)).toBe(0.5);
   });
 });
 
