@@ -1,5 +1,21 @@
 # Changelog
 
+## Install as an app (Phase 3.7c, 2026-11-03)
+
+No database changes. It keeps no copy of pages or tickets, so offline it shows the browser's normal "no connection" page.
+
+- **Icons:** 192 and 512 px icons, a maskable one for Android and a solid one for iPhone, all with the seal on white.
+- **Install QA Hub:** My account → Notifications has a one-tap button on Android, Chrome and Edge, and the steps on iPhone. Windows also gets a tip
+  to start it with the PC. The sign-in prompt offers it too. Hidden once QA Hub runs from its own icon.
+- **Unread count on the icon:** updated when the bell checks and when a push arrives, even with the app closed. A push carries the number, no ticket text.
+  Cleared on sign-out; a device with notifications still on gets it back at its next push.
+- **Share → QA Hub (Android):** a screenshot or recording shared from the gallery opens New ticket with it attached, through the normal markup, upload and
+  checks. If you aren't signed in, it's still waiting after you sign in, and New ticket collects it whenever it's next opened. Not collected within a
+  day, it's deleted the next time the app opens or a notification arrives. Sign-out deletes it too.
+- **Service worker:** now registered on every signed-in page, not only when notifications are turned on.
+- Code: `lib/pwa.ts`, `lib/tickets/shared-files.ts` (tested), `hooks/use-install-prompt.ts`, `components/pwa-setup.tsx`, `account/install-card.tsx`,
+  `app/share-target/route.ts`, `public/sw.js`, `app/manifest.ts`.
+
 ## Bug fixes, photos, DAR periods and ticket tabs (Phase 3.7a follow-up, 2026-11-03)
 
 The look stays as on the live site. The phone redesign tried on 2026-11-03 is kept only on the branch `phase-3.7a-mobile-look`, for

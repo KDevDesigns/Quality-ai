@@ -19,6 +19,8 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: { default: "QA Hub", template: "%s · QA Hub" },
   description: "QA tickets and QA↔developer communication for the in-house ERP",
+  // An iPhone reads these instead of the manifest: opened from the Home Screen, QA Hub fills the screen under this name.
+  appleWebApp: { capable: true, title: "QA Hub", statusBarStyle: "default" },
 };
 
 // viewportFit "cover" lets the page reach under an iPhone's notch and home bar; the top bar, bottom tab bar and sheets

@@ -1,5 +1,5 @@
 // QA Hub's service worker: shows device notifications (Web Push) even when no QA Hub tab is open.
-// The server sends { title, body, url, tag, tone, stack? } (see lib/push/message.ts). With the person's
+// The server sends { title, body, url, tag, tone, count, stack? } (see lib/push/message.ts). With the person's
 // "Show message previews" off, it holds no ticket text.
 //
 // Sound: a service worker can't play audio, and browsers can't attach a custom sound to a notification. So when a QA
@@ -67,9 +67,63 @@ self.addEventListener("push", (event) => {
         badge: "/dcwd-seal.png",
         data: { url: msg.url, replies },
       });
+      // The unread count on the installed app's icon, even with QA Hub closed.
+      if (typeof msg.count === "number") {
+        await (msg.count > 0 ? self.navigator.setAppBadge?.(msg.count) : self.navigator.clearAppBadge?.())?.catch(() => {});
+      }
       await refreshTabs();
+      await dropOldShares();
     })(),
   );
+});
+
+// Share → QA Hub (Android, the installed app). The files wait here until New ticket collects them (lib/tickets/shared-files.ts,
+// keep the names in sync), so they survive a sign-in on the way. Every other request goes straight to the network: this worker
+// stores no pages or ticket data.
+const SHARED_CACHE = "qa-hub-shared";
+const MAX_SHARED = 10;
+const SHARED_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+/** Deletes a share nobody collected within the day, even if they never signed in. Runs whenever the app opens or a push arrives. */
+async function dropOldShares() {
+  try {
+    const cache = await caches.open(SHARED_CACHE);
+    for (const key of await cache.keys()) {
+      const res = await cache.match(key);
+      if (!res || Date.now() - Number(res.headers.get("x-shared-at")) > SHARED_MAX_AGE_MS) await cache.delete(key);
+    }
+  } catch {
+    // Browser storage can be unavailable; the next run tries again.
+  }
+}
+
+async function receiveShare(request) {
+  const page = (shared) => Response.redirect(new URL(`/tickets/new?shared=${shared}`, self.location.origin).href, 303);
+  try {
+    const form = await request.formData();
+    const files = form.getAll("files").filter((f) => f instanceof File && f.size > 0).slice(0, MAX_SHARED);
+    if (!files.length) return page("missed");
+    // A new share replaces one nobody collected.
+    await caches.delete(SHARED_CACHE);
+    const cache = await caches.open(SHARED_CACHE);
+    const at = String(Date.now());
+    await Promise.all(
+      files.map((file, i) =>
+        cache.put(
+          new URL(`/shared/${String(i).padStart(2, "0")}`, self.location.origin).href,
+          new Response(file, { headers: { "Content-Type": file.type, "x-shared-name": encodeURIComponent(file.name), "x-shared-at": at } }),
+        ),
+      ),
+    );
+    return page("1");
+  } catch {
+    return page("missed");
+  }
+}
+
+self.addEventListener("fetch", (event) => {
+  if (event.request.method === "POST" && new URL(event.request.url).pathname === "/share-target") event.respondWith(receiveShare(event.request));
+  else if (event.request.mode === "navigate") event.waitUntil(dropOldShares());
 });
 
 // Clicking it opens the ticket: in a QA Hub tab that's already open if there is one, otherwise a new one.

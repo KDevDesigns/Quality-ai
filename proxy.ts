@@ -21,6 +21,7 @@ export function proxy(req: NextRequest) {
 // Also skips /api/cron, which Vercel Cron calls without a cookie; that route checks CRON_SECRET itself.
 // Ticket files are never in public/; they go through an auth-checked route (CLAUDE.md rule 4).
 // The service worker and the manifest hold no data and must load as-is, never as a redirect to /login.
+// /share-target checks the session itself: a redirect here would send a shared file's POST to the sign-in page.
 export const config = {
-  matcher: ["/((?!login|api/cron|_next/static|_next/image|favicon.ico|sw\\.js$|manifest\\.webmanifest$|.*\\.(?:png|svg|ico)$).*)"],
+  matcher: ["/((?!login|share-target|api/cron|_next/static|_next/image|favicon.ico|sw\\.js$|manifest\\.webmanifest$|.*\\.(?:png|svg|ico)$).*)"],
 };

@@ -359,7 +359,8 @@ reaches every page for each role; a person can read and reply to a ticket one-ha
   ("Delete the screenshot from your gallery"), keep **Sign out** easy to reach on shared company phones (Settings
   tab), and let an admin end a user's sessions if a phone is lost.
 
-#### 3.7c — Install as an app (PWA)
+#### 3.7c — Install as an app (PWA) (built 2026-11-03, awaiting a real-phone test)
+*The iPhone guide is written steps with the Share icon, not pictures.*
 - **Install as an app (PWA)**, in this order (each step ships on its own):
   1. **Icons and manifest:** the manifest (`app/manifest.ts`, done in 3.8c) gets 192 and 512 px icons plus a
      *maskable* one (the seal on a solid background with a safe margin) so Android doesn't put it in a white square, an

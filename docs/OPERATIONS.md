@@ -224,6 +224,17 @@ through, so it says so: check **Tickets** before trying again, or the same ticke
 - **Office network:** the firewall must allow `fcm.googleapis.com`, `*.push.apple.com`,
   `updates.push.services.mozilla.com` and `*.notify.windows.com`. If tests work at home but not at the office, ask IT.
 
+### Installing QA Hub as an app
+
+- **Install:** My account → Notifications → **Install QA Hub** (on a phone: Settings → Notifications). iPhone and iPad show the steps instead: Share →
+  Add to Home Screen, in Safari. Needs HTTPS, so it works on the live site or a Vercel preview, not from `localhost` on a phone.
+- **Start with Windows:** after installing, open `edge://apps` or `chrome://apps`, right-click QA Hub and choose *Start app when you sign in*.
+- **Unread count on the icon:** on installed Android, iPhone (iOS 16.4+) and Windows apps. It updates when a notification arrives, so it needs notifications on.
+- **Share → QA Hub (Android, installed app only):** share a screenshot or recording from the gallery, and New ticket opens with it attached. The file stays in
+  that phone's browser storage until New ticket collects it. If nobody does within a day, it's deleted the next time the app opens or a notification
+  arrives. Sign-out deletes it too. iPhones have no share option, so pick from Photos in New ticket.
+- **Nothing else is stored:** the app keeps no pages or tickets on the device, so with no connection it shows the browser's normal offline page.
+
 ## 6. Daily Accomplishment Reports (My DAR)
 
 - **Everyone has My DAR** (QA testers, developers and admins, in the sidebar under Tickets). There is no shared

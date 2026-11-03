@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useRef, useState } from "react";
+import { startTransition, useActionState, useEffect, useEffectEvent, useRef, useState } from "react";
 import { Field, FormMessage, FormSection } from "@/components/form-field";
 import { InlineAlert } from "@/components/inline-alert";
 import { SelectField } from "@/components/select-field";
@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ROLE_LABELS, type Role } from "@/lib/auth/permissions";
 import { initialFormState, type FormState } from "@/lib/form";
+import { takeSharedFiles } from "@/lib/tickets/shared-files";
+import { VIDEO_TYPES } from "@/lib/uploads/limits";
 import { DRAFT_FIELDS, draftKey, FILING_KEY, guessDevice, isDeviceType, isEmptyDraft, parseDraft, type DraftFile, type TicketDraft } from "@/lib/tickets/draft";
 import { DEVICE_LABELS, DEVICE_TYPES, PRIORITIES, PRIORITY_LABELS, SEVERITIES, SEVERITY_LABELS, TICKET_TYPES, TYPE_LABELS, type DeviceType, type SeverityValue, type TicketType } from "@/lib/tickets/workflow";
 import { cn } from "@/lib/utils";
@@ -133,12 +135,16 @@ type TicketFormProps = {
   draftUserId?: string;
 };
 
+/** What Share → QA Hub brought. None means it didn't arrive. */
+type SharedFiles = { files: File[] };
+
 /** New ticket (no `ticket`) or edit an existing one. */
 export function TicketForm(props: TicketFormProps) {
   const { ticket, draftUserId } = props;
   // Browser storage only exists after hydration, so a draft fills the form by starting it again with those values.
   const [restored, setRestored] = useState<{ run: number; draft: TicketDraft | null }>({ run: 0, draft: null });
   const [defaultDevice, setDefaultDevice] = useState<DeviceType | "">("");
+  const [shared, setShared] = useState<SharedFiles | null>(null);
   const loaded = useRef(false);
   const sent = useRef(false);
 
@@ -170,6 +176,22 @@ export function TicketForm(props: TicketFormProps) {
         else if (raw) s.removeItem(draftKey(draftUserId));
       });
       setDefaultDevice(isDeviceType(remembered) ? remembered : guessDevice(navigator.userAgent, navigator.maxTouchPoints));
+      // Share → QA Hub: collected here, after the draft is settled, because restoring one starts the fields again. Whatever
+      // the address says: signing in can land somewhere else first, and the file should still be here when they come.
+      const url = new URL(window.location.href);
+      const share = url.searchParams.get("shared");
+      if (share) {
+        url.searchParams.delete("shared");
+        window.history.replaceState(null, "", url);
+      }
+      ("caches" in window ? takeSharedFiles() : Promise.resolve([])).then(
+        (files) => {
+          if (files.length || share) setShared({ files });
+        },
+        () => {
+          if (share) setShared({ files: [] });
+        },
+      );
     });
   }, [ticket, draftUserId]);
 
@@ -178,7 +200,7 @@ export function TicketForm(props: TicketFormProps) {
     setRestored((r) => ({ run: r.run + 1, draft: null }));
   }
 
-  return <TicketFormFields key={restored.run} {...props} restored={restored.draft} defaultDevice={defaultDevice} onClearDraft={clearDraft} onSending={(sending) => (sent.current = sending)} />;
+  return <TicketFormFields key={restored.run} {...props} restored={restored.draft} defaultDevice={defaultDevice} shared={shared} onSharedUsed={() => setShared(null)} onClearDraft={clearDraft} onSending={(sending) => (sent.current = sending)} />;
 }
 
 function TicketFormFields({
@@ -190,11 +212,27 @@ function TicketFormFields({
   draftUserId,
   restored,
   defaultDevice,
+  shared,
+  onSharedUsed,
   onClearDraft,
   onSending,
-}: TicketFormProps & { restored: TicketDraft | null; defaultDevice: DeviceType | ""; onClearDraft: () => void; onSending: (sending: boolean) => void }) {
+}: TicketFormProps & { restored: TicketDraft | null; defaultDevice: DeviceType | ""; shared: SharedFiles | null; onSharedUsed: () => void; onClearDraft: () => void; onSending: (sending: boolean) => void }) {
   const images = useImageAttachments(restored?.files.filter((f) => f.kind === "IMAGE"));
   const video = useVideoUpload(restored?.files.find((f) => f.kind === "VIDEO"));
+  const [shareNote, setShareNote] = useState<string | null>(null);
+  // Shared files go through the same steps as picked ones: markup, upload and every check.
+  const addShared = useEffectEvent(({ files }: SharedFiles) => {
+    onSharedUsed();
+    const videos = files.filter((f) => VIDEO_TYPES.includes(f.type));
+    const others = files.filter((f) => !VIDEO_TYPES.includes(f.type));
+    if (others.length) images.add(others);
+    if (videos.length) void video.start(videos[0]);
+    if (!files.length) setShareNote("The shared file didn't reach QA Hub. Add it here instead.");
+    else if (videos.length > 1) setShareNote("A ticket takes one video, so only the first one was added.");
+  });
+  useEffect(() => {
+    if (shared) queueMicrotask(() => addShared(shared));
+  }, [shared]);
   const form = useRef<HTMLFormElement>(null);
   const typing = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // Keeps the draft: a moment after typing, when files change, and when a phone hides or unloads the page.
@@ -290,6 +328,7 @@ function TicketFormFields({
 
   return (
     <form ref={form} onSubmit={submitKeepingInput(action)} onInput={saveSoon} className="@container grid gap-5">
+      {shareNote ? <InlineAlert tone="warn" role="status">{shareNote}</InlineAlert> : null}
       {restored ? (
         <InlineAlert tone="info" role="status">
           <div className="grid justify-items-start gap-2">

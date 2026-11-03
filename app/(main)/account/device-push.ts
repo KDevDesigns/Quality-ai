@@ -1,4 +1,5 @@
 import { base64UrlToBytes } from "@/lib/push/key";
+import { isInstalled, isIos } from "@/lib/pwa";
 import { toneSrc } from "@/lib/push/tones";
 import { pushStatus, removePushSubscription, savePushSubscription } from "./actions";
 
@@ -8,9 +9,6 @@ import { pushStatus, removePushSubscription, savePushSubscription } from "./acti
 const VAPID_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
 
 export type DeviceState = "loading" | "unsupported" | "install" | "unset" | "blocked" | "off" | "on";
-
-const isIos = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.userAgent.includes("Macintosh") && navigator.maxTouchPoints > 1);
-const isInstalled = () => window.matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
 
 export async function currentSubscription(): Promise<PushSubscription | null> {
   const reg = await navigator.serviceWorker.getRegistration("/");
