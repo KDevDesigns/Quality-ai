@@ -26,7 +26,7 @@ import {
   type TextSize,
   type Tool,
 } from "@/lib/markup/shapes";
-import { clampZoom, ZOOM_STEP, zoomAt } from "@/lib/markup/view";
+import { clampZoom, pinchZoom, ZOOM_STEP, zoomAt } from "@/lib/markup/view";
 import { IMAGE_MAX_BYTES } from "@/lib/uploads/limits";
 import { cn } from "@/lib/utils";
 import { MarkupToolbar } from "./markup-toolbar";
@@ -64,9 +64,19 @@ type Drag =
   | { mode: "callout"; tip: Point }
   | { mode: "move"; index: number; from: Point; start: Shape }
   | { mode: "resize"; index: number; handle: Handle; start: Shape }
-  | { mode: "pan"; client: Point; scroll: Point };
+  | { mode: "pan"; client: Point; scroll: Point }
+  // A finger on a tool that acts on one tap: it waits for the lift, in case this is the start of a pinch.
+  | { mode: "tap"; at: Point };
+
+/** Two fingers on the screenshot: where they started, and how far apart. */
+type Pinch = { distance: number; scale: number; middle: Point };
+
+const middleOf = (a: Point, b: Point): Point => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
 
 const hasText = (s: Shape | undefined): s is Extract<Shape, { kind: "text" | "step" | "callout" }> => s?.kind === "text" || s?.kind === "step" || s?.kind === "callout";
+
+/** On a phone, the height of everything in the sheet around the screenshot: heading, toolbar, buttons, padding. */
+const PHONE_SHEET_CHROME = 290;
 
 /** How close a click must be to a line or a handle, in screen pixels. */
 const GRAB_PX = 8;
@@ -94,6 +104,9 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
   const canvas = useRef<HTMLCanvasElement>(null);
   const textInput = useRef<HTMLInputElement>(null);
   const drag = useRef<Drag | null>(null);
+  /** Fingers on the screenshot now, by pointer id. */
+  const fingers = useRef(new Map<number, Point>());
+  const pinch = useRef<Pinch | null>(null);
   const pendingScroll = useRef<Point | null>(null);
   const measureRef = useRef<Measure | null>(null);
 
@@ -123,6 +136,8 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
       setScale(0);
       setError(null);
       setSaving(false);
+      fingers.current.clear();
+      pinch.current = null;
     };
     image.onerror = () => setError("This image couldn't be opened. Use the original, or remove it.");
     image.src = url;
@@ -133,7 +148,8 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
   const measureFit = useCallback(() => {
     const el = stage.current;
     if (!el || !img) return;
-    const h = Math.round(Math.max(240, window.innerHeight * 0.62));
+    // Phones: the sheet is at most 92% of the screen (components/ui/dialog.tsx), so the buttons stay in view under the screenshot.
+    const h = Math.round(Math.max(240, window.innerWidth < 768 ? window.innerHeight * 0.92 - PHONE_SHEET_CHROME : window.innerHeight * 0.62));
     const f = Math.min(1, el.clientWidth / img.naturalWidth, h / img.naturalHeight);
     setStageH(h);
     setFit((old) => {
@@ -328,8 +344,55 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
   }
 
   // ── Pointer ──
+  // Fingers are followed on the stage, before the canvas sees them, so a pinch also works with a finger on the black
+  // bars beside a tall screenshot. A second finger drops whatever the first had started; until both lift it's zoom and move.
+  function onFingerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.pointerType !== "touch") return;
+    fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (fingers.current.size !== 2) return;
+    const [a, b] = [...fingers.current.values()];
+    drag.current = null;
+    setDraft(null);
+    setLive(null);
+    pinch.current = { distance: Math.hypot(a.x - b.x, a.y - b.y), scale, middle: middleOf(a, b) };
+  }
+
+  function onFingerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (fingers.current.has(e.pointerId)) fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch.current) {
+      movePinch(pinch.current);
+      e.stopPropagation();
+    }
+  }
+
+  function onFingerUp(e: React.PointerEvent<HTMLDivElement>) {
+    fingers.current.delete(e.pointerId);
+    if (!pinch.current) return;
+    if (!fingers.current.size) pinch.current = null;
+    e.stopPropagation();
+  }
+
+  function movePinch(p: Pinch) {
+    const [a, b] = [...fingers.current.values()];
+    if (!a || !b) return;
+    const el = stage.current!;
+    const middle = middleOf(a, b);
+    el.scrollLeft -= middle.x - p.middle.x;
+    el.scrollTop -= middle.y - p.middle.y;
+    p.middle = middle;
+    const r = el.getBoundingClientRect();
+    zoomTo(pinchZoom(p.scale, p.distance, Math.hypot(a.x - b.x, a.y - b.y)), { x: middle.x - r.left, y: middle.y - r.top });
+  }
+
+  function placeText(p: Point, tol: number) {
+    const i = hitTest(present, p, W, tol, measure);
+    if (i >= 0 && present[i].kind === "text") retype(i);
+    else setEdit({ kind: "text", at: p, index: null, color, fontPx: presetPx });
+    setText("");
+  }
+
   function onPointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
-    if (!img || saving) return;
+    if (!img || saving || pinch.current) return;
     const el = stage.current!;
     if (e.button === 1 || (e.button === 0 && spaceHeld)) {
       e.preventDefault();
@@ -355,12 +418,14 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
       if (drag.current) e.currentTarget.setPointerCapture(e.pointerId);
       return;
     }
+    if ((tool === "text" || tool === "step") && e.pointerType === "touch") {
+      e.currentTarget.setPointerCapture(e.pointerId);
+      drag.current = { mode: "tap", at: p };
+      return;
+    }
     if (tool === "text") {
       e.preventDefault();
-      const i = hitTest(present, p, W, tol, measure);
-      if (i >= 0 && present[i].kind === "text") retype(i);
-      else setEdit({ kind: "text", at: p, index: null, color, fontPx: presetPx });
-      setText("");
+      placeText(p, tol);
       return;
     }
     if (tool === "step") {
@@ -378,7 +443,7 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
 
   function onPointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
     const d = drag.current;
-    if (!d) return;
+    if (!d || d.mode === "tap") return;
     if (d.mode === "pan") {
       const el = stage.current!;
       el.scrollLeft = d.scroll.x - (e.clientX - d.client.x);
@@ -399,6 +464,17 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
     const d = drag.current;
     drag.current = null;
     if (!d || d.mode === "pan") return;
+    // The system took the touch away (a call, a gesture): nothing half-done is kept.
+    if (e.type === "pointercancel") {
+      setDraft(null);
+      setLive(null);
+      return;
+    }
+    if (d.mode === "tap") {
+      if (tool === "text") placeText(d.at, GRAB_PX / scale);
+      else add({ kind: "step", at: d.at, n: nextStep(present), color, fontPx: presetPx });
+      return;
+    }
     if (d.mode === "move" || d.mode === "resize") {
       if (live) replaceAt(d.index, live.shape);
       setLive(null);
@@ -522,14 +598,15 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
     >
       {open ? (
         // No corner X: it would drop the image like Remove does, with no warning. Remove is in the footer.
-        <DialogContent className="sm:max-w-6xl" showCloseButton={false} onKeyDown={onKeyDown} onKeyUp={(e) => e.key === " " && setSpaceHeld(false)}>
+        <DialogContent className="max-md:gap-3 max-md:pt-6 sm:max-w-6xl" showCloseButton={false} onKeyDown={onKeyDown} onKeyUp={(e) => e.key === " " && setSpaceHeld(false)}>
           <DialogHeader>
             <DialogTitle className="truncate" title={file.name}>
               {file.name}
             </DialogTitle>
             <DialogDescription>
               {position && position.total > 1 ? `${position.index} of ${position.total} · ` : ""}
-              Mark up this screenshot: point at the problem, and hide names, account numbers and amounts before it uploads.
+              <span className="max-md:hidden">Mark up this screenshot: point at the problem, and hide names, account numbers and amounts before it uploads.</span>
+              <span className="md:hidden">Hide names, account numbers and amounts.</span>
             </DialogDescription>
           </DialogHeader>
 
@@ -557,7 +634,15 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
             onHelp={() => setHelp((h) => !h)}
           />
 
-          <div ref={stage} className="relative flex overflow-auto rounded-lg border border-line bg-black" style={{ height: stageH }}>
+          <div
+            ref={stage}
+            className="relative flex touch-none overflow-auto rounded-lg border border-line bg-black"
+            style={{ height: stageH }}
+            onPointerDownCapture={onFingerDown}
+            onPointerMoveCapture={onFingerMove}
+            onPointerUpCapture={onFingerUp}
+            onPointerCancelCapture={onFingerUp}
+          >
             {img && scale ? (
               <div className="relative m-auto shrink-0" style={{ width: img.naturalWidth * scale, height: img.naturalHeight * scale }}>
                 <canvas
@@ -591,11 +676,11 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
             </p>
           ) : null}
 
-          <DialogFooter className="sm:justify-between">
+          <DialogFooter className="max-md:flex-row max-md:flex-wrap max-md:items-center max-md:justify-between max-md:pt-3 sm:justify-between">
             <Button type="button" variant="outline" onClick={() => onDone({ action: "remove" })} disabled={saving} className="hover:bg-bad-t hover:text-bad">
               Remove
             </Button>
-            <div className="flex flex-col-reverse gap-2 sm:flex-row">
+            <div className="flex gap-2 sm:flex-row">
               <Button type="button" variant="outline" onClick={() => onDone({ action: "original" })} disabled={saving}>
                 Use original
               </Button>

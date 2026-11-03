@@ -16,6 +16,11 @@ export function clampZoom(scale: number, fit: number, imageWidth: number, dpr = 
   return Math.min(max, Math.max(fit, scale));
 }
 
+/** The zoom a two-finger pinch asks for: it follows how far the fingers have moved apart since they landed. */
+export function pinchZoom(startScale: number, startDistance: number, distance: number): number {
+  return startDistance > 0 ? startScale * (distance / startDistance) : startScale;
+}
+
 type Size = { w: number; h: number };
 type Vec = { x: number; y: number };
 

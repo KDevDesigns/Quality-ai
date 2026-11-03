@@ -1,19 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FilmIcon, XIcon } from "lucide-react";
+import { FilmIcon, RotateCwIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { discardUpload, UploadCancelled, uploadFile, type UploadHandle } from "@/lib/uploads/client";
-import { VIDEO_MAX_BYTES, VIDEO_MAX_MB, VIDEO_MAX_SECONDS, VIDEO_TYPES } from "@/lib/uploads/limits";
+import { VIDEO_MAX_BYTES, VIDEO_MAX_MB, VIDEO_MAX_SECONDS, VIDEO_TYPES, warnOnMobileData } from "@/lib/uploads/limits";
 import { formatBytes, formatDuration } from "@/lib/format";
+import type { DraftFile } from "@/lib/tickets/draft";
 import { cn } from "@/lib/utils";
 
 // One screen recording for a ticket or reply. It is too big for the form post, so it uploads straight to Storage as
-// soon as it's picked (with progress and Cancel). The form then sends only its id in "uploadIds".
+// soon as it's picked (with progress and Cancel). The form then sends only its id in "uploadIds". A big video on mobile
+// data asks first, and an upload that fails waits for Retry, because that usually only means the signal dropped.
 
 type Upload =
   | { status: "idle" }
+  | { status: "confirm"; file: File }
   | { status: "uploading"; name: string; size: number; loaded: number }
+  | { status: "failed"; file: File; message: string }
   | { status: "done"; id: string; name: string; size: number; durationSec: number | null };
 
 /** The length the browser reads from the file's headers, or null when it can't tell (e.g. a WebM recording). */
@@ -39,11 +43,18 @@ function probeDuration(file: File): Promise<number | null> {
   });
 }
 
-export function useVideoUpload() {
-  const [upload, setUpload] = useState<Upload>({ status: "idle" });
+/** What Android Chrome says it's connected through; other browsers don't say. */
+const connectionType = () => (navigator as { connection?: { type?: string } }).connection?.type;
+
+export function useVideoUpload(restored?: DraftFile) {
+  const [upload, setUpload] = useState<Upload>(() =>
+    restored ? { status: "done", id: restored.id, name: restored.name, size: restored.size, durationSec: restored.durationSec } : { status: "idle" },
+  );
   const [error, setError] = useState<string | null>(null);
   const handle = useRef<UploadHandle | null>(null);
-  const busy = upload.status === "uploading";
+  // Reading a picked video's length takes a moment; it counts as uploading, so the post can't go without it.
+  const [checking, setChecking] = useState(false);
+  const busy = upload.status === "uploading" || checking;
 
   // Leaving the page mid-upload would throw the upload away; let the browser ask first.
   useEffect(() => {
@@ -54,14 +65,21 @@ export function useVideoUpload() {
   }, [busy]);
 
   async function start(file: File) {
-    if (upload.status !== "idle") return setError("Only one video per post. Remove the current one first, or add another in a reply.");
+    if (upload.status !== "idle" || checking) return setError("Only one video per post. Remove the current one first, or add another in a reply.");
     if (!VIDEO_TYPES.includes(file.type)) return setError(`${file.name} isn't an MP4 or WebM video. Snipping Tool and Xbox Game Bar (Win+Alt+R) save MP4.`);
     if (file.size > VIDEO_MAX_BYTES) return setError(`${file.name} is ${formatBytes(file.size)}. Videos can be at most ${VIDEO_MAX_MB} MB.`);
+    setChecking(true);
     const seconds = await probeDuration(file);
+    setChecking(false);
     if (seconds !== null && seconds > VIDEO_MAX_SECONDS + 0.5) {
       return setError(`${file.name} is ${formatDuration(seconds)} long. Videos can be at most ${formatDuration(VIDEO_MAX_SECONDS)}; trim it or split it.`);
     }
+    setError(null);
+    if (warnOnMobileData(file.size, connectionType())) return setUpload({ status: "confirm", file });
+    await send(file);
+  }
 
+  async function send(file: File) {
     setError(null);
     setUpload({ status: "uploading", name: file.name, size: file.size, loaded: 0 });
     const h = uploadFile(file, "VIDEO", (loaded) => setUpload((u) => (u.status === "uploading" ? { ...u, loaded } : u)));
@@ -70,8 +88,8 @@ export function useVideoUpload() {
       const done = await h.done;
       setUpload({ status: "done", ...done });
     } catch (e) {
-      setUpload({ status: "idle" });
-      if (!(e instanceof UploadCancelled)) setError(e instanceof Error ? e.message : "The upload failed. Try again.");
+      if (e instanceof UploadCancelled) setUpload({ status: "idle" });
+      else setUpload({ status: "failed", file, message: e instanceof Error ? e.message : "The upload failed. Try again." });
     } finally {
       handle.current = null;
     }
@@ -81,7 +99,13 @@ export function useVideoUpload() {
     upload,
     error,
     busy,
+    /** Waiting for an answer or for Retry; sending now would leave the video out. */
+    blocked: upload.status === "confirm" || upload.status === "failed",
     start,
+    /** Uploads the video waiting for an answer or for Retry. */
+    send: () => {
+      if (upload.status === "confirm" || upload.status === "failed") void send(upload.file);
+    },
     cancel: () => handle.current?.cancel(),
     /** Drops an uploaded video that hasn't been sent; the server deletes the file. */
     remove: () => {
@@ -141,6 +165,34 @@ export function VideoPicker({ state, id = "video", compact }: { state: VideoUplo
           <span className="text-[0.7813rem] text-muted-foreground">
             {compact ? `One MP4 or WebM, up to 3 min / ${VIDEO_MAX_MB} MB.` : `A screen recording: one MP4 or WebM, up to 3 min and ${VIDEO_MAX_MB} MB. You can also drop it here.`}
           </span>
+        </div>
+      ) : upload.status === "confirm" ? (
+        <div className="grid gap-2 text-[0.8125rem]">
+          <p>
+            This video is {formatBytes(upload.file.size)} and you&apos;re on mobile data. Upload anyway?
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={state.send}>
+              Upload anyway
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={state.remove}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : upload.status === "failed" ? (
+        <div className="grid gap-2 text-[0.8125rem]">
+          <p role="alert" className="font-medium text-destructive">
+            {upload.file.name}: {upload.message}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={state.send}>
+              <RotateCwIcon /> Retry
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={state.remove}>
+              Remove
+            </Button>
+          </div>
         </div>
       ) : upload.status === "uploading" ? (
         <div className="grid gap-1.5">

@@ -123,6 +123,18 @@ export async function resetPassword(id: string): Promise<UserFormState> {
   return { ok: true, tempPassword, email: user.email };
 }
 
+/**
+ * For a lost phone: ends every session of this person and stops device notifications, which carry ticket text and would
+ * otherwise keep arriving on it. Their password stays; they sign in again and turn notifications back on.
+ */
+export async function signOutAllDevices(id: string): Promise<FormState> {
+  const me = await requireAction("users.manage");
+  if (id === me.id) return { ok: false, message: "Use Sign out on your own devices." };
+  await auth.deleteUserSessions(id);
+  await db.pushSubscription.deleteMany({ where: { userId: id } });
+  return { ok: true };
+}
+
 /** Removes a forgot-password request without resetting, e.g. when the person remembered their password. */
 export async function dismissResetRequest(id: string): Promise<FormState> {
   await requireAction("users.manage");

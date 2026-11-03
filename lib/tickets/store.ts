@@ -11,11 +11,13 @@ import {
   isDone,
   OPEN_STATUSES,
   PRIORITY_LABELS,
+  DEVICE_LABELS,
   SEVERITY_LABELS,
   ticketScope,
   transitionError,
   TYPE_LABELS,
   type Actor,
+  type DeviceType,
   type SeverityValue,
   type TicketStatus,
 } from "./workflow";
@@ -137,6 +139,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
                 severity: input.severity,
                 priority: input.priority,
                 foundIn: input.foundIn,
+                deviceType: input.deviceType,
                 reporterId: actor.id,
                 assigneeId: input.assigneeId,
                 createdAt: at,
@@ -162,6 +165,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
       if (!canEditTicket(t, actor)) throw new TicketError("Only the person who filed this ticket, or an admin, can edit it.");
 
       const sev = (s: string | null) => (s ? SEVERITY_LABELS[s as SeverityValue] : null);
+      const device = (d: string | null) => (d ? DEVICE_LABELS[d as DeviceType] : null);
       const changes: { field: string; from?: string | null; to?: string | null }[] = [];
       if (input.type !== t.type) changes.push({ field: "type", from: TYPE_LABELS[t.type], to: TYPE_LABELS[input.type] });
       if (input.title !== t.title) changes.push({ field: "title", from: t.title, to: input.title });
@@ -170,6 +174,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
       if (input.severity !== t.severity) changes.push({ field: "severity", from: sev(t.severity), to: sev(input.severity) });
       if (input.priority !== t.priority) changes.push({ field: "priority", from: PRIORITY_LABELS[t.priority], to: PRIORITY_LABELS[input.priority] });
       if (input.foundIn !== t.foundIn) changes.push({ field: "found in", from: t.foundIn, to: input.foundIn });
+      if (input.deviceType !== t.deviceType) changes.push({ field: "device type", from: device(t.deviceType), to: device(input.deviceType) });
       if (!changes.length) return 0;
 
       await db.$transaction(async (tx) => {

@@ -339,14 +339,14 @@ into a drawer); tablets in portrait and up, laptops and big screens stay as they
 **3.7a done when:** at 375 px, in light and dark mode, every page works with no sideways scrolling; the bottom bar
 reaches every page for each role; a person can read and reply to a ticket one-handed; a laptop looks unchanged.
 
-#### 3.7b — Filing a ticket from the phone
+#### 3.7b — Filing a ticket from the phone (built 2026-11-03, awaiting a real-phone test)
 - **Filing a ticket from the phone:**
   - **Take photo** / **Choose from gallery** for screenshots. Check that iPhone HEIC photos arrive as JPEG; convert in
     the browser if not.
-  - **Phone screen recordings:** Android records MP4 (works today). iPhone records `.mov`, which is refused today.
-    Decide: accept H.264 `.mov` and check it plays in Chrome on Windows, or show a clear "how to share as MP4" tip.
-  - **Device details** box for mobile-app bugs: phone model, Android/iOS version, app name and version, Wi-Fi or
-    mobile data. Remembered per user ("My phones") so it's one tap next time.
+  - **Phone screen recordings:** Android records MP4 (works today). Testers use Android, so iPhone `.mov` stays
+    refused (decided 2026-11-03).
+  - **Device type** dropdown on bugs: Computer, Android phone, iPhone or Tablet, remembered on that device (decided
+    2026-11-03, instead of typing phone details).
   - **Draft autosave** on the device, because testers switch to the app under test to take more screenshots, and the
     phone may unload the page. Plain browser storage, cleared when the ticket is filed.
   - Uploads over mobile data: a progress bar, a clear retry when the signal drops, and a warning before a big video

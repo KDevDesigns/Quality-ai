@@ -1,23 +1,26 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { ImagePlusIcon, MonitorIcon, PencilIcon, XIcon } from "lucide-react";
+import { CameraIcon, ImageIcon, ImagePlusIcon, MonitorIcon, PencilIcon, RotateCwIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTouchScreen } from "@/hooks/use-touch-screen";
 import { shrinkImage } from "@/lib/markup/encode";
 import { discardUpload, UploadCancelled, uploadFile, type UploadHandle } from "@/lib/uploads/client";
 import { IMAGE_MAX_BYTES, IMAGE_TYPES, MAX_IMAGES_PER_POST } from "@/lib/uploads/limits";
 import { formatBytes } from "@/lib/format";
+import type { DraftFile } from "@/lib/tickets/draft";
 import { cn } from "@/lib/utils";
 import { MarkupEditor, type MarkupResult } from "./markup/markup-editor";
 
 // Images for a ticket or comment: pick them, drop them, paste a screenshot (Ctrl+V) or capture a tab or window.
 // Each one opens in the markup editor first (one at a time), then uploads straight to Storage; the form sends only
-// their ids in "uploadIds". Edit reopens an added image and replaces its upload.
+// their ids in "uploadIds". Edit reopens an added image and replaces its upload. An upload that fails stays on screen
+// with Retry, because on mobile data that usually only means the signal dropped.
 
 type Item = {
   key: number;
-  /** Kept so Edit can reopen the image in the markup editor. */
-  file: File;
+  /** Kept so Edit can reopen the image in the markup editor, and Retry can send it again. Null for one restored from a draft. */
+  file: File | null;
   name: string;
   size: number;
   preview: string;
@@ -25,6 +28,8 @@ type Item = {
   /** Set once the server has checked the arrived file. */
   id: string | null;
   handle: UploadHandle | null;
+  /** Why the upload failed; it waits for Retry or Remove. */
+  failed: string | null;
 };
 
 /** An image waiting in the markup editor. With `replaceKey` it is an added image being edited again. */
@@ -67,8 +72,10 @@ export const canCaptureScreen = () => typeof navigator !== "undefined" && !!navi
 /** Whether this browser can capture a tab or window. False while hydrating, like the server render, then the real answer. */
 const useCanCapture = () => useSyncExternalStore(() => () => {}, canCaptureScreen, () => false);
 
-export function useImageAttachments() {
-  const [items, setItems] = useState<Item[]>([]);
+export function useImageAttachments(restored: DraftFile[] = []) {
+  const [items, setItems] = useState<Item[]>(() =>
+    restored.map((f, i) => ({ key: -1 - i, file: null, name: f.name, size: f.size, preview: "", loaded: f.size, id: f.id, handle: null, failed: null })),
+  );
   const [queue, setQueue] = useState<Queued[]>([]);
   // How many images the current run through the editor started with, for "2 of 3".
   const [batch, setBatch] = useState(0);
@@ -80,7 +87,7 @@ export function useImageAttachments() {
   // Screenshots being converted to a smaller file before upload (lib/markup/encode.ts).
   const [converting, setConverting] = useState(0);
   // Images still in the editor or being converted count as busy too: the post can't go without them.
-  const busy = items.some((i) => !i.id) || queue.length > 0 || converting > 0;
+  const busy = items.some((i) => !i.id && !i.failed) || queue.length > 0 || converting > 0;
 
   // Leaving the page mid-upload would throw the upload away; let the browser ask first.
   useEffect(() => {
@@ -108,20 +115,25 @@ export function useImageAttachments() {
       return list.filter((i) => i.key !== key);
     });
 
-  function start(file: File) {
-    const key = nextKey++;
+  function send(key: number, file: File) {
     const handle = uploadFile(file, "IMAGE", (loaded) => update(key, { loaded }));
-    setItems((list) => [...list, { key, file, name: file.name, size: file.size, preview: URL.createObjectURL(file), loaded: 0, id: null, handle }]);
+    update(key, { handle, failed: null, loaded: 0 });
     handle.done.then(
       (done) => update(key, { id: done.id, handle: null, loaded: file.size }),
       (e) => {
-        drop(key);
-        if (e instanceof UploadCancelled) return;
+        if (e instanceof UploadCancelled) return drop(key);
         // Several images upload at once, so say which one this was.
         const message = e instanceof Error ? e.message : "It couldn't be uploaded. Try again.";
         setError(message.includes(file.name) ? message : `${file.name}: ${message}`);
+        update(key, { handle: null, failed: message });
       },
     );
+  }
+
+  function start(file: File) {
+    const key = nextKey++;
+    setItems((list) => [...list, { key, file, name: file.name, size: file.size, preview: URL.createObjectURL(file), loaded: 0, id: null, handle: null, failed: null }]);
+    send(key, file);
   }
 
   function add(list: Iterable<File>) {
@@ -131,7 +143,8 @@ export function useImageAttachments() {
     const ok = images.filter((f) => f.size <= IMAGE_MAX_BYTES);
     const room = MAX_IMAGES_PER_POST - items.length - queue.length;
     enqueue(ok.slice(0, Math.max(0, room)).map((file) => ({ file })));
-    if (images.length < incoming.length) setError("Only PNG, JPEG, WebP and GIF images go here. Add a recording with Add video.");
+    if (incoming.some((f) => f.type === "image/heic" || f.type === "image/heif" || /\.hei[cf]$/i.test(f.name))) setError("HEIC photos can't be added. Use a JPEG photo or a screenshot.");
+    else if (images.length < incoming.length) setError("Only PNG, JPEG, WebP and GIF images go here. Add a recording with Add video.");
     else if (tooBig.length) setError(`${tooBig.map((f) => f.name).join(", ")} is larger than ${IMAGE_MAX_BYTES / 1024 / 1024} MB.`);
     else if (ok.length > room) setError(`At most ${MAX_IMAGES_PER_POST} images per post.`);
     else setError(null);
@@ -193,6 +206,8 @@ export function useImageAttachments() {
     items,
     error,
     busy,
+    /** An upload failed and is waiting for Retry or Remove; sending now would leave it out. */
+    failed: items.some((i) => i.failed),
     add,
     onPaste,
     /** The image in the markup editor now, and where it is in the run ("2 of 3"). */
@@ -202,7 +217,13 @@ export function useImageAttachments() {
     /** Reopens an added image in the editor; saving replaces its upload. */
     edit: (key: number) => {
       const item = items.find((i) => i.key === key);
-      if (item) enqueue([{ file: item.file, replaceKey: key }]);
+      if (item?.file) enqueue([{ file: item.file, replaceKey: key }]);
+    },
+    retry: (key: number) => {
+      const item = items.find((i) => i.key === key);
+      if (!item?.file) return;
+      setError(null);
+      send(key, item.file);
     },
     /** Grabs one frame of a tab or window the person picks and opens it in the editor. */
     capture: async () => {
@@ -225,7 +246,9 @@ export type ImageAttachments = ReturnType<typeof useImageAttachments>;
 export function ImagePicker({ state, id = "images", compact }: { state: ImageAttachments; id?: string; compact?: boolean }) {
   const [over, setOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const canCapture = useCanCapture();
+  const touch = useTouchScreen();
   const full = state.items.length >= MAX_IMAGES_PER_POST;
 
   // Ctrl+V anywhere on the page that isn't a text field lands here too, so a fresh Win+Shift+S can be pasted without
@@ -284,9 +307,28 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
           e.target.value = "";
         }}
       />
+      {/* Opens the phone's camera straight away. */}
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden
+        onChange={(e) => {
+          state.add([...(e.target.files ?? [])]);
+          e.target.value = "";
+        }}
+      />
       <div className="flex flex-wrap items-center gap-3">
+        {touch ? (
+          <Button type="button" variant="outline" size="sm" onClick={() => cameraRef.current?.click()} disabled={full}>
+            <CameraIcon /> Take photo
+          </Button>
+        ) : null}
         <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={full}>
-          <ImagePlusIcon /> Add images
+          <ImagePlusIcon /> {touch ? "Choose from gallery" : "Add images"}
         </Button>
         {canCapture ? (
           <Button type="button" variant="outline" size="sm" onClick={state.capture} disabled={full} title="Capture a tab or window, such as the ERP">
@@ -294,8 +336,7 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
           </Button>
         ) : null}
         <span className="text-[0.7813rem] text-muted-foreground">
-          {compact ? "Or paste a screenshot (Ctrl+V) into your message or this box." : "Or click this box and paste a screenshot (Ctrl+V), or drop images here."} Each
-          one opens in the markup tools first. Up to {MAX_IMAGES_PER_POST}, {IMAGE_MAX_BYTES / 1024 / 1024} MB each.
+          {touch ? "" : compact ? "Or paste a screenshot (Ctrl+V) into your message or this box. " : "Or click this box and paste a screenshot (Ctrl+V), or drop images here. "}Each one opens in the markup tools first. Up to {MAX_IMAGES_PER_POST}, {IMAGE_MAX_BYTES / 1024 / 1024} MB each.
         </span>
       </div>
       {state.items.length ? (
@@ -304,17 +345,31 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
             const pct = i.size ? Math.min(100, Math.round((i.loaded / i.size) * 100)) : 0;
             return (
               <li key={i.key} className="relative w-32 overflow-hidden rounded-lg border border-line bg-surface2">
-                {/* eslint-disable-next-line @next/next/no-img-element -- a local blob preview */}
-                <img src={i.preview} alt="" className={cn("h-20 w-full object-cover", !i.id && "opacity-60")} />
-                {!i.id ? (
+                {i.preview ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- a local blob preview
+                  <img src={i.preview} alt="" className={cn("h-20 w-full object-cover", !i.id && "opacity-60")} />
+                ) : (
+                  // Restored from a draft: the file is safely uploaded, but the phone no longer has its preview.
+                  <div className="flex h-20 items-center justify-center text-muted-foreground" aria-hidden>
+                    <ImageIcon className="size-6" />
+                  </div>
+                )}
+                {!i.id && !i.failed ? (
                   <div className="h-1.5 overflow-hidden bg-surface3" role="progressbar" aria-label={`Uploading ${i.name}`} aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
                     <div className="h-full bg-acc transition-[width]" style={{ width: `${pct}%` }} />
                   </div>
                 ) : null}
-                <div className="truncate px-2 py-1 text-[0.7188rem] text-muted-foreground" title={i.name}>
-                  {i.id ? formatBytes(i.size) : `${pct}%`} · {i.name}
+                <div className={cn("truncate px-2 py-1 text-[0.7188rem]", i.failed ? "font-medium text-destructive" : "text-muted-foreground")} title={i.name}>
+                  {i.id ? formatBytes(i.size) : i.failed ? "Failed" : `${pct}%`} · {i.name}
                 </div>
-                {i.id ? (
+                {i.failed ? (
+                  <div className="px-1.5 pb-1.5">
+                    <Button type="button" variant="outline" size="sm" className="w-full" aria-label={`Retry ${i.name}`} onClick={() => state.retry(i.key)}>
+                      <RotateCwIcon /> Retry
+                    </Button>
+                  </div>
+                ) : null}
+                {i.id && i.file ? (
                   <button
                     type="button"
                     onClick={() => state.edit(i.key)}
@@ -328,8 +383,8 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
                 <button
                   type="button"
                   onClick={() => state.remove(i.key)}
-                  aria-label={i.id ? `Remove ${i.name}` : `Cancel uploading ${i.name}`}
-                  title={i.id ? "Remove" : "Cancel upload"}
+                  aria-label={i.id || i.failed ? `Remove ${i.name}` : `Cancel uploading ${i.name}`}
+                  title={i.id || i.failed ? "Remove" : "Cancel upload"}
                   className="absolute top-1 right-1 flex size-6 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
                 >
                   <XIcon className="size-3.5" />

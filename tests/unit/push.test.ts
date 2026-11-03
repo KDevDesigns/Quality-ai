@@ -248,7 +248,7 @@ describe("pushStore and notifyTicket", () => {
   });
 
   const newTicket = (over: Partial<Parameters<ReturnType<typeof ticketStore>["create"]>[1]> = {}) =>
-    ticketStore(db).create(qa, { type: "BUG", title: "Something broke", description: "x", areaId: null, severity: "S3", priority: "P3", foundIn: null, assigneeId: dev.id, ...over });
+    ticketStore(db).create(qa, { type: "BUG", title: "Something broke", description: "x", areaId: null, severity: "S3", priority: "P3", foundIn: null, deviceType: null, assigneeId: dev.id, ...over });
 
   it("sends each person their own sound choice", async () => {
     const s = pushStore(db);

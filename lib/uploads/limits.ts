@@ -20,6 +20,12 @@ export const VIDEO_MAX_BYTES = VIDEO_MAX_MB * 1024 * 1024;
 /** Uploads one person may have waiting (picked but not yet sent with a ticket or reply). */
 export const MAX_PENDING_PER_USER = 20;
 
+/** A video bigger than this asks first on mobile data. */
+export const MOBILE_DATA_WARN_BYTES = 10 * 1024 * 1024;
+
+/** `connectionType` is what Android Chrome reports; other browsers report nothing and just upload. */
+export const warnOnMobileData = (size: number, connectionType: string | undefined) => connectionType === "cellular" && size > MOBILE_DATA_WARN_BYTES;
+
 export const maxBytes = (kind: UploadKind) => (kind === "IMAGE" ? IMAGE_MAX_BYTES : VIDEO_MAX_BYTES);
 export const acceptedTypes = (kind: UploadKind) => (kind === "IMAGE" ? IMAGE_TYPES : VIDEO_TYPES);
 

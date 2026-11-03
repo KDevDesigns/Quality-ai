@@ -9,6 +9,12 @@ export type UploadHandle = { done: Promise<Uploaded>; cancel: () => void };
 
 export class UploadCancelled extends Error {}
 
+/** A phone with no signal: the browser's own "Failed to fetch" means nothing to anyone. */
+const reach = (url: string, init: RequestInit) =>
+  fetch(url, init).catch(() => {
+    throw new Error("The upload was interrupted. Check the connection and try again.");
+  });
+
 async function json<T>(res: Response): Promise<T> {
   const body = (await res.json().catch(() => null)) as (T & { error?: string }) | null;
   if (!res.ok || !body) throw new Error(body?.error ?? `The upload failed (${res.status}). Try again.`);
@@ -22,7 +28,7 @@ export function uploadFile(file: File, kind: UploadKind, onProgress: (loaded: nu
 
   const done = (async () => {
     const signed = await json<{ id: string; url: string; headers: Record<string, string> }>(
-      await fetch("/uploads/sign", {
+      await reach("/uploads/sign", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ kind, name: file.name, type: file.type, size: file.size }),
@@ -43,7 +49,7 @@ export function uploadFile(file: File, kind: UploadKind, onProgress: (loaded: nu
       req.send(file);
     });
 
-    return json<Uploaded>(await fetch(`/uploads/${encodeURIComponent(signed.id)}`, { method: "POST" }));
+    return json<Uploaded>(await reach(`/uploads/${encodeURIComponent(signed.id)}`, { method: "POST" }));
   })();
 
   // Whatever went wrong, don't leave a half-done upload waiting on the server.

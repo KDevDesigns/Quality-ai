@@ -13,6 +13,9 @@ export type TicketStatus = (typeof TICKET_STATUSES)[number];
 export const SEVERITIES = ["S1", "S2", "S3", "S4"] as const;
 export type SeverityValue = (typeof SEVERITIES)[number];
 
+export const DEVICE_TYPES = ["COMPUTER", "ANDROID", "IPHONE", "TABLET"] as const;
+export type DeviceType = (typeof DEVICE_TYPES)[number];
+
 export const TYPE_LABELS: Record<TicketType, string> = { BUG: "Bug", SUGGESTION: "Suggestion", IMPROVEMENT: "Improvement" };
 
 /** The colour each type is shown in: Bug red, Suggestion amber, Improvement blue (the --type-* tokens in globals.css). */
@@ -46,6 +49,8 @@ export const STATUS_TONES: Record<TicketStatus, Tone> = {
 };
 
 export const SEVERITY_LABELS: Record<SeverityValue, string> = { S1: "S1 Critical", S2: "S2 Major", S3: "S3 Minor", S4: "S4 Trivial" };
+
+export const DEVICE_LABELS: Record<DeviceType, string> = { COMPUTER: "Computer", ANDROID: "Android phone", IPHONE: "iPhone", TABLET: "Tablet" };
 export const PRIORITIES = ["P1", "P2", "P3", "P4"] as const;
 export const PRIORITY_LABELS = { P1: "P1 Urgent", P2: "P2 High", P3: "P3 Normal", P4: "P4 Low" } as const;
 

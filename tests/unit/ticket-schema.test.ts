@@ -12,7 +12,7 @@ describe("ticket schemas", () => {
       areaId: null,
       severity: "S2",
       priority: "P2",
-      foundIn: null,
+      foundIn: null, deviceType: null,
       assigneeId: null,
     });
   });
