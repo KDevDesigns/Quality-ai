@@ -1,6 +1,6 @@
 # Changelog
 
-## Bug fixes, photos, DAR periods and ticket tabs (Phase 3.7c, 2026-11-03)
+## Bug fixes, photos, DAR periods and ticket tabs (Phase 3.7a follow-up, 2026-11-03)
 
 The look stays as on the live site. The phone redesign tried on 2026-11-03 is kept only on the branch `phase-3.7a-mobile-look`, for
 reference, while the user designs the new UI in the Claude Design canvas.
