@@ -1,15 +1,22 @@
 import type { MetadataRoute } from "next";
 
-// Lets phones install QA Hub to the home screen. iPhones need this before they allow device notifications.
+// Lets phones and computers install QA Hub as an app. iPhones need this before they allow device notifications.
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: "/",
     name: "QA Hub",
     short_name: "QA Hub",
     description: "DCWD ERP ticket hub",
     start_url: "/",
+    scope: "/",
     display: "standalone",
     background_color: "#ffffff",
-    theme_color: "#ffffff",
-    icons: [{ src: "/dcwd-seal.png", sizes: "512x512", type: "image/png", purpose: "any" }],
+    theme_color: "#2233b8",
+    icons: [
+      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      // On solid white with a margin, so Android can crop it to any shape without a white square around a small seal.
+      { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+    ],
   };
 }
