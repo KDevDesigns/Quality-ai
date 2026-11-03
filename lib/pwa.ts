@@ -11,3 +11,10 @@ export const isWindows = (nav: Nav = navigator) => nav.userAgent.includes("Windo
 /** Running from its own icon instead of a browser tab. */
 export const isInstalled = (win: { matchMedia(query: string): { matches: boolean }; navigator: Nav } = window) =>
   win.matchMedia("(display-mode: standalone)").matches || win.navigator.standalone === true;
+
+type BadgeNav = { setAppBadge?(count: number): Promise<void>; clearAppBadge?(): Promise<void> };
+
+/** The unread count on the installed app's icon. Browsers without badges, or a tab that isn't installed, just ignore it. */
+export function showBadge(count: number, nav: BadgeNav = navigator) {
+  (count > 0 ? nav.setAppBadge?.(count) : nav.clearAppBadge?.())?.catch(() => {});
+}

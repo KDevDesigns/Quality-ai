@@ -1,5 +1,5 @@
 // QA Hub's service worker: shows device notifications (Web Push) even when no QA Hub tab is open.
-// The server sends { title, body, url, tag, tone, stack? } (see lib/push/message.ts). With the person's
+// The server sends { title, body, url, tag, tone, count, stack? } (see lib/push/message.ts). With the person's
 // "Show message previews" off, it holds no ticket text.
 //
 // Sound: a service worker can't play audio, and browsers can't attach a custom sound to a notification. So when a QA
@@ -67,6 +67,10 @@ self.addEventListener("push", (event) => {
         badge: "/dcwd-seal.png",
         data: { url: msg.url, replies },
       });
+      // The unread count on the installed app's icon, even with QA Hub closed.
+      if (typeof msg.count === "number") {
+        await (msg.count > 0 ? self.navigator.setAppBadge?.(msg.count) : self.navigator.clearAppBadge?.())?.catch(() => {});
+      }
       await refreshTabs();
     })(),
   );

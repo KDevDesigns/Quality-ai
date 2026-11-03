@@ -9,6 +9,7 @@ import { pushStore } from "@/lib/push/store";
 import { DEFAULT_TONE, effectiveTone, isTone, toneSrc } from "@/lib/push/tones";
 import { webPushSender } from "@/lib/push/web-push";
 import { isPushEndpoint, pushSubscriptionInput, workHoursInput } from "@/lib/schemas/push";
+import { notificationStore } from "@/lib/tickets/notifications";
 import { ticketStore } from "@/lib/tickets/store";
 import type { Actor } from "@/lib/tickets/workflow";
 import { createTestDb } from "./helpers/test-db";
@@ -263,6 +264,24 @@ describe("pushStore and notifyTicket", () => {
 
     const tones = Object.fromEntries(f.sent.map((x) => [x.endpoint.split("/").pop(), JSON.parse(x.payload).tone]));
     expect(tones).toEqual({ dev: "tone-1", admin: "silent" });
+  });
+
+  it("tells each person's device their own unread count, for the app icon", async () => {
+    const s = pushStore(db);
+    await s.subscribe(dev.id, sub("dev"), "x");
+    await s.subscribe(admin.id, sub("admin"), "x");
+    const { id } = await newTicket();
+    const commentId = await ticketStore(db).comment(qa, id, "Hello");
+    const unread = notificationStore(db);
+    await unread.markAllRead(admin);
+
+    const f = fakeSender();
+    await notifyTicket(db, f.send, { ticketId: id, actorId: qa.id, event: { kind: "reply", commentId } }, { now: at });
+
+    const counts = Object.fromEntries(f.sent.map((x) => [x.endpoint.split("/").pop(), JSON.parse(x.payload).count]));
+    expect(counts.dev).toBe((await unread.unread(dev, 1)).count);
+    expect(counts.dev).toBeGreaterThan(0);
+    expect(counts.admin).toBe(0);
   });
 
   it("outside work hours sends silently or not at all, as each person chose", async () => {
