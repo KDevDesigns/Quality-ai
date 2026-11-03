@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { CROP_DIM, CROP_LINE, DEFAULT_MARK_COLOR, MARK_COLORS, ON_MARK, TEXT_OUTLINE } from "@/lib/markup/colors";
 import { canvasMeasure, drawSelection, drawShape, FONT } from "@/lib/markup/draw";
 import { encodeCanvas } from "@/lib/markup/encode";
@@ -75,13 +76,11 @@ const middleOf = (a: Point, b: Point): Point => ({ x: (a.x + b.x) / 2, y: (a.y +
 
 const hasText = (s: Shape | undefined): s is Extract<Shape, { kind: "text" | "step" | "callout" }> => s?.kind === "text" || s?.kind === "step" || s?.kind === "callout";
 
-/** On a phone, the height of everything in the sheet around the screenshot: heading, toolbar, buttons, padding. */
-const PHONE_SHEET_CHROME = 290;
-
 /** How close a click must be to a line or a handle, in screen pixels. */
 const GRAB_PX = 8;
 
 export function MarkupEditor({ file, position, onDone }: { file: File | null; position: { index: number; total: number } | null; onDone: (r: MarkupResult) => void }) {
+  const mobile = useIsMobile();
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [tool, setTool] = useState<Tool>("box");
   const [color, setColor] = useState<string>(DEFAULT_MARK_COLOR);
@@ -148,15 +147,16 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
   const measureFit = useCallback(() => {
     const el = stage.current;
     if (!el || !img) return;
-    // Phones: the sheet is at most 92% of the screen (components/ui/dialog.tsx), so the buttons stay in view under the screenshot.
-    const h = Math.round(Math.max(240, window.innerWidth < 768 ? window.innerHeight * 0.92 - PHONE_SHEET_CHROME : window.innerHeight * 0.62));
+    // Phones: the editor fills the screen and the stage takes all the height the tools leave.
+    const h = mobile ? el.clientHeight : Math.round(Math.max(240, window.innerHeight * 0.62));
+    if (!h) return;
     const f = Math.min(1, el.clientWidth / img.naturalWidth, h / img.naturalHeight);
     setStageH(h);
     setFit((old) => {
       setScale((s) => (s === 0 || s === old ? f : clampZoom(s, f, img.naturalWidth, window.devicePixelRatio || 1)));
       return f;
     });
-  }, [img]);
+  }, [img, mobile]);
 
   useEffect(() => {
     if (!img) return;
@@ -598,12 +598,16 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
     >
       {open ? (
         // No corner X: it would drop the image like Remove does, with no warning. Remove is in the footer.
-        <DialogContent className="max-md:gap-3 max-md:pt-6 sm:max-w-6xl" showCloseButton={false} onKeyDown={onKeyDown} onKeyUp={(e) => e.key === " " && setSpaceHeld(false)}>
-          <DialogHeader>
-            <DialogTitle className="truncate" title={file.name}>
+        <DialogContent
+          className="sm:max-w-6xl max-md:inset-0 max-md:flex max-md:h-dvh max-md:max-h-none max-md:max-w-none max-md:flex-col max-md:gap-2 max-md:overflow-hidden max-md:rounded-none max-md:px-3 max-md:pt-[calc(0.75rem+env(safe-area-inset-top))] max-md:pb-[calc(0.75rem+env(safe-area-inset-bottom))] max-md:short:grid max-md:short:grid-cols-[minmax(0,1fr)_17rem] max-md:short:grid-rows-[auto_minmax(0,1fr)_auto_auto]"
+          showGrabber={false}
+          showCloseButton={false}
+          onKeyDown={onKeyDown} onKeyUp={(e) => e.key === " " && setSpaceHeld(false)}>
+          <DialogHeader className="max-md:shrink-0 max-md:pr-0 max-md:short:col-start-2">
+            <DialogTitle className="truncate max-md:text-[1.0625rem]" title={file.name}>
               {file.name}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="max-md:text-[0.8125rem] max-md:short:hidden">
               {position && position.total > 1 ? `${position.index} of ${position.total} · ` : ""}
               <span className="max-md:hidden">Mark up this screenshot: point at the problem, and hide names, account numbers and amounts before it uploads.</span>
               <span className="md:hidden">Hide names, account numbers and amounts.</span>
@@ -611,6 +615,7 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
           </DialogHeader>
 
           <MarkupToolbar
+            className="max-md:order-2 max-md:shrink-0 max-md:short:col-start-2 max-md:short:row-start-2 max-md:short:content-start max-md:short:overflow-y-auto"
             tool={tool}
             onTool={pickTool}
             color={edit?.color ?? (sel && "color" in sel ? sel.color : color)}
@@ -636,8 +641,8 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
 
           <div
             ref={stage}
-            className="relative flex touch-none overflow-auto rounded-lg border border-line bg-black"
-            style={{ height: stageH }}
+            className="relative flex touch-none overflow-auto rounded-lg border border-line bg-black max-md:order-1 max-md:min-h-0 max-md:flex-1 max-md:short:col-start-1 max-md:short:row-span-4 max-md:short:row-start-1"
+            style={mobile ? undefined : { height: stageH }}
             onPointerDownCapture={onFingerDown}
             onPointerMoveCapture={onFingerMove}
             onPointerUpCapture={onFingerUp}
@@ -671,12 +676,12 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
           </div>
 
           {error && img ? (
-            <p role="alert" className="text-[0.7813rem] font-medium text-destructive">
+            <p role="alert" className="text-[0.7813rem] font-medium text-destructive max-md:order-3 max-md:shrink-0 max-md:short:col-start-2 max-md:short:row-start-3">
               {error}
             </p>
           ) : null}
 
-          <DialogFooter className="max-md:flex-row max-md:flex-wrap max-md:items-center max-md:justify-between max-md:pt-3 sm:justify-between">
+          <DialogFooter className="sm:justify-between max-md:order-4 max-md:mx-0 max-md:mb-0 max-md:shrink-0 max-md:flex-row max-md:flex-wrap max-md:items-center max-md:justify-between max-md:border-t-0 max-md:p-0 max-md:pt-1 max-md:short:col-start-2 max-md:short:row-start-4">
             <Button type="button" variant="outline" onClick={() => onDone({ action: "remove" })} disabled={saving} className="hover:bg-bad-t hover:text-bad">
               Remove
             </Button>

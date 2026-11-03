@@ -228,7 +228,7 @@ through, so it says so: check **Tickets** before trying again, or the same ticke
 
 - **Everyone has My DAR** (QA testers, developers and admins, in the sidebar under Tickets). There is no shared
   template: a new account starts empty and shows **Set up my DAR**.
-- **Set up once (each person), under My DAR → My details** (the **My DAR set-up** page, laid out like the old shared
+- **Set up once (each person), under My DAR → My details** (the **My DAR set-up** page, which also asks for their first period, laid out like the old shared
   template page; Save keeps you on it):
   - Full name as on official forms (the account only holds a nickname), and position title.
   - Department and unit.

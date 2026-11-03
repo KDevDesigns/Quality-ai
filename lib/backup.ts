@@ -64,9 +64,10 @@ export function parseSnapshot(value: unknown): Snapshot {
   return s as Snapshot;
 }
 
-/** The stored names of every attachment in the snapshot: the Storage objects that belong with it. */
+/** The stored names of every attachment and profile photo in the snapshot: the Storage objects that belong with it. */
 export function snapshotFiles(s: Snapshot): { storedName: string; mime: string; size: number }[] {
-  return s.tables.attachment.map((a) => ({ storedName: String(a.storedName), mime: String(a.mime), size: Number(a.size) }));
+  const photos = s.tables.user.filter((u) => u.avatarName).map((u) => ({ storedName: String(u.avatarName), mime: String(u.avatarMime), size: Number(u.avatarSize) }));
+  return [...s.tables.attachment.map((a) => ({ storedName: String(a.storedName), mime: String(a.mime), size: Number(a.size) })), ...photos];
 }
 
 const CHUNK = 500;
@@ -107,6 +108,8 @@ export async function restoreSnapshot(db: PrismaClient, s: Snapshot): Promise<Re
         for (let i = 0; i < rows.length; i += CHUNK) await createMany(rows.slice(i, i + CHUNK));
       };
       await insert(user, (data) => tx.user.createMany({ data: data as Prisma.UserCreateManyInput[] }));
+      // Restored numbers don't move the counter, so the next new account would take someone's colours.
+      await tx.$queryRaw`SELECT setval(pg_get_serial_sequence('"User"', 'avatarColor'), GREATEST((SELECT COALESCE(MAX("avatarColor"), 0) FROM "User"), 1))`;
       // Parents before children, one level of the module tree at a time.
       for (const level of areaLevels(t.erpArea)) await insert(level, (data) => tx.erpArea.createMany({ data: data as Prisma.ErpAreaCreateManyInput[] }));
       await insert(t.areaMember, (data) => tx.areaMember.createMany({ data: data as Prisma.AreaMemberCreateManyInput[] }));

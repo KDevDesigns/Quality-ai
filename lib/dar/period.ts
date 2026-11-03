@@ -44,6 +44,54 @@ export function previousPeriod(p: Period): Period {
   return periodFor(`${py}-${pad(pm)}-16`);
 }
 
+/** The period after `p`. */
+export function nextPeriod(p: Period): Period {
+  const [y, m, d] = parts(p.start);
+  if (d === 1) return periodFor(`${y}-${pad(m)}-16`);
+  return periodFor(m === 12 ? `${y + 1}-01-01` : `${y}-${pad(m + 1)}-01`);
+}
+
+/** More than anyone needs (10 years), so a bad stored date can't make a huge list. */
+const MAX_LISTED = 240;
+
+/**
+ * A person's periods, newest first: from their first one to the current one, and always both halves of the first month, even
+ * when the second half hasn't come yet.
+ */
+export function periodsFrom(first: Period, today: string): Period[] {
+  const current = periodFor(today);
+  const firstMonthEnd = first.start.endsWith("-01") ? nextPeriod(first) : first;
+  let at = current.start > firstMonthEnd.start ? current : firstMonthEnd;
+  const out: Period[] = [];
+  while (at.start >= first.start && out.length < MAX_LISTED) {
+    out.push(at);
+    at = previousPeriod(at);
+  }
+  return out;
+}
+
+/** Where a person's list starts: the first period they chose, else the earliest DAR they saved, else unknown. */
+export function firstPeriodOf(chosen: string | null | undefined, savedStarts: string[]): Period | null {
+  const earliest = [...savedStarts].sort()[0];
+  return parsePeriod(chosen ?? "") ?? (earliest ? parsePeriod(earliest) : null);
+}
+
+/** Months to choose a first DAR from ("2026-11"), newest first: the last year and the next two months, plus `keep`. */
+export function monthOptions(today: string, keep?: string): string[] {
+  const [y, m] = parts(today);
+  const months = Array.from({ length: 15 }, (_, i) => {
+    const at = new Date(Date.UTC(y, m - 1 + 2 - i, 1));
+    return `${at.getUTCFullYear()}-${pad(at.getUTCMonth() + 1)}`;
+  });
+  return keep && !months.includes(keep) ? [...months, keep].sort().reverse() : months;
+}
+
+/** "November 2026". */
+export function monthLabel(month: string): string {
+  const [y, m] = month.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", year: "numeric" }).format(new Date(Date.UTC(y, m - 1, 1)));
+}
+
 /** The current period first, then the `n - 1` before it. */
 export function recentPeriods(today: string, n = 6): Period[] {
   const out = [periodFor(today)];

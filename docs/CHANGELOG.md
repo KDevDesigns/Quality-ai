@@ -1,5 +1,28 @@
 # Changelog
 
+## Bug fixes, photos, DAR periods and ticket tabs (Phase 3.7a follow-up, 2026-11-03)
+
+The look stays as on the live site. The phone redesign tried on 2026-11-03 is kept only on the branch `phase-3.7a-mobile-look`, for
+reference, while the user designs the new UI in the Claude Design canvas.
+
+- **Fixed:** a long module name no longer pushes a phone's page and tab bar sideways. A grid's default column now fits the page on
+  phones, and anything too wide is cut off rather than moving the page.
+- **Fixed:** Back after filing a ticket goes to the ticket list, not the finished form. The gallery reminder is gone.
+- **Fixed:** every page stays the same centered width; visiting My inbox or My DAR used to widen the pages after them.
+- **Fixed:** Ctrl+Z, Ctrl+Y and the other markup shortcuts stopped working after clicking on the screenshot.
+- **Removed:** the customer-data note on New ticket, on every device.
+- **Profile photo:** the avatar is the upload. Tap your picture on Settings or My account → Profile; with a photo already there it offers
+  Change and Remove. On a laptop, they're also in the account menu at the top. It's cropped to a centred square and saved small.
+  Everyone signed in sees it. Included in backups and in Delete user.
+- **Each person's colours:** without a photo, a person's initials show in one of 16 colour pairs that is theirs, in conversations too.
+- **My DAR periods:** My details asks for the first period (a month, then 1st or 2nd half). The list starts from it and adds each next 15
+  days by itself. Saved DARs always stay listed. Someone who hasn't chosen starts from their earliest saved DAR.
+- **Ticket page on phones:** two tabs, **Details & logs** and **Conversation**, by tapping or swiping. A half-written reply survives switching.
+- **Markup on phones:** full screen, with the screenshot taking all the free height. On a phone under 768 px wide held sideways, the tools sit beside it; wider ones get the laptop dialog, as before.
+- **Setup:** migrations `user_avatar` and `dar_first_period` (`npm run db:deploy`). Run them before this code goes live.
+- Code: `lib/avatar.ts` and `lib/users/avatar.ts`, `components/user-avatar.tsx`, `components/avatar-upload.tsx`, `files/avatar/[userId]`,
+  `periodsFrom` in `lib/dar/period.ts`, `tickets/[number]/ticket-tabs.tsx`, `lib/tickets/swipe.ts` (tested), and the `short:` variant in `app/globals.css`.
+
 ## Filing tickets from a phone (Phase 3.7b, 2026-11-03)
 
 - **Device type:** a dropdown for bugs (Computer, Android phone, iPhone, Tablet), filled in with the last choice on that

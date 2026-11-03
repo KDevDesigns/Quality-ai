@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { BellIcon, ChevronRightIcon, ClockIcon, KeyRoundIcon, ShieldIcon, UserRoundIcon, UsersRoundIcon, Volume2Icon } from "lucide-react";
+import { AvatarUpload } from "@/components/avatar-upload";
 import { PageHeader } from "@/components/page-header";
 import { AccountSkeleton } from "@/components/skeletons";
 import { ROLE_LABELS } from "@/lib/auth/permissions";
 import { requireUser } from "@/lib/auth/session";
 import { db } from "@/lib/db";
-import { initials } from "@/lib/format";
 import { pushStore } from "@/lib/push/store";
 import { PRESET_TONES } from "@/lib/push/tones";
 import { ampm } from "@/lib/time-options";
@@ -38,18 +38,17 @@ async function SettingsBody() {
 
   return (
     <div className="mx-auto grid w-full max-w-xl gap-5">
-      <Link href="/account?tab=profile" className="flex items-center gap-3.5 rounded-2xl bg-card p-4 shadow-[0_0.0625rem_0.125rem_rgba(20,22,40,0.06),0_0.125rem_0.5rem_rgba(20,22,40,0.04)] outline-none focus-visible:ring-3 focus-visible:ring-acc/30">
-        <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-acc-t text-xl font-semibold text-acc-ink" aria-hidden>
-          {initials(me.name)}
-        </span>
-        <span className="grid min-w-0 flex-1 gap-0.5">
-          <span className="truncate text-lg font-semibold">{me.name}</span>
-          <span className="truncate text-sm text-muted-foreground">
-            {ROLE_LABELS[me.role]} · {me.email}
+      <AvatarUpload person={me} avatarClassName="size-14 text-xl" className="rounded-2xl bg-card p-4 shadow-[0_0.0625rem_0.125rem_rgba(20,22,40,0.06),0_0.125rem_0.5rem_rgba(20,22,40,0.04)]">
+        <Link href="/account?tab=profile" className="flex min-w-0 flex-1 items-center gap-3.5 rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-acc/30">
+          <span className="grid min-w-0 flex-1 gap-0.5">
+            <span className="truncate text-lg font-semibold">{me.name}</span>
+            <span className="truncate text-sm text-muted-foreground">
+              {ROLE_LABELS[me.role]} · {me.email}
+            </span>
           </span>
-        </span>
-        <ChevronRightIcon className="size-[1.125rem] shrink-0 text-muted-foreground" aria-hidden />
-      </Link>
+          <ChevronRightIcon className="size-[1.125rem] shrink-0 text-muted-foreground" aria-hidden />
+        </Link>
+      </AvatarUpload>
 
       <Group label="Account">
         <Row href="/account?tab=profile" icon={<UserRoundIcon />} tone="indigo" label="Profile" />

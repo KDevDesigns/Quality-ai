@@ -73,6 +73,36 @@ describe("backup and restore", () => {
     expect(snapshotFiles(await takeSnapshot(source))).toEqual([{ storedName: "2026/10/abc123.png", mime: "image/png", size: 1234 }]);
   });
 
+  it("includes profile photos in those files", async () => {
+    const snap = await takeSnapshot(source);
+    const withPhoto = { ...snap, tables: { ...snap.tables, user: [{ ...snap.tables.user[0], avatarName: "2026/11/me.webp", avatarMime: "image/webp", avatarSize: 900 }] } };
+    expect(snapshotFiles(withPhoto)).toContainEqual({ storedName: "2026/11/me.webp", mime: "image/webp", size: 900 });
+  });
+
+  it("keeps everyone's colours after a restore, and the next account gets a new number", async () => {
+    const snap = asFile(await takeSnapshot(source));
+    const fresh = await createTestDb();
+    cleanups.push(fresh.cleanup);
+
+    await restoreSnapshot(fresh.db, snap);
+    const restored = await fresh.db.user.findMany({ select: { avatarColor: true } });
+    expect(restored.map((u) => u.avatarColor).sort()).toEqual(snap.tables.user.map((u) => u.avatarColor).sort());
+    const next = await fresh.db.user.create({ data: { name: "New", email: "new@x.ph", passwordHash: "x", role: "QA" } });
+    expect(restored.map((u) => u.avatarColor)).not.toContain(next.avatarColor);
+  });
+
+  it("restores a backup from before profile photos, giving each person their own colours", async () => {
+    const old = asFile(await takeSnapshot(source));
+    for (const u of old.tables.user) for (const k of ["avatarColor", "avatarName", "avatarMime", "avatarSize"]) delete u[k];
+    expect(snapshotFiles(old)).toHaveLength(1);
+    const fresh = await createTestDb();
+    cleanups.push(fresh.cleanup);
+
+    await restoreSnapshot(fresh.db, old);
+    const numbers = (await fresh.db.user.findMany({ select: { avatarColor: true } })).map((u) => u.avatarColor);
+    expect(new Set(numbers).size).toBe(numbers.length);
+  });
+
   it("restores a backup from before own tones were removed", async () => {
     const old = asFile(await takeSnapshot(source));
     old.tables.user = old.tables.user.map((u, i) => ({ ...u, customTone: i ? null : "2026/10/abc.wav", notifyTone: i ? "tone-3" : "custom" }));

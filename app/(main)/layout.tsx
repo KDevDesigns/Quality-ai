@@ -25,7 +25,7 @@ export default function MainLayout({ children }: LayoutProps<"/">) {
           <Suspense fallback={<AppTopbarShell />}>
             <SessionTopbar />
           </Suspense>
-          <main data-main className="page-enter mx-auto w-full max-w-[82.5rem] flex-1 space-y-6 px-4 py-7 has-data-full-width:max-w-none max-md:px-5 max-md:py-5 md:px-10">
+          <main data-main className="page-enter mx-auto w-full max-w-[82.5rem] flex-1 space-y-6 px-4 py-7 max-md:overflow-x-clip max-md:px-5 max-md:py-5 md:px-10">
             {children}
           </main>
           <footer className="flex h-[3.25rem] shrink-0 items-center justify-center border-t border-line2 px-4 text-center text-[0.8125rem] tracking-[0.02em] text-muted-foreground max-md:hidden">
@@ -48,7 +48,7 @@ export default function MainLayout({ children }: LayoutProps<"/">) {
 
 async function sessionUser(): Promise<SidebarUser | null> {
   const u = await getCurrentUser();
-  return u ? { name: u.name, role: u.role } : null;
+  return u ? { id: u.id, name: u.name, role: u.role, avatarColor: u.avatarColor, avatarName: u.avatarName, mustChangePassword: u.mustChangePassword } : null;
 }
 
 async function SessionSidebar() {

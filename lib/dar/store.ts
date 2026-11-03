@@ -79,6 +79,8 @@ export function darStore(db: PrismaClient, now: () => Date = () => new Date()) {
         notedByTitle: input.notedBy.title || null,
         coreFunctions: fns(input.coreFunctions),
         supportFunctions: fns(input.supportFunctions),
+        // Left as it is when not given: once set, it can be changed but not emptied.
+        firstPeriodStart: input.firstPeriodStart || undefined,
       };
       await db.darProfile.upsert({ where: { userId }, update: data, create: { userId, ...data } });
     },

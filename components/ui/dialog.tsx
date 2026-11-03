@@ -44,9 +44,12 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  showGrabber = true,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
+  /** The bar for dragging a sheet down on phones; a full-screen dialog has none. */
+  showGrabber?: boolean
 }) {
   return (
     <DialogPortal>
@@ -54,7 +57,7 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          // Phones (below md): a sheet that slides up from the bottom, full width, clear of the home bar, scrolling
+          // Phones: a sheet that slides up from the bottom, full width, clear of the home bar, scrolling
           // when tall. From md up: the centred dialog.
           "fixed inset-x-0 bottom-0 z-50 mx-auto grid max-h-[92dvh] w-full gap-5 overflow-y-auto overscroll-contain rounded-t-[1.75rem] bg-popover p-6 pt-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-sm text-popover-foreground shadow-[0_1.5rem_3.75rem_rgba(20,18,30,0.3)] duration-200 ease-(--ease-out) outline-none sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom-full data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-bottom-full",
           "md:inset-x-auto md:top-1/2 md:bottom-auto md:left-1/2 md:mx-0 md:max-h-none md:w-[calc(100%-2rem)] md:-translate-x-1/2 md:-translate-y-1/2 md:overflow-visible md:rounded-2xl md:pt-6 md:pb-6 md:data-open:zoom-in-95 md:data-open:slide-in-from-bottom-2 md:data-closed:zoom-out-95 md:data-closed:slide-out-to-bottom-0",
@@ -62,7 +65,7 @@ function DialogContent({
         )}
         {...props}
       >
-        <Grabber className="md:hidden" />
+        {showGrabber ? <Grabber className="md:hidden" /> : null}
         {children}
         {showCloseButton && (
           <DialogPrimitive.Close

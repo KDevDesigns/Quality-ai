@@ -78,7 +78,6 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
 
   return (
     <div
-      data-full-width
       className="grid grid-cols-1 overflow-hidden rounded-xl border border-line bg-card lg:h-[calc(100dvh-16.25rem)] lg:min-h-[32.5rem] lg:grid-cols-[minmax(18.75rem,23.75rem)_minmax(0,1fr)]"
     >
       {/* Conversations */}
