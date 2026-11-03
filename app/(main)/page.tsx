@@ -274,7 +274,7 @@ function StatRow({ stats }: { stats: Stat[] }) {
   return (
     <>
     {/* Phones: cards that swipe sideways, the first (the one to act on) in the accent colour. */}
-    <div className="-mx-5 flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto px-5 pb-1 [scrollbar-width:none] md:hidden">
+    <div className="relative -mx-5 flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto px-5 pb-1 [scrollbar-width:none] md:hidden">
       {stats.map(({ label, value, href, icon: Icon, note }, i) => (
         <Link
           key={label}

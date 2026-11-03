@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createContext, useCallback, useContext, useEffect, useRef, useState, useTransition } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { Menu } from "@base-ui/react/menu";
 import { BellIcon, CheckCheckIcon, InboxIcon } from "lucide-react";
 import { markAllTicketsRead } from "@/app/(main)/tickets/actions";
@@ -24,7 +24,17 @@ type Ctx = { data: Data | null; poll: () => void };
 
 const NotificationsContext = createContext<Ctx>({ data: null, poll: () => {} });
 
-export const useNotifications = () => useContext(NotificationsContext);
+const noChange = () => () => {};
+
+/**
+ * The first answer can arrive before a part of the page further down has hydrated. Counts stay empty until it has, as in
+ * the server's HTML, or React throws that part away and rebuilds it.
+ */
+export const useNotifications = (): Ctx => {
+  const ctx = useContext(NotificationsContext);
+  const hydrated = useSyncExternalStore(noChange, () => true, () => false);
+  return hydrated ? ctx : { ...ctx, data: null };
+};
 
 /** Pages that list or show tickets, refreshed in place when something new arrives. */
 const LIVE = (path: string) => path === "/" || path === "/inbox" || path === "/tickets" || path.startsWith("/tickets/");

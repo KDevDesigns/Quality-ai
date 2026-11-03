@@ -79,7 +79,7 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
   return (
     <div
       data-full-width
-      className="grid overflow-hidden rounded-xl border border-line bg-card lg:h-[calc(100dvh-16.25rem)] lg:min-h-[32.5rem] lg:grid-cols-[minmax(18.75rem,23.75rem)_minmax(0,1fr)]"
+      className="grid grid-cols-1 overflow-hidden rounded-xl border border-line bg-card lg:h-[calc(100dvh-16.25rem)] lg:min-h-[32.5rem] lg:grid-cols-[minmax(18.75rem,23.75rem)_minmax(0,1fr)]"
     >
       {/* Conversations */}
       <section aria-label="Conversations" className={cn("min-h-0 flex-col border-line lg:flex lg:border-r", t ? "hidden" : "flex")}>
@@ -151,7 +151,7 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
             </div>
           </header>
           <ImageGallery images={galleryImages(t)}>
-            <div id="inbox-messages" className="grid min-h-0 flex-1 content-start gap-3 overflow-y-auto p-4">
+            <div id="inbox-messages" className="grid min-h-0 flex-1 grid-cols-1 content-start gap-3 overflow-y-auto p-4">
               <Message author={t.reporter} mine={t.reporter.id === me.id} at={t.createdAt} now={now} body={t.description} files={t.attachments} />
               <Thread t={t} meId={me.id} now={now} />
             </div>
@@ -179,7 +179,7 @@ function ThreadRow({ x, href, active, now }: { x: InboxThread; href: string; act
       <Link
         href={href}
         aria-current={active ? "page" : undefined}
-        className={cn("grid gap-1 px-4 py-3 transition-colors hover:bg-surface2", active && "bg-acc-t2 hover:bg-acc-t2")}
+        className={cn("grid grid-cols-1 gap-1 px-4 py-3 transition-colors hover:bg-surface2", active && "bg-acc-t2 hover:bg-acc-t2")}
       >
         <span className="flex items-center gap-2">
           {x.unread ? <UnreadDot /> : null}

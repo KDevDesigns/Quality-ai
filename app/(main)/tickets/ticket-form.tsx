@@ -331,7 +331,7 @@ function TicketFormFields({
                 <label
                   key={t}
                   className={cn(
-                    "flex cursor-pointer items-start gap-2.5 rounded-[0.625rem] border border-line p-3 text-sm transition-[border-color,background-color,transform] duration-200 active:scale-[0.99] has-focus-visible:ring-3 has-focus-visible:ring-acc/25 max-md:flex-col max-md:items-center max-md:gap-1.5 max-md:rounded-xl max-md:border-[0.125rem] max-md:px-2 max-md:py-3 max-md:text-center max-md:has-checked:font-semibold",
+                    "flex cursor-pointer items-start gap-2.5 rounded-[0.625rem] border border-line p-3 text-sm transition-[border-color,background-color,transform] duration-200 active:scale-[0.99] has-focus-visible:ring-3 has-focus-visible:ring-acc/25 max-md:flex-col max-md:items-center max-md:gap-1.5 max-md:rounded-xl max-md:border-[0.125rem] max-md:px-1 max-md:py-3 max-md:text-center max-md:has-checked:font-semibold",
                     typeStyle(t).choice,
                   )}
                 >
