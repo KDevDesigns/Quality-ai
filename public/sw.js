@@ -76,6 +76,40 @@ self.addEventListener("push", (event) => {
   );
 });
 
+// Share → QA Hub (Android, the installed app). The files wait here until New ticket collects them (lib/tickets/shared-files.ts,
+// keep the names in sync), so they survive a sign-in on the way. Every other request goes straight to the network: this worker
+// stores no pages or ticket data.
+const SHARED_CACHE = "qa-hub-shared";
+const MAX_SHARED = 10;
+
+async function receiveShare(request) {
+  const page = (shared) => Response.redirect(new URL(`/tickets/new?shared=${shared}`, self.location.origin).href, 303);
+  try {
+    const form = await request.formData();
+    const files = form.getAll("files").filter((f) => f instanceof File && f.size > 0).slice(0, MAX_SHARED);
+    if (!files.length) return page("missed");
+    // A new share replaces one nobody collected.
+    await caches.delete(SHARED_CACHE);
+    const cache = await caches.open(SHARED_CACHE);
+    const at = String(Date.now());
+    await Promise.all(
+      files.map((file, i) =>
+        cache.put(
+          new URL(`/shared/${String(i).padStart(2, "0")}`, self.location.origin).href,
+          new Response(file, { headers: { "Content-Type": file.type, "x-shared-name": encodeURIComponent(file.name), "x-shared-at": at } }),
+        ),
+      ),
+    );
+    return page("1");
+  } catch {
+    return page("missed");
+  }
+}
+
+self.addEventListener("fetch", (event) => {
+  if (event.request.method === "POST" && new URL(event.request.url).pathname === "/share-target") event.respondWith(receiveShare(event.request));
+});
+
 // Clicking it opens the ticket: in a QA Hub tab that's already open if there is one, otherwise a new one.
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();

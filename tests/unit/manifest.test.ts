@@ -19,6 +19,13 @@ describe("web app manifest", () => {
     expect(icons.some((i) => i.purpose === "maskable" && i.sizes === "512x512")).toBe(true);
   });
 
+  it("takes shared images and videos as files, by POST", () => {
+    const share = m.share_target;
+    expect(share).toMatchObject({ action: "/share-target", method: "POST", enctype: "multipart/form-data" });
+    const accepted = JSON.stringify(share?.params);
+    for (const type of ["image/png", "image/jpeg", "video/mp4"]) expect(accepted).toContain(type);
+  });
+
   it("only names icon files that exist", () => {
     for (const icon of m.icons ?? []) expect(existsSync(join(process.cwd(), "public", icon.src))).toBe(true);
   });
