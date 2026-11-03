@@ -2,10 +2,12 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { DownloadIcon } from "lucide-react";
 import { InlineAlert } from "@/components/inline-alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/form-field";
+import { useInstallPrompt } from "@/hooks/use-install-prompt";
 import { DEFAULT_TONE } from "@/lib/push/tones";
 import { myTone, saveTone } from "./account/actions";
 import { deviceState, turnOnDevice, type DeviceState } from "./account/device-push";
@@ -43,6 +45,7 @@ export function PushPrompt() {
   const [message, setMessage] = useState<string | null>(null);
   const [saved, setSaved] = useState({ tone: DEFAULT_TONE });
   const [tone, setTone] = useState(DEFAULT_TONE);
+  const { canInstall, install } = useInstallPrompt();
 
   useEffect(() => {
     // My account has the full card, and the forced password change happens there.
@@ -97,6 +100,11 @@ export function PushPrompt() {
           <Field label="Sound" htmlFor="promptTone" hint="Plays while QA Hub is open. Change it any time in My account.">
             <ToneSelect id="promptTone" value={tone} onChange={setTone} />
           </Field>
+        ) : null}
+        {canInstall ? (
+          <Button variant="outline" onClick={install} className="w-fit">
+            <DownloadIcon /> Install QA Hub as an app
+          </Button>
         ) : null}
         {message ? <InlineAlert tone="bad" role="alert">{message}</InlineAlert> : null}
         <DialogFooter>

@@ -13,6 +13,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { pushStore } from "@/lib/push/store";
 import { AccountTabs } from "./account-tabs";
+import { InstallCard } from "./install-card";
 import { DeviceNotificationsCard, ToneCard, WorkHoursCard } from "./notifications-card";
 import { PasswordForm } from "./password-form";
 
@@ -100,7 +101,18 @@ async function AccountBody() {
               </Card>
             ),
           },
-          { id: "notifications", label: "Notifications", hint: "Alerts on this device", icon: <BellRingIcon />, content: <DeviceNotificationsCard /> },
+          {
+            id: "notifications",
+            label: "Notifications",
+            hint: "Alerts on this device",
+            icon: <BellRingIcon />,
+            content: (
+              <div className="grid gap-5">
+                <DeviceNotificationsCard />
+                <InstallCard />
+              </div>
+            ),
+          },
           { id: "sound", label: "Sound", hint: "Tone and message previews", icon: <Volume2Icon />, content: <ToneCard initial={{ ...tone, previews }} /> },
           { id: "hours", label: "Work hours", hint: "When notifications may ring", icon: <ClockIcon />, content: <WorkHoursCard initial={workHours} /> },
         ]}

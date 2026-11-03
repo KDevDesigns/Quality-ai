@@ -4,6 +4,7 @@ import { AppSidebar, AppSidebarShell, type SidebarUser } from "@/components/app-
 import { AppTopbar, AppTopbarShell } from "@/components/app-topbar";
 import { BottomNav } from "@/components/bottom-nav";
 import { NotificationsProvider } from "@/components/notifications";
+import { PwaSetup } from "@/components/pwa-setup";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { getCurrentUser } from "@/lib/auth/session";
 
@@ -17,6 +18,7 @@ export default function MainLayout({ children }: LayoutProps<"/">) {
   return (
     <NotificationsProvider>
       <AppSplash />
+      <PwaSetup />
       <SidebarProvider style={{ "--sidebar-width": "17.5rem", "--sidebar-width-icon": "3.5625rem" } as React.CSSProperties}>
         <Suspense fallback={<AppSidebarShell />}>
           <SessionSidebar />
