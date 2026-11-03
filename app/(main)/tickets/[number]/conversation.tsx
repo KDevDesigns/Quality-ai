@@ -69,7 +69,7 @@ export function Thread({ t, meId, now }: { t: TicketDetail; meId: string; now: D
   if (!items.length) return <p className="text-sm text-muted-foreground">No replies yet. Ask a question or add details below.</p>;
 
   return (
-    <ol className="grid gap-3">
+    <ol className="grid grid-cols-1 gap-3">
       {items.map((it) =>
         it.kind === "comment" ? (
           <li key={it.c.id}>
@@ -81,7 +81,7 @@ export function Thread({ t, meId, now }: { t: TicketDetail; meId: string; now: D
             <div className="min-w-0 flex-1 py-1">
               <span className="font-medium text-foreground">{it.e.actor.name}</span> <EventText e={it.e} />{" "}
               <time className="text-muted-foreground" title={formatDateTime(it.e.createdAt)}>· {timeAgo(it.e.createdAt, now)}</time>
-              {it.e.note ? <p className="mt-1.5 rounded-lg border-l-[0.1875rem] border-acc-b bg-surface2 px-3 py-2 break-words whitespace-pre-wrap text-foreground">{it.e.note}</p> : null}
+              {it.e.note ? <p className="mt-1.5 rounded-lg border-l-[0.1875rem] border-acc-b bg-surface2 px-3 py-2 wrap-anywhere whitespace-pre-wrap text-foreground">{it.e.note}</p> : null}
             </div>
           </li>
         ),
@@ -124,7 +124,7 @@ export function Message({
           <span className="text-muted-foreground">{ROLE_LABELS[author.role as Role]}</span>
           <time className="text-muted-foreground" title={formatDateTime(at)}>· {timeAgo(at, now)}</time>
         </div>
-        {body ? <p className="mt-1.5 text-[0.9063rem] leading-relaxed break-words whitespace-pre-wrap">{body}</p> : null}
+        {body ? <p className="mt-1.5 text-[0.9063rem] leading-relaxed wrap-anywhere whitespace-pre-wrap">{body}</p> : null}
         {files.length ? (
           <div className="mt-3">
             <Attachments files={files} />

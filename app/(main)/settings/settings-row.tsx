@@ -23,8 +23,8 @@ export function SettingsRowBody({ icon, tone, label, value }: { icon: React.Reac
       <span className={cn("flex size-[1.875rem] shrink-0 items-center justify-center rounded-lg text-white [&_svg]:size-[1.0625rem]", TILES[tone])} aria-hidden>
         {icon}
       </span>
-      <span className="min-w-0 flex-1 truncate text-base">{label}</span>
-      {value ? <span className="shrink-0 text-[0.9375rem] text-muted-foreground">{value}</span> : null}
+      <span className="min-w-max flex-1 text-base">{label}</span>
+      {value ? <span className="min-w-0 truncate text-[0.9375rem] text-muted-foreground max-[24rem]:text-[0.8438rem]">{value}</span> : null}
     </>
   );
 }

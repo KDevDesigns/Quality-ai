@@ -138,23 +138,24 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18.75rem]">
         <ImageGallery images={galleryImages(t)}>
-          <div className="grid min-w-0 content-start gap-6">
+          <div className="grid min-w-0 grid-cols-1 content-start gap-6">
             <Card>
               <CardContent className="grid gap-4">
-                <p className="text-[0.9375rem] leading-relaxed break-words whitespace-pre-wrap">{t.description}</p>
+                <p className="text-[0.9375rem] leading-relaxed wrap-anywhere whitespace-pre-wrap">{t.description}</p>
                 <Attachments files={t.attachments} />
               </CardContent>
             </Card>
 
-            <section aria-label="Conversation and history" className="grid gap-3">
+            <section aria-label="Conversation and history" className="grid grid-cols-1 gap-3">
               <h2 className="text-xs font-semibold tracking-[0.06em] text-ink2 uppercase">Conversation</h2>
               {/* Messenger-style: past a set height the messages scroll on their own, opened at the newest one, so the
-                  reply box below never moves down. */}
+                  reply box below never moves down. On a phone they scroll with the page: a box inside a scrolling page
+                  traps the thumb. */}
               <div
                 id="ticket-thread"
                 tabIndex={0}
                 aria-label="Messages and history"
-                className="-mr-2 max-h-[min(55svh,36rem)] overflow-y-auto overscroll-contain pr-2 outline-none [scrollbar-gutter:stable] focus-visible:ring-3 focus-visible:ring-acc/20"
+                className="-mr-2 max-h-[min(55svh,36rem)] overflow-y-auto overscroll-contain pr-2 outline-none [scrollbar-gutter:stable] focus-visible:ring-3 focus-visible:ring-acc/20 max-md:mr-0 max-md:max-h-none max-md:overflow-visible max-md:pr-0"
               >
                 <Thread t={t} meId={me.id} now={now} />
               </div>

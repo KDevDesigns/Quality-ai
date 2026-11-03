@@ -15,6 +15,10 @@
   person's password stays.
 - **Setup:** migration `ticket_device_type` (`npm run db:deploy`).
 - Code: `lib/tickets/draft.ts` (tested), `hooks/use-touch-screen.ts`, `pinchZoom` in `lib/markup/view.ts`.
+- **Phone fixes found while getting ready to test:** Home no longer scrolls sideways and pushes the tab bar off screen.
+  My inbox and conversations fit the screen, including long titles and long unbroken text. On a touch screen, Enter in a
+  reply starts a new line, and the conversation scrolls with the page. Unread counts no longer make a page rebuild as
+  it loads.
 
 ## Delete user and the Designer tick-box (2026-11-01)
 

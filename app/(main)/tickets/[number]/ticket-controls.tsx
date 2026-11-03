@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useTouchScreen } from "@/hooks/use-touch-screen";
 import { initialFormState, type FormState } from "@/lib/form";
 import { STATUS_LABELS, type TicketStatus, type Transition } from "@/lib/tickets/workflow";
 import { addComment, assignTicket, deleteTicket, moveTicket } from "../actions";
@@ -155,6 +156,7 @@ export function AssignControl({
 export function CommentForm({ ticket }: { ticket: Ref }) {
   const images = useImageAttachments();
   const video = useVideoUpload();
+  const touch = useTouchScreen();
   const [body, setBody] = useState("");
   const [state, action, pending] = useActionState(async (prev: FormState, fd: FormData) => {
     const r = await addComment(prev, fd);
@@ -183,12 +185,13 @@ export function CommentForm({ ticket }: { ticket: Ref }) {
         onPaste={images.onPaste}
         onKeyDown={(e) => {
           // Enter sends, like a chat; Shift+Enter starts a new line. Not while an IME is composing a word, and not
-          // while files are still uploading (the message would go without them).
-          if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+          // while files are still uploading (the message would go without them). A phone keyboard has no Shift+Enter, so
+          // there Enter starts a new line and the Send button sends.
+          if (touch || e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
           e.preventDefault();
           if (canSend) e.currentTarget.form?.requestSubmit();
         }}
-        placeholder="Write a reply… (Enter to send, Shift+Enter for a new line)"
+        placeholder={touch ? "Write a reply…" : "Write a reply… (Enter to send, Shift+Enter for a new line)"}
       />
       <ImagePicker state={images} id="comment-images" compact />
       <VideoPicker state={video} id="comment-video" compact />
