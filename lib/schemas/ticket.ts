@@ -11,7 +11,7 @@ const emptyToNull = z
 const ticketFields = z.object({
   type: z.enum(TICKET_TYPES, "Pick a type"),
   title: z.string().trim().min(5, "At least 5 characters").max(150, "At most 150 characters"),
-  description: z.string().trim().min(1, "Describe what happened").max(20000, "At most 20,000 characters"),
+  description: z.string().trim().max(20000, "At most 20,000 characters"),
   areaId: emptyToNull,
   severity: z.union([z.enum(SEVERITIES), z.literal("")]).optional().transform((v) => (v ? v : null)),
   priority: z.enum(PRIORITIES).default("P3"),

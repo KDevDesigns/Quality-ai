@@ -311,6 +311,9 @@ Can be built before 3.6, because tickets already exist. Built in three parts, ea
 **3.7a** the mobile UI rework, **3.7b** filing from the phone, **3.7c** the installed app (PWA).
 
 #### 3.7a — Mobile UI rework (no database changes)
+*Round 1 of the user's screenshot notes was built ahead of the rest (2026-11-03): see the changelog. It also changed the
+admin Home, the laptop footer and My inbox's header and list.*
+
 Today most pages only shrink on a phone (the ticket list, Team, Admin → Users and My DAR have no phone layout). This
 part makes QA Hub feel like a phone app. Applies below 768 px wide (Tailwind `md`, where the sidebar already turns
 into a drawer); tablets in portrait and up, laptops and big screens stay as they are.

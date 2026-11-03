@@ -16,6 +16,17 @@ export function clampZoom(scale: number, fit: number, imageWidth: number, dpr = 
   return Math.min(max, Math.max(fit, scale));
 }
 
+/** The image viewer's zoom: 1 is the image fitting the viewer, up to ZOOM_MAX times that. */
+export function clampViewerZoom(zoom: number): number {
+  return Math.min(ZOOM_MAX, Math.max(1, zoom));
+}
+
+/** One press of the image viewer's zoom buttons or keys. Stepping back lands on exactly 100 %, whatever rounding did. */
+export function stepZoom(zoom: number, direction: 1 | -1): number {
+  const next = clampViewerZoom(direction > 0 ? zoom * ZOOM_STEP : zoom / ZOOM_STEP);
+  return Math.abs(next - 1) < 0.01 ? 1 : next;
+}
+
 /** The zoom a two-finger pinch asks for: it follows how far the fingers have moved apart since they landed. */
 export function pinchZoom(startScale: number, startDistance: number, distance: number): number {
   return startDistance > 0 ? startScale * (distance / startDistance) : startScale;

@@ -133,38 +133,11 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
         title={me.role === "ADMIN" ? "All tickets" : "My tickets"}
         description={SCOPE_TEXT[me.role]}
         actions={
-          <>
-            {canFile ? (
-              <span className="max-md:hidden">
-                <NewTicketButton />
-              </span>
-            ) : null}
-            <span className="md:hidden">
-              <FilterSheet active={activeFilters}>
-                <form action="/tickets" className="grid gap-4">
-                  {keep}
-                  {f.q ? <input type="hidden" name="q" value={f.q} /> : null}
-                  <Field label="Type" htmlFor="ftype">
-                    <SelectField id="ftype" name="type" defaultValue={f.type ?? ""} options={options.type} />
-                  </Field>
-                  <Field label="Module" htmlFor="farea">
-                    <SelectField id="farea" name="area" defaultValue={f.area ?? ""} groups={options.area} />
-                  </Field>
-                  {me.role !== "DEV" ? (
-                    <Field label="Developer" htmlFor="fassignee">
-                      <SelectField id="fassignee" name="assignee" defaultValue={f.assignee ?? ""} options={options.assignee} />
-                    </Field>
-                  ) : null}
-                  <div className="grid grid-cols-2 gap-2.5 pt-1">
-                    <Button variant="outline" size="lg" nativeButton={false} render={<Link href={clearHref} />}>
-                      Clear
-                    </Button>
-                    <Button type="submit" size="lg">Apply</Button>
-                  </div>
-                </form>
-              </FilterSheet>
+          canFile ? (
+            <span className="max-md:hidden">
+              <NewTicketButton />
             </span>
-          </>
+          ) : null
         }
       />
       {deleted ? (
@@ -173,23 +146,48 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
         </InlineAlert>
       ) : null}
 
-      {/* Phones: one search field; the rest of the filters are in the sheet. */}
-      <form action="/tickets" role="search" className="relative md:hidden">
-        {keep}
-        {f.type ? <input type="hidden" name="type" value={f.type} /> : null}
-        {f.area ? <input type="hidden" name="area" value={f.area} /> : null}
-        {f.assignee ? <input type="hidden" name="assignee" value={f.assignee} /> : null}
-        <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-[1.125rem] -translate-y-1/2 text-muted-foreground" aria-hidden />
-        <Input
-          type="search"
-          name="q"
-          defaultValue={f.q}
-          enterKeyHint="search"
-          placeholder="Search tickets or #number"
-          aria-label="Search tickets"
-          className="h-11 rounded-xl border-transparent pl-10 shadow-[0_0.0625rem_0.125rem_rgba(20,22,40,0.06),0_0.125rem_0.5rem_rgba(20,22,40,0.04)]"
-        />
-      </form>
+      {/* Phones: the filters button and one search field; the rest of the filters are in the sheet. */}
+      <div className="flex items-center gap-2 md:hidden">
+        <FilterSheet active={activeFilters}>
+          <form action="/tickets" className="grid gap-4">
+            {keep}
+            {f.q ? <input type="hidden" name="q" value={f.q} /> : null}
+            <Field label="Type" htmlFor="ftype">
+              <SelectField id="ftype" name="type" defaultValue={f.type ?? ""} options={options.type} />
+            </Field>
+            <Field label="Module" htmlFor="farea">
+              <SelectField id="farea" name="area" defaultValue={f.area ?? ""} groups={options.area} />
+            </Field>
+            {me.role !== "DEV" ? (
+              <Field label="Developer" htmlFor="fassignee">
+                <SelectField id="fassignee" name="assignee" defaultValue={f.assignee ?? ""} options={options.assignee} />
+              </Field>
+            ) : null}
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
+              <Button variant="outline" size="lg" nativeButton={false} render={<Link href={clearHref} />}>
+                Clear
+              </Button>
+              <Button type="submit" size="lg">Apply</Button>
+            </div>
+          </form>
+        </FilterSheet>
+        <form action="/tickets" role="search" className="relative min-w-0 flex-1">
+          {keep}
+          {f.type ? <input type="hidden" name="type" value={f.type} /> : null}
+          {f.area ? <input type="hidden" name="area" value={f.area} /> : null}
+          {f.assignee ? <input type="hidden" name="assignee" value={f.assignee} /> : null}
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-[1.125rem] -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Input
+            type="search"
+            name="q"
+            defaultValue={f.q}
+            enterKeyHint="search"
+            placeholder="Search tickets or #number"
+            aria-label="Search tickets"
+            className="h-11 rounded-xl border-transparent pl-10 shadow-[0_0.0625rem_0.125rem_rgba(20,22,40,0.06),0_0.125rem_0.5rem_rgba(20,22,40,0.04)]"
+          />
+        </form>
+      </div>
 
       <nav aria-label="Ticket views" className="flex flex-wrap gap-1.5 max-md:-mx-5 max-md:flex-nowrap max-md:gap-2 max-md:overflow-x-auto max-md:px-5 max-md:[scrollbar-width:none]">
         {QUICK.map((v) => (

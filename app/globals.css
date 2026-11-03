@@ -509,6 +509,14 @@
   pointer-events: none;
 }
 /* Shown before React runs only when this session hasn't seen it yet (the inline script in components/app-splash.tsx). */
+/* The laptop footer stays at the bottom of the window (app/(main)/layout.tsx), so scrolling to something, or tabbing to
+   it, must stop above the footer. */
+@media (min-width: 48rem) and (min-height: 40rem) {
+  html {
+    scroll-padding-bottom: 3.25rem;
+  }
+}
+
 html:not(.qa-splash-on) .qa-splash {
   display: none;
 }

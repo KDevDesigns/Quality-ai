@@ -133,8 +133,7 @@ export function DarEditor({
   }
 
   return (
-    // data-full-width lets the page use the whole width (see app/(main)/layout.tsx), so the sheet fills it.
-    <div className="grid gap-5" data-full-width>
+    <div className="grid gap-5">
       {!hasFullName && !empty ? (
         <InlineAlert tone="warn">
           Your report shows your QA Hub nickname, <strong>{accountName}</strong>. Add your full name as it appears on official forms under{" "}

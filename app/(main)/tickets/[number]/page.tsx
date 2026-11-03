@@ -139,12 +139,14 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18.75rem]">
         <ImageGallery images={galleryImages(t)}>
           <div className="grid min-w-0 grid-cols-1 content-start gap-6">
-            <Card>
-              <CardContent className="grid gap-4">
-                <p className="text-[0.9375rem] leading-relaxed wrap-anywhere whitespace-pre-wrap">{t.description}</p>
-                <Attachments files={t.attachments} />
-              </CardContent>
-            </Card>
+            {t.description || t.attachments.length ? (
+              <Card>
+                <CardContent className="grid gap-4">
+                  {t.description ? <p className="text-[0.9375rem] leading-relaxed wrap-anywhere whitespace-pre-wrap">{t.description}</p> : null}
+                  <Attachments files={t.attachments} />
+                </CardContent>
+              </Card>
+            ) : null}
 
             <section aria-label="Conversation and history" className="grid grid-cols-1 gap-3">
               <h2 className="text-xs font-semibold tracking-[0.06em] text-ink2 uppercase">Conversation</h2>

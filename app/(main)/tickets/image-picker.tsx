@@ -70,7 +70,7 @@ async function captureFrame(): Promise<File | null> {
 export const canCaptureScreen = () => typeof navigator !== "undefined" && !!navigator.mediaDevices?.getDisplayMedia;
 
 /** Whether this browser can capture a tab or window. False while hydrating, like the server render, then the real answer. */
-const useCanCapture = () => useSyncExternalStore(() => () => {}, canCaptureScreen, () => false);
+export const useCanCapture = () => useSyncExternalStore(() => () => {}, canCaptureScreen, () => false);
 
 export function useImageAttachments(restored: DraftFile[] = []) {
   const [items, setItems] = useState<Item[]>(() =>
@@ -243,6 +243,10 @@ export function useImageAttachments(restored: DraftFile[] = []) {
 
 export type ImageAttachments = ReturnType<typeof useImageAttachments>;
 
+/** The id of the hidden camera input for the picker with this `id`. */
+export const cameraInputId = (id: string) => `${id}-camera`;
+
+/** `compact`: the reply box, where the Attach menu (attach-menu.tsx) opens these inputs and only what's attached shows here. */
 export function ImagePicker({ state, id = "images", compact }: { state: ImageAttachments; id?: string; compact?: boolean }) {
   const [over, setOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -269,29 +273,36 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
 
   return (
     <div
-      // Focusable, so clicking it and pressing Ctrl+V pastes here.
-      tabIndex={0}
-      role="group"
-      aria-label="Screenshots"
-      onPaste={state.onPaste}
-      onClick={(e) => {
-        if (!(e.target as HTMLElement).closest("button, input, a")) e.currentTarget.focus();
-      }}
-      className={cn(
-        // Focused: a solid outline (ready for Ctrl+V). Dragging a file over keeps its own look, the filled box.
-        "grid cursor-default gap-2.5 rounded-[0.625rem] border border-dashed border-line p-3 transition-colors outline-none focus:border-solid focus:border-acc-b focus-visible:ring-3 focus-visible:ring-acc/30",
-        over && "border-acc bg-acc-t2",
-      )}
-      onDragOver={(e) => {
-        e.preventDefault();
-        setOver(true);
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setOver(false);
-        state.add(e.dataTransfer.files);
-      }}
+      {...(compact
+        ? { className: "contents" }
+        : {
+            // Focusable, so clicking it and pressing Ctrl+V pastes here.
+            tabIndex: 0,
+            role: "group",
+            "aria-label": "Screenshots",
+            onPaste: state.onPaste,
+            onClick: (e: React.MouseEvent<HTMLDivElement>) => {
+              // The markup dialog is this box's child in React, so its clicks arrive here too. Focusing the box for them
+              // would take the keyboard away from the dialog, and with it Ctrl+Z and every other shortcut.
+              if (!e.currentTarget.contains(e.target as Node)) return;
+              if (!(e.target as HTMLElement).closest("button, input, a")) e.currentTarget.focus();
+            },
+            className: cn(
+              // Focused: a solid outline (ready for Ctrl+V). Dragging a file over keeps its own look, the filled box.
+              "grid cursor-default gap-2.5 rounded-[0.625rem] border border-dashed border-line p-3 transition-colors outline-none focus:border-solid focus:border-acc-b focus-visible:ring-3 focus-visible:ring-acc/30",
+              over && "border-acc bg-acc-t2",
+            ),
+            onDragOver: (e: React.DragEvent) => {
+              e.preventDefault();
+              setOver(true);
+            },
+            onDragLeave: () => setOver(false),
+            onDrop: (e: React.DragEvent) => {
+              e.preventDefault();
+              setOver(false);
+              state.add(e.dataTransfer.files);
+            },
+          })}
     >
       {state.items.map((i) => (i.id ? <input key={i.key} type="hidden" name="uploadIds" value={i.id} /> : null))}
       <input
@@ -310,6 +321,7 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
       {/* Opens the phone's camera straight away. */}
       <input
         ref={cameraRef}
+        id={cameraInputId(id)}
         type="file"
         accept="image/*"
         capture="environment"
@@ -321,24 +333,26 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
           e.target.value = "";
         }}
       />
-      <div className="flex flex-wrap items-center gap-3">
-        {touch ? (
-          <Button type="button" variant="outline" size="sm" onClick={() => cameraRef.current?.click()} disabled={full}>
-            <CameraIcon /> Take photo
+      {compact ? null : (
+        <div className="flex flex-wrap items-center gap-3">
+          {touch ? (
+            <Button type="button" variant="outline" size="sm" onClick={() => cameraRef.current?.click()} disabled={full}>
+              <CameraIcon /> Take photo
+            </Button>
+          ) : null}
+          <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={full}>
+            <ImagePlusIcon /> {touch ? "Choose from gallery" : "Add images"}
           </Button>
-        ) : null}
-        <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={full}>
-          <ImagePlusIcon /> {touch ? "Choose from gallery" : "Add images"}
-        </Button>
-        {canCapture ? (
-          <Button type="button" variant="outline" size="sm" onClick={state.capture} disabled={full} title="Capture a tab or window, such as the ERP">
-            <MonitorIcon /> Capture screen
-          </Button>
-        ) : null}
-        <span className="text-[0.7813rem] text-muted-foreground">
-          {touch ? "" : compact ? "Or paste a screenshot (Ctrl+V) into your message or this box. " : "Or click this box and paste a screenshot (Ctrl+V), or drop images here. "}Each one opens in the markup tools first. Up to {MAX_IMAGES_PER_POST}, {IMAGE_MAX_BYTES / 1024 / 1024} MB each.
-        </span>
-      </div>
+          {canCapture ? (
+            <Button type="button" variant="outline" size="sm" onClick={state.capture} disabled={full} title="Capture a tab or window, such as the ERP">
+              <MonitorIcon /> Capture screen
+            </Button>
+          ) : null}
+          <span className="text-[0.7813rem] text-muted-foreground">
+            {touch ? "" : "Or click this box and paste a screenshot (Ctrl+V), or drop images here. "}Each one opens in the markup tools first. Up to {MAX_IMAGES_PER_POST}, {IMAGE_MAX_BYTES / 1024 / 1024} MB each.
+          </span>
+        </div>
+      )}
       {state.items.length ? (
         <ul className="flex flex-wrap gap-2.5">
           {state.items.map((i) => {

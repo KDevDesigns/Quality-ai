@@ -1,5 +1,26 @@
 # Changelog
 
+## UI rework, round 1 (Phase 3.7a, 2026-11-03)
+
+From the user's marked-up screenshots, ahead of the rest of 3.7a.
+
+- **Tickets on a phone:** the filter button now sits to the left of the search bar.
+- **Admin Home:** Total tickets, QA testers, Developers and Modules, then Not in any module. Testers and developers keep
+  their Home.
+- **Footer:** stays at the bottom of the window on laptops.
+- **My inbox:** the conversation header shows the ticket's type, severity, module, who filed it and its developer. In
+  the list, an unread row is bold throughout, and long titles end in "…" with no sideways scrolling.
+- **Reply box:** one **Attach** button on Send's row opens Add images, Capture screen and Add video (Take photo, Choose
+  from gallery and Add video on phones). Ctrl+V pastes a screenshot into the reply field; files can be dropped on the form.
+- **Description is optional** on every ticket type. No description and no files means no empty card or message.
+- **Image viewer:** zoom in and out up to 400 %, with the buttons, + − 0 (with or without Ctrl) or Ctrl + wheel. Drag to
+  move around.
+- **Team & modules:** tree lines join each sub-module to its module.
+- **Fixed:** every page stays the same centered width; visiting My inbox or My DAR used to widen the pages after them. Both
+  are centered now too.
+- **Fixed:** Ctrl+Z, Ctrl+Y and the other markup shortcuts stopped working after clicking on the screenshot.
+- Code: `total` in `lib/tickets/store.ts`, `stepZoom` in `lib/markup/view.ts` (tested), `tickets/attach-menu.tsx`.
+
 ## Filing tickets from a phone (Phase 3.7b, 2026-11-03)
 
 - **Device type:** a dropdown for bugs (Computer, Android phone, iPhone, Tablet), filled in with the last choice on that
