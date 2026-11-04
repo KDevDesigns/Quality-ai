@@ -219,7 +219,7 @@ through, so it says so: check **Tickets** before trying again, or the same ticke
   | iPhone / iPad | iOS 16.4+, and QA Hub **added to the Home Screen** (Share → Add to Home Screen), then turned on from that icon. Not possible in a normal Safari tab |
 
 - Delivery is best-effort: usually seconds, but phone battery savers can delay it, and a notification older than
-  12 hours is dropped.
+  3 days is dropped.
 - **Blocked by mistake?** Click the icon left of the address bar → Notifications → Allow, and reload.
 - **Office network:** the firewall must allow `fcm.googleapis.com`, `*.push.apple.com`,
   `updates.push.services.mozilla.com` and `*.notify.windows.com`. If tests work at home but not at the office, ask IT.

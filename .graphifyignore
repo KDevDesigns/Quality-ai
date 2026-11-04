@@ -1,0 +1,12 @@
+# Left out of the graphify knowledge graph.
+
+# Copies of .claude/skills
+.agents/
+
+# The same DCWD seal at other sizes; public/dcwd-seal.png stays in the graph
+app/icon.png
+app/apple-icon.png
+public/icons/
+
+# Notification tones, no speech to transcribe
+public/sounds/
