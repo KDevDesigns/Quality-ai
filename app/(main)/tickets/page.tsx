@@ -151,7 +151,7 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
         title={me.role === "ADMIN" ? "All tickets" : "My tickets"}
         description={SCOPE_TEXT[me.role]}
         actions={
-          <>
+          <div className="flex items-center gap-2">
             <ViewSwitch view={view} hrefs={viewHrefs} />
             {canFile ? (
               <span className="max-md:hidden">
@@ -183,7 +183,7 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
                 </form>
               </FilterSheet>
             </span>
-          ) : null
+          </div>
         }
       />
       {deleted ? (
