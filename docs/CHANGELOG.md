@@ -1,25 +1,43 @@
 # Changelog
 
-## UI rework, round 1 (Phase 3.7a, 2026-11-03)
+## Install as an app (Phase 3.7c, 2026-11-03)
 
-From the user's marked-up screenshots, ahead of the rest of 3.7a.
+No database changes. It keeps no copy of pages or tickets, so offline it shows the browser's normal "no connection" page.
 
-- **Tickets on a phone:** the filter button now sits to the left of the search bar.
-- **Admin Home:** Total tickets, QA testers, Developers and Modules, then Not in any module. Testers and developers keep
-  their Home.
-- **Footer:** stays at the bottom of the window on laptops.
-- **My inbox:** the conversation header shows the ticket's type, severity, module, who filed it and its developer. In
-  the list, an unread row is bold throughout, and long titles end in "…" with no sideways scrolling.
-- **Reply box:** one **Attach** button on Send's row opens Add images, Capture screen and Add video (Take photo, Choose
-  from gallery and Add video on phones). Ctrl+V pastes a screenshot into the reply field; files can be dropped on the form.
-- **Description is optional** on every ticket type. No description and no files means no empty card or message.
-- **Image viewer:** zoom in and out up to 400 %, with the buttons, + − 0 (with or without Ctrl) or Ctrl + wheel. Drag to
-  move around.
-- **Team & modules:** tree lines join each sub-module to its module.
-- **Fixed:** every page stays the same centered width; visiting My inbox or My DAR used to widen the pages after them. Both
-  are centered now too.
+- **Icons:** 192 and 512 px icons, a maskable one for Android and a solid one for iPhone, all with the seal on white.
+- **Install QA Hub:** My account → Notifications has a one-tap button on Android, Chrome and Edge, and the steps on iPhone. Windows also gets a tip
+  to start it with the PC. The sign-in prompt offers it too. Hidden once QA Hub runs from its own icon.
+- **Unread count on the icon:** updated when the bell checks and when a push arrives, even with the app closed. A push carries the number, no ticket text.
+  Cleared on sign-out; a device with notifications still on gets it back at its next push.
+- **Share → QA Hub (Android):** a screenshot or recording shared from the gallery opens New ticket with it attached, through the normal markup, upload and
+  checks. If you aren't signed in, it's still waiting after you sign in, and New ticket collects it whenever it's next opened. Not collected within a
+  day, it's deleted the next time the app opens or a notification arrives. Sign-out deletes it too.
+- **Service worker:** now registered on every signed-in page, not only when notifications are turned on.
+- Code: `lib/pwa.ts`, `lib/tickets/shared-files.ts` (tested), `hooks/use-install-prompt.ts`, `components/pwa-setup.tsx`, `account/install-card.tsx`,
+  `app/share-target/route.ts`, `public/sw.js`, `app/manifest.ts`.
+
+## Bug fixes, photos, DAR periods and ticket tabs (Phase 3.7a follow-up, 2026-11-03)
+
+The look stays as on the live site. The phone redesign tried on 2026-11-03 is kept only on the branch `phase-3.7a-mobile-look`, for
+reference, while the user designs the new UI in the Claude Design canvas.
+
+- **Fixed:** a long module name no longer pushes a phone's page and tab bar sideways. A grid's default column now fits the page on
+  phones, and anything too wide is cut off rather than moving the page.
+- **Fixed:** Back after filing a ticket goes to the ticket list, not the finished form. The gallery reminder is gone.
+- **Fixed:** every page stays the same centered width; visiting My inbox or My DAR used to widen the pages after them.
 - **Fixed:** Ctrl+Z, Ctrl+Y and the other markup shortcuts stopped working after clicking on the screenshot.
-- Code: `total` in `lib/tickets/store.ts`, `stepZoom` in `lib/markup/view.ts` (tested), `tickets/attach-menu.tsx`.
+- **Removed:** the customer-data note on New ticket, on every device.
+- **Profile photo:** the avatar is the upload. Tap your picture on Settings or My account → Profile; with a photo already there it offers
+  Change and Remove. On a laptop, they're also in the account menu at the top. It's cropped to a centred square and saved small.
+  Everyone signed in sees it. Included in backups and in Delete user.
+- **Each person's colours:** without a photo, a person's initials show in one of 16 colour pairs that is theirs, in conversations too.
+- **My DAR periods:** My details asks for the first period (a month, then 1st or 2nd half). The list starts from it and adds each next 15
+  days by itself. Saved DARs always stay listed. Someone who hasn't chosen starts from their earliest saved DAR.
+- **Ticket page on phones:** two tabs, **Details & logs** and **Conversation**, by tapping or swiping. A half-written reply survives switching.
+- **Markup on phones:** full screen, with the screenshot taking all the free height. On a phone under 768 px wide held sideways, the tools sit beside it; wider ones get the laptop dialog, as before.
+- **Setup:** migrations `user_avatar` and `dar_first_period` (`npm run db:deploy`). Run them before this code goes live.
+- Code: `lib/avatar.ts` and `lib/users/avatar.ts`, `components/user-avatar.tsx`, `components/avatar-upload.tsx`, `files/avatar/[userId]`,
+  `periodsFrom` in `lib/dar/period.ts`, `tickets/[number]/ticket-tabs.tsx`, `lib/tickets/swipe.ts` (tested), and the `short:` variant in `app/globals.css`.
 
 ## Filing tickets from a phone (Phase 3.7b, 2026-11-03)
 

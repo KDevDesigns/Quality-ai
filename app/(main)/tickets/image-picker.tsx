@@ -273,36 +273,32 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
 
   return (
     <div
-      {...(compact
-        ? { className: "contents" }
-        : {
-            // Focusable, so clicking it and pressing Ctrl+V pastes here.
-            tabIndex: 0,
-            role: "group",
-            "aria-label": "Screenshots",
-            onPaste: state.onPaste,
-            onClick: (e: React.MouseEvent<HTMLDivElement>) => {
-              // The markup dialog is this box's child in React, so its clicks arrive here too. Focusing the box for them
-              // would take the keyboard away from the dialog, and with it Ctrl+Z and every other shortcut.
-              if (!e.currentTarget.contains(e.target as Node)) return;
-              if (!(e.target as HTMLElement).closest("button, input, a")) e.currentTarget.focus();
-            },
-            className: cn(
-              // Focused: a solid outline (ready for Ctrl+V). Dragging a file over keeps its own look, the filled box.
-              "grid cursor-default gap-2.5 rounded-[0.625rem] border border-dashed border-line p-3 transition-colors outline-none focus:border-solid focus:border-acc-b focus-visible:ring-3 focus-visible:ring-acc/30",
-              over && "border-acc bg-acc-t2",
-            ),
-            onDragOver: (e: React.DragEvent) => {
-              e.preventDefault();
-              setOver(true);
-            },
-            onDragLeave: () => setOver(false),
-            onDrop: (e: React.DragEvent) => {
-              e.preventDefault();
-              setOver(false);
-              state.add(e.dataTransfer.files);
-            },
-          })}
+      // Focusable, so clicking it and pressing Ctrl+V pastes here.
+      tabIndex={0}
+      role="group"
+      aria-label="Screenshots"
+      onPaste={state.onPaste}
+      onClick={(e) => {
+        // The markup dialog is this box's child in React, so its clicks arrive here too. Focusing the box for them
+        // would take the keyboard away from the dialog, and with it Ctrl+Z and every other shortcut.
+        if (!e.currentTarget.contains(e.target as Node)) return;
+        if (!(e.target as HTMLElement).closest("button, input, a")) e.currentTarget.focus();
+      }}
+      className={cn(
+        // Focused: a solid outline (ready for Ctrl+V). Dragging a file over keeps its own look, the filled box.
+        "grid cursor-default gap-2.5 rounded-[0.625rem] border border-dashed border-line p-3 transition-colors outline-none focus:border-solid focus:border-acc-b focus-visible:ring-3 focus-visible:ring-acc/30",
+        over && "border-acc bg-acc-t2",
+      )}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setOver(true);
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setOver(false);
+        state.add(e.dataTransfer.files);
+      }}
     >
       {state.items.map((i) => (i.id ? <input key={i.key} type="hidden" name="uploadIds" value={i.id} /> : null))}
       <input

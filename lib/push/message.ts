@@ -15,10 +15,10 @@ export type PushEvent =
   | { kind: "edited" };
 
 /**
- * `tone` is the recipient's sound choice (see tones.ts), added per person when it's sent. `stack` lets the service
- * worker merge replies on one ticket (public/sw.js).
+ * `tone` is the recipient's sound choice (see tones.ts) and `count` their unread tickets for the app icon, a number with no
+ * ticket text, both added per person when it's sent. `stack` lets the service worker merge replies on one ticket (public/sw.js).
  */
-export type PushMessage = { title: string; body: string; url: string; tag: string; tone?: string; stack?: { line: string; detail: string } };
+export type PushMessage = { title: string; body: string; url: string; tag: string; tone?: string; count?: number; stack?: { line: string; detail: string } };
 
 export type PushTicket = { number: number; title: string; type: keyof typeof TYPE_LABELS; areaName: string | null };
 

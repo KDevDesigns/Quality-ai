@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { InlineAlert } from "@/components/inline-alert";
 import { PageHeader } from "@/components/page-header";
 import { FormSkeleton } from "@/components/skeletons";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,16 +27,11 @@ async function NewTicket() {
   const me = await requireAction("tickets.create");
   const { areas, people } = await ticketFormOptions();
   return (
-    <div className="grid gap-4">
-      <InlineAlert tone="info">
-        Screenshots often show customer names, account numbers and amounts. They stay on this office server and are never sent to any AI service.
-      </InlineAlert>
-      {/* Not clipped on phones, so the File ticket bar can stick to the bottom of the screen. */}
-      <Card className="max-md:overflow-visible">
-        <CardContent>
-          <TicketForm areas={areas} people={people} canAssign={can(me, "tickets.assign")} draftUserId={me.id} />
-        </CardContent>
-      </Card>
-    </div>
+    // Not clipped on phones, so the File ticket bar can stick to the bottom of the screen.
+    <Card className="max-md:overflow-visible">
+      <CardContent>
+        <TicketForm areas={areas} people={people} canAssign={can(me, "tickets.assign")} draftUserId={me.id} />
+      </CardContent>
+    </Card>
   );
 }

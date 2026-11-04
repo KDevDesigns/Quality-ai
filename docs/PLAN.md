@@ -311,9 +311,9 @@ Can be built before 3.6, because tickets already exist. Built in three parts, ea
 **3.7a** the mobile UI rework, **3.7b** filing from the phone, **3.7c** the installed app (PWA).
 
 #### 3.7a — Mobile UI rework (no database changes)
-*Round 1 of the user's screenshot notes was built ahead of the rest (2026-11-03): see the changelog. It also changed the
-admin Home, the laptop footer and My inbox's header and list.*
 
+*On hold (2026-11-03). The redesigns tried so far were not accepted, so the look stays as on the live site, and the user is designing the new
+UI in the Claude Design canvas first. That work is on the branch `phase-3.7a-mobile-look`. What shipped from it is under "3.7a follow-up" in the changelog.*
 Today most pages only shrink on a phone (the ticket list, Team, Admin → Users and My DAR have no phone layout). This
 part makes QA Hub feel like a phone app. Applies below 768 px wide (Tailwind `md`, where the sidebar already turns
 into a drawer); tablets in portrait and up, laptops and big screens stay as they are.
@@ -359,7 +359,8 @@ reaches every page for each role; a person can read and reply to a ticket one-ha
   ("Delete the screenshot from your gallery"), keep **Sign out** easy to reach on shared company phones (Settings
   tab), and let an admin end a user's sessions if a phone is lost.
 
-#### 3.7c — Install as an app (PWA)
+#### 3.7c — Install as an app (PWA) (built 2026-11-03, awaiting a real-phone test)
+*The iPhone guide is written steps with the Share icon, not pictures.*
 - **Install as an app (PWA)**, in this order (each step ships on its own):
   1. **Icons and manifest:** the manifest (`app/manifest.ts`, done in 3.8c) gets 192 and 512 px icons plus a
      *maskable* one (the seal on a solid background with a safe margin) so Android doesn't put it in a white square, an

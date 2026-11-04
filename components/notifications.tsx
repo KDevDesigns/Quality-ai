@@ -9,6 +9,7 @@ import { markAllTicketsRead } from "@/app/(main)/tickets/actions";
 import { UnreadDot } from "@/app/(main)/tickets/ticket-bits";
 import { Button } from "@/components/ui/button";
 import { timeAgo } from "@/lib/format";
+import { showBadge } from "@/lib/pwa";
 import { cn } from "@/lib/utils";
 
 // Unread tickets for the bell, the sidebar counts and the red dots, from GET /api/notifications. Polled at once when a
@@ -52,6 +53,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       const prev = last.current;
       last.current = next;
       setData(next);
+      showBadge(next.count);
       // Refresh only for something new, not when reading a ticket lowered the count.
       const newer = prev && (next.count > prev.count || (next.items[0]?.lastActivityAt ?? "") > (prev.items[0]?.lastActivityAt ?? ""));
       // The address is read here, not with usePathname: this provider is part of the prerendered shell.

@@ -24,11 +24,14 @@ export function DarEditor({
   periods,
   hasFullName,
   accountName,
+  needsFirstPeriod,
 }: {
   report: DarReportData;
   periods: PeriodOption[];
   hasFullName: boolean;
   accountName: string;
+  /** They haven't chosen their first period and have saved nothing, so only the current period is listed. */
+  needsFirstPeriod: boolean;
 }) {
   const router = useRouter();
   const [cells, setCells] = useState<DarCells>(report.cells);
@@ -141,6 +144,15 @@ export function DarEditor({
             My details
           </Link>
           .
+        </InlineAlert>
+      ) : null}
+      {needsFirstPeriod && !empty ? (
+        <InlineAlert tone="info">
+          Choose the first period of your DAR under{" "}
+          <Link href="/dar/setup" className="font-semibold underline underline-offset-2">
+            My details
+          </Link>
+          , and your list of periods will start from it.
         </InlineAlert>
       ) : null}
 

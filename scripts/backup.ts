@@ -20,7 +20,7 @@ const README = `QA Hub backups
 ==============
 
 Database\\  One file per night: "QA Hub database <date> <time>.json". The newest ones are kept, older ones are deleted.
-Files\\     Every screenshot and video attached to a ticket, in the same folders as in Supabase Storage.
+Files\\     Every screenshot and video attached to a ticket and every profile photo, in the same folders as in Supabase Storage.
 
 These hold ticket data (customer names, account numbers, amounts). Don't share or upload them anywhere.
 

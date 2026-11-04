@@ -77,6 +77,12 @@ model User {
   notifyTone         String             @default("tone-1")
   /// Device notifications show the ticket title and the message. Off: only "#12 · New reply from Ana".
   pushPreviews       Boolean            @default(true)
+  /// Picks their colours when they have no photo (lib/avatar.ts). Each account gets the next number.
+  avatarColor        Int                @default(autoincrement())
+  /// Their profile photo in Storage, generated like any upload's name. Empty: their colours show.
+  avatarName         String?
+  avatarMime         String?
+  avatarSize         Int?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   sessions           Session[]
@@ -319,6 +325,7 @@ model DarProfile {
   notedByTitle     String?
   coreFunctions    Json? // [{ duty, mfo, autofill }]
   supportFunctions Json?
+  firstPeriodStart String? // "2026-11-01", where their list of periods starts
   updatedAt        DateTime @updatedAt
 }
 

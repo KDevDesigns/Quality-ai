@@ -4,6 +4,13 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* A phone held sideways, when height is scarce (the markup editor puts its tools beside the screenshot). */
+@custom-variant short {
+  @media (max-height: 30rem) {
+    @slot;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -319,6 +326,15 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /* A grid with no columns set grows to its widest content, and text cut off with "…" still counts at full length, so one long
+     module name made a list wider than the phone and pushed the whole page and the tab bar sideways. So on phones a grid's
+     default column fits the page. In this layer, so any grid-cols-* class still wins. */
+  @media (width < 48rem) {
+    [data-main] .grid,
+    [data-main] .max-md\:grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
   html {
     @apply font-sans;

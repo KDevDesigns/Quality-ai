@@ -8,6 +8,7 @@ import { FormSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireAction } from "@/lib/auth/session";
+import { firstPeriodOf, manilaDay, periodFor } from "@/lib/dar/period";
 import { darStore } from "@/lib/dar/store";
 import { db } from "@/lib/db";
 import { DarSetupForm } from "./setup-form";
@@ -38,11 +39,13 @@ export default function DarSetupPage() {
 async function SetupBody() {
   await connection();
   const me = await requireAction("dar.use");
-  const [header, profile] = await Promise.all([dar.header(me), dar.profile(me.id)]);
+  const [header, profile, saved] = await Promise.all([dar.header(me), dar.profile(me.id), dar.list(me.id)]);
+  const today = manilaDay(new Date());
+  const first = firstPeriodOf(profile?.firstPeriodStart, saved.map((s) => s.periodStart)) ?? periodFor(today);
   return (
     <Card>
       <CardContent>
-        <DarSetupForm header={header} hasFullName={!!profile?.fullName} />
+        <DarSetupForm header={header} hasFullName={!!profile?.fullName} firstPeriodStart={first.start} today={today} />
       </CardContent>
     </Card>
   );

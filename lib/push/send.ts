@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@/lib/generated/prisma/client";
+import { notificationStore } from "@/lib/tickets/notifications";
 import { pushMessage, type PushEvent, type PushMessage } from "./message";
 import { pickRecipients } from "./recipients";
 import { effectiveTone } from "./tones";
@@ -100,6 +101,7 @@ export async function notifyTicket(
 
     const recipients = pickRecipients(ticket, input.actorId, candidates, now);
 
+    const unread = notificationStore(db);
     let sent = 0;
     let removed = 0;
     for (const u of recipients) {
@@ -108,6 +110,8 @@ export async function notifyTicket(
         ...pushMessage(event, { ...facts, actorName: actor.name, forAssignee: u.id === ticket.assigneeId, previews: u.pushPreviews, at: now }),
         // Outside work hours a "silent" choice arrives without sound or vibration (public/sw.js), still in the list.
         tone: u.delivery === "silent" ? "silent" : effectiveTone(u),
+        // Only for the app icon: if it can't be read, the notification still goes, and the icon keeps its last number.
+        count: await unread.unread(u, 1).then((r) => r.count, () => undefined),
       };
       const r = await sendTo(db, send, u.pushSubscriptions, msg, now);
       sent += r.sent;

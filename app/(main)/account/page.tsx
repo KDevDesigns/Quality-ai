@@ -2,15 +2,18 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { BellRingIcon, ClockIcon, KeyRoundIcon, UserRoundIcon, Volume2Icon } from "lucide-react";
+import { AvatarUpload } from "@/components/avatar-upload";
 import { InlineAlert } from "@/components/inline-alert";
 import { PageHeader } from "@/components/page-header";
 import { AccountSkeleton } from "@/components/skeletons";
+import { UserAvatar } from "@/components/user-avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ROLE_LABELS } from "@/lib/auth/permissions";
 import { getCurrentUser } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { pushStore } from "@/lib/push/store";
 import { AccountTabs } from "./account-tabs";
+import { InstallCard } from "./install-card";
 import { DeviceNotificationsCard, ToneCard, WorkHoursCard } from "./notifications-card";
 import { PasswordForm } from "./password-form";
 
@@ -27,6 +30,15 @@ export default function AccountPage() {
         <AccountBody />
       </Suspense>
     </>
+  );
+}
+
+function ProfileName({ name, detail }: { name: string; detail: string }) {
+  return (
+    <div className="grid min-w-0 gap-1">
+      <CardTitle>{name}</CardTitle>
+      <CardDescription className="wrap-anywhere">{detail}</CardDescription>
+    </div>
   );
 }
 
@@ -53,18 +65,22 @@ async function AccountBody() {
             icon: <UserRoundIcon />,
             content: (
               <Card>
-                <CardHeader className="flex flex-row items-center gap-4">
-                  <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-acc-t text-xl font-semibold text-acc-ink" aria-hidden>
-                    {user.name.slice(0, 1).toUpperCase()}
-                  </span>
-                  <div className="grid gap-1">
-                    <CardTitle>{user.name}</CardTitle>
-                    <CardDescription>
-                      {user.email} · {ROLE_LABELS[user.role]}
-                    </CardDescription>
-                  </div>
+                <CardHeader>
+                  {user.mustChangePassword ? (
+                    <div className="flex items-center gap-3.5">
+                      <UserAvatar person={user} className="size-14 text-xl" />
+                      <ProfileName name={user.name} detail={`${user.email} · ${ROLE_LABELS[user.role]}`} />
+                    </div>
+                  ) : (
+                    <AvatarUpload person={user} avatarClassName="size-14 text-xl">
+                      <ProfileName name={user.name} detail={`${user.email} · ${ROLE_LABELS[user.role]}`} />
+                    </AvatarUpload>
+                  )}
                 </CardHeader>
-                <CardContent className="text-sm text-muted-foreground">An admin can change your nickname, email or role under Admin → Users.</CardContent>
+                <CardContent className="grid gap-1 text-sm text-muted-foreground">
+                  <p>{user.mustChangePassword ? "Choose your own password first, then you can add a photo." : "Click your picture to change your photo. Everyone in QA Hub sees it."}</p>
+                  <p>An admin can change your nickname, email or role under Admin → Users.</p>
+                </CardContent>
               </Card>
             ),
           },
@@ -85,7 +101,18 @@ async function AccountBody() {
               </Card>
             ),
           },
-          { id: "notifications", label: "Notifications", hint: "Alerts on this device", icon: <BellRingIcon />, content: <DeviceNotificationsCard /> },
+          {
+            id: "notifications",
+            label: "Notifications",
+            hint: "Alerts on this device",
+            icon: <BellRingIcon />,
+            content: (
+              <div className="grid gap-5">
+                <DeviceNotificationsCard />
+                <InstallCard />
+              </div>
+            ),
+          },
           { id: "sound", label: "Sound", hint: "Tone and message previews", icon: <Volume2Icon />, content: <ToneCard initial={{ ...tone, previews }} /> },
           { id: "hours", label: "Work hours", hint: "When notifications may ring", icon: <ClockIcon />, content: <WorkHoursCard initial={workHours} /> },
         ]}

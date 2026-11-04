@@ -16,7 +16,8 @@ const GROUP_LABEL = { tickets: "Tickets", admin: "Admin" } as const;
 /** Pages seen in this tab since QA Hub loaded. More than one means Back can return inside QA Hub. */
 let pagesSeen = 0;
 
-type PhoneNav = { back: { href: string; label: string }; title: string };
+/** `up`: Back always goes to the parent page, not through the history. */
+type PhoneNav = { back: { href: string; label: string; up?: boolean }; title: string };
 
 export function AppTopbar({ user }: { user: SidebarUser | null }) {
   const pathname = usePathname();
@@ -24,7 +25,9 @@ export function AppTopbar({ user }: { user: SidebarUser | null }) {
   useEffect(() => {
     pagesSeen++;
   }, [pathname]);
-  const phone = isTabRoot(pathname, params.has("t")) ? null : { back: backTarget(pathname), title: mobileTitle(pathname, params) };
+  // Just filed (?filing=, see tickets/actions.ts): the page before this is the finished form, so Back goes to the list.
+  const back = params.has("filing") ? { href: "/tickets", label: "Tickets", up: true } : backTarget(pathname);
+  const phone = isTabRoot(pathname, params.has("t")) ? null : { back, title: mobileTitle(pathname, params) };
   return <TopbarView pathname={pathname} user={user} phone={phone} />;
 }
 
@@ -73,13 +76,13 @@ function TopbarView({ pathname, user, phone }: { pathname: string | null; user: 
 }
 
 /** Back inside QA Hub when there's somewhere to go back to, otherwise up to the parent page. */
-function BackButton({ href, label }: { href: string; label: string }) {
+function BackButton({ href, label, up }: { href: string; label: string; up?: boolean }) {
   const router = useRouter();
   return (
     <Link
       href={href}
       onClick={(e) => {
-        if (pagesSeen > 1) {
+        if (!up && pagesSeen > 1) {
           e.preventDefault();
           router.back();
         }

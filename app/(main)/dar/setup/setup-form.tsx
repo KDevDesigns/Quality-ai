@@ -10,15 +10,19 @@ import { cn } from "@/lib/utils";
 import { submitKeepingInput } from "../../tickets/ticket-form";
 import { saveDarProfile } from "../actions";
 import { FunctionsEditor } from "../functions-editor";
+import { FirstPeriodField } from "./first-period-field";
 
 // The person's own DAR set-up, laid out like the old shared DAR template page. Empty fields stay empty on the report.
 
-export function DarSetupForm({ header: h, hasFullName }: { header: DarHeader; hasFullName: boolean }) {
+export function DarSetupForm({ header: h, hasFullName, firstPeriodStart, today }: { header: DarHeader; hasFullName: boolean; firstPeriodStart: string; today: string }) {
   const [state, action, pending] = useActionState(saveDarProfile, initialFormState);
   const err = state.fieldErrors ?? {};
 
   return (
     <form onSubmit={submitKeepingInput(action)} className="grid gap-5">
+      <FormSection>First period</FormSection>
+      <FirstPeriodField initial={firstPeriodStart} today={today} error={err.firstPeriodStart} />
+
       <FormSection>Header</FormSection>
       <div className="grid gap-4 md:grid-cols-2">
         <Field label="Full name" htmlFor="fullName" error={err.fullName} hint="As on official forms, e.g. Juan D. Dela Cruz. Your QA Hub nickname is used until you add it.">

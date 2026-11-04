@@ -38,7 +38,7 @@ async function main() {
     else if (!/exists|duplicate/i.test(error.message)) failed.push(`${f.storedName} (${error.message})`);
   }
   console.log(`Files: ${uploaded} uploaded to Storage; the rest were already there.`);
-  if (missing.length) console.error(`Not in ${filesDir}, so those attachments won't open:\n  ${missing.join("\n  ")}`);
+  if (missing.length) console.error(`Not in ${filesDir}, so those files won't open:\n  ${missing.join("\n  ")}`);
   if (failed.length) console.error(`Upload failed:\n  ${failed.join("\n  ")}`);
   if (missing.length || failed.length) process.exitCode = 1;
 }
