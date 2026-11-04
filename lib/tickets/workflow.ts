@@ -92,6 +92,10 @@ type Rule = {
   who: (t: TicketRef, u: Actor) => boolean;
   needsNote?: boolean;
   needsDuplicate?: boolean;
+  /** Moves the ticket back a step, to correct a move made by mistake. Never the main button. */
+  back?: boolean;
+  /** What to write in the note, when the target status's usual hint doesn't fit. */
+  hint?: string;
 };
 
 const WORKING: readonly TicketStatus[] = ["NEW", "IN_PROGRESS", "REOPENED"];
@@ -108,10 +112,15 @@ const RULES: Rule[] = [
   { from: [...WORKING, "NEED_INFO"], to: "DUPLICATE", label: "Duplicate", who: (t, u) => devSide(t, u) || qaSide(t, u), needsDuplicate: true },
   { from: [...WORKING, "NEED_INFO"], to: "WONT_FIX", label: "Won't fix", who: devSide, needsNote: true },
   { from: [...WORKING, "NEED_INFO"], to: "REJECTED", label: "Reject", who: devSide, needsNote: true },
-  { from: ["NEW", "NEED_INFO"], to: "CLOSED", label: "Withdraw", who: reporter, needsNote: true },
+  { from: ["NEW", "NEED_INFO"], to: "CLOSED", label: "Withdraw", who: reporter, needsNote: true, hint: "Why you're withdrawing it." },
+  // Back a step, for a move made by mistake. Each asks why, so the other side knows what happened.
+  { from: ["IN_PROGRESS"], to: "NEW", label: "Stop work", who: devSide, needsNote: true, back: true, hint: "Why it goes back to To do, e.g. started the wrong ticket." },
+  { from: ["FIXED"], to: "IN_PROGRESS", label: "Not fixed yet", who: devSide, needsNote: true, back: true, hint: "What still needs work, so QA doesn't retest yet." },
+  { from: ["VERIFIED"], to: "FIXED", label: "Undo verify", who: qaSide, needsNote: true, back: true, hint: "Why it isn't verified after all." },
+  { from: ["REJECTED", "WONT_FIX", "DUPLICATE"], to: "IN_PROGRESS", label: "Take back", who: devSide, needsNote: true, back: true, hint: "Why you're working on it after all." },
 ];
 
-export type Transition = { to: TicketStatus; label: string; needsNote: boolean; needsDuplicate: boolean };
+export type Transition = { to: TicketStatus; label: string; needsNote: boolean; needsDuplicate: boolean; back: boolean; hint?: string };
 
 /** The moves `user` may make on this ticket now, one per target status. */
 export function allowedTransitions(t: TicketRef, u: Actor): Transition[] {
@@ -120,7 +129,7 @@ export function allowedTransitions(t: TicketRef, u: Actor): Transition[] {
   for (const r of RULES) {
     if (seen.has(r.to) || !r.from.includes(t.status) || !r.who(t, u)) continue;
     seen.add(r.to);
-    out.push({ to: r.to, label: r.label, needsNote: !!r.needsNote, needsDuplicate: !!r.needsDuplicate });
+    out.push({ to: r.to, label: r.label, needsNote: !!r.needsNote, needsDuplicate: !!r.needsDuplicate, back: !!r.back, ...(r.hint ? { hint: r.hint } : {}) });
   }
   return out;
 }

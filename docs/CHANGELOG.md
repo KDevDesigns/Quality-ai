@@ -1,5 +1,6 @@
 # Changelog
 
+<<<<<<< Updated upstream
 ## Install as an app (Phase 3.7c, 2026-11-03)
 
 No database changes. It keeps no copy of pages or tickets, so offline it shows the browser's normal "no connection" page.
@@ -58,6 +59,52 @@ reference, while the user designs the new UI in the Claude Design canvas.
   My inbox and conversations fit the screen, including long titles and long unbroken text. On a touch screen, Enter in a
   reply starts a new line, and the conversation scrolls with the page. Unread counts no longer make a page rebuild as
   it loads.
+=======
+## Tickets: move a ticket back a step (2026-11-04)
+
+A move made by mistake can now be taken back on the same ticket, instead of filing a new one. Each asks for a note,
+which shows in the history and in the notification, so the other side knows why.
+
+| Button | From → to | Who |
+|---|---|---|
+| **Stop work** | In progress → New (To do) | the assigned developer |
+| **Not fixed yet** | Fixed → In progress (before QA verifies it) | the assigned developer |
+| **Undo verify** | Verified → Fixed | the QA tester who filed it |
+| **Take back** | Rejected, Won't fix or Duplicate → In progress | the assigned developer |
+
+- Admins can make all of them, as with every other move. **Reopen** (QA, back to To do) is unchanged.
+- On the board, drag the card back a column (In progress to To do, Fixed to In progress…); the ⋯ menu and the ticket
+  page have them as buttons, never as the main one.
+- Taking back a duplicate clears its "Duplicate of #…" link.
+- Each move's note box now says what to write; **Withdraw** no longer shows "Optional." on a required note.
+- Code: the rules in `lib/tickets/workflow.ts` (tested); `Transition` has `back` and `hint`.
+
+## Tickets: Board view (2026-11-04)
+
+- **List or Board:** a switch beside **New ticket** shows the tickets as the usual list or as a board, like ClickUp or
+  Planner. Each browser remembers the last choice, so Tickets opens the same way next time.
+- **Same views and filters as the list:** Open, Assigned to me, Reported by me, Needs info, Waiting for retest, Done
+  and All, plus search, type, module and developer. Switching between List and Board keeps them. Columns the view
+  leaves empty (Done under Open) stay on the board as places to drop a card.
+- **Columns** follow the workflow: **To do** (new and reopened), **In progress**, **Needs info**, **Fixed**,
+  **Verified** and **Done** (closed, rejected, duplicate, won't fix), each with its count. A column shows its 50 most
+  recently active tickets and links to the rest in the list.
+- **Cards** show the number, module, title, type, severity, P1/P2 priority, a reopened or rejected status, replies,
+  last activity, and the developer (on a developer's board, who filed it). Unread tickets are bold with the red dot.
+  Click a card to open the ticket.
+- **Drag a card to another column to move it.** Only the columns you may move it to light up; the rest fade.
+  - A move without a note (Start work, Info added, Mark fixed, Verified, Close) happens at once, with **Undo** for 5
+    seconds. It is saved, and people are notified, only when that message closes. Closing the tab before then asks
+    first.
+  - A move that needs a note (Ask for info, Reopen, Reject, Won't fix, Withdraw, Duplicate) asks for it, as the ticket
+    page does. Done asks how it ends when there's more than one way.
+- **The ⋯ menu on each card** opens it, makes any move it allows (through the note dialog, so you can add one), and
+  assigns or reassigns the developer (QA testers and admins). On a phone, where there's no dragging, the columns swipe
+  sideways with tabs to jump between them.
+- Code: `lib/tickets/board.ts` (columns, which move lands where, which columns a view fills; tested),
+  `ticketStore.board()`, `app/(main)/tickets/board.tsx`, `view-switch.tsx`. The ticket page's move and assign forms are
+  shared with the board. Toasts (sonner) are now mounted in `app/(main)/layout.tsx`.
+>>>>>>> Stashed changes
 
 ## Delete user and the Designer tick-box (2026-11-01)
 

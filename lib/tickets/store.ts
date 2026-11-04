@@ -3,6 +3,7 @@ import { areaPath } from "@/lib/areas/tree";
 import { can } from "@/lib/auth/permissions";
 import type { TicketCreate, TicketEdit, TicketFilters, TransitionInput } from "@/lib/schemas/ticket";
 import { MAX_IMAGES_PER_POST, MAX_PENDING_PER_USER, MAX_VIDEOS_PER_POST, type UploadKind } from "@/lib/uploads/limits";
+import { BOARD_COLUMN_LIMIT, BOARD_COLUMNS } from "./board";
 import {
   canAssign,
   canDeleteTicket,
@@ -45,6 +46,26 @@ export function scopeWhere(actor: Actor): Prisma.TicketWhereInput {
   const s = ticketScope(actor);
   return s === "all" ? {} : s;
 }
+
+/** What a row of the list, or a card on the board, shows. */
+const listSelect = {
+  id: true,
+  number: true,
+  type: true,
+  title: true,
+  status: true,
+  severity: true,
+  priority: true,
+  createdAt: true,
+  lastActivityAt: true,
+  areaId: true,
+  area: { select: { name: true, parent: { select: { name: true } } } },
+  assignee: { select: { id: true, name: true } },
+  reporter: { select: { id: true, name: true } },
+  _count: { select: { comments: true } },
+} satisfies Prisma.TicketSelect;
+
+const byActivity = [{ lastActivityAt: "desc" }, { number: "desc" }] satisfies Prisma.TicketOrderByWithRelationInput[];
 
 export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()) {
   /** A ticket the actor may see. Someone else's ticket gets the same answer as a missing one. */
@@ -102,6 +123,27 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
       })),
     });
     await tx.pendingUpload.deleteMany({ where: { id: { in: ids } } });
+  }
+
+  /** The list (and board) filters, within what `actor` may see. */
+  async function filterWhere(f: TicketFilters, actor: Actor): Promise<Prisma.TicketWhereInput> {
+    const filters: Prisma.TicketWhereInput = {};
+    if (f.status) filters.status = f.status;
+    else if (f.group !== "all") filters.status = { in: [...(f.group === "open" ? OPEN_STATUSES : DONE_STATUSES)] as TicketStatus[] };
+    if (f.type) filters.type = f.type;
+    if (f.area) {
+      const subs = await db.erpArea.findMany({ where: { parentId: f.area }, select: { id: true } });
+      filters.areaId = { in: [f.area, ...subs.map((s) => s.id)] };
+    }
+    if (f.assignee === "none") filters.assigneeId = null;
+    else if (f.assignee) filters.assigneeId = f.assignee === "me" ? actor.id : f.assignee;
+    if (f.reporter) filters.reporterId = f.reporter === "me" ? actor.id : f.reporter;
+    if (f.q) {
+      const num = /^#?(\d{1,9})$/.exec(f.q);
+      filters.OR = [{ title: { contains: f.q, mode: "insensitive" } }, { description: { contains: f.q, mode: "insensitive" } }, ...(num ? [{ number: Number(num[1]) }] : [])];
+    }
+    // AND, so a filter can only narrow the person's scope, never widen it.
+    return { AND: [scopeWhere(actor), filters] };
   }
 
   /** Bumps lastActivityAt and records who did it, so everyone else sees the ticket as unread. */
@@ -214,7 +256,8 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
         if (dup.id === id) throw new TicketError("A ticket can't be a duplicate of itself.");
         duplicateOfId = dup.id;
         note = note ? `Duplicate of #${dup.number}. ${note}` : `Duplicate of #${dup.number}.`;
-      } else if (input.to === "REOPENED") {
+      } else if (t.status === "DUPLICATE") {
+        // Reopened or taken back: no longer a duplicate.
         duplicateOfId = null;
       }
 
@@ -284,49 +327,35 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
 
     /** The tickets `actor` may see, narrowed by the list filters. */
     async list(f: TicketFilters, actor: Actor) {
-      const filters: Prisma.TicketWhereInput = {};
-      if (f.status) filters.status = f.status;
-      else if (f.group !== "all") filters.status = { in: [...(f.group === "open" ? OPEN_STATUSES : DONE_STATUSES)] as TicketStatus[] };
-      if (f.type) filters.type = f.type;
-      if (f.area) {
-        const subs = await db.erpArea.findMany({ where: { parentId: f.area }, select: { id: true } });
-        filters.areaId = { in: [f.area, ...subs.map((s) => s.id)] };
-      }
-      if (f.assignee === "none") filters.assigneeId = null;
-      else if (f.assignee) filters.assigneeId = f.assignee === "me" ? actor.id : f.assignee;
-      if (f.reporter) filters.reporterId = f.reporter === "me" ? actor.id : f.reporter;
-      if (f.q) {
-        const num = /^#?(\d{1,9})$/.exec(f.q);
-        filters.OR = [{ title: { contains: f.q, mode: "insensitive" } }, { description: { contains: f.q, mode: "insensitive" } }, ...(num ? [{ number: Number(num[1]) }] : [])];
-      }
-      // AND, so a filter can only narrow the person's scope, never widen it.
-      const where: Prisma.TicketWhereInput = { AND: [scopeWhere(actor), filters] };
-
+      const where = await filterWhere(f, actor);
       const [total, rows] = await Promise.all([
         db.ticket.count({ where }),
-        db.ticket.findMany({
-          where,
-          orderBy: [{ lastActivityAt: "desc" }, { number: "desc" }],
-          skip: (f.page - 1) * PAGE_SIZE,
-          take: PAGE_SIZE,
-          select: {
-            id: true,
-            number: true,
-            type: true,
-            title: true,
-            status: true,
-            severity: true,
-            priority: true,
-            createdAt: true,
-            lastActivityAt: true,
-            area: { select: { name: true, parent: { select: { name: true } } } },
-            assignee: { select: { id: true, name: true } },
-            reporter: { select: { id: true, name: true } },
-            _count: { select: { comments: true } },
-          },
-        }),
+        db.ticket.findMany({ where, orderBy: byActivity, skip: (f.page - 1) * PAGE_SIZE, take: PAGE_SIZE, select: listSelect }),
       ]);
       return { total, rows };
+    },
+
+    /**
+     * The Board view: the same tickets as the list with the same filters, one column per stage, the most recently
+     * active first. `total` counts the column's tickets, including any past its limit.
+     */
+    async board(f: TicketFilters, actor: Actor) {
+      const where = await filterWhere(f, actor);
+      const [counts, columns] = await Promise.all([
+        db.ticket.groupBy({ by: ["status"], where, _count: { _all: true } }),
+        Promise.all(
+          BOARD_COLUMNS.map((c) =>
+            db.ticket.findMany({
+              where: { AND: [where, { status: { in: [...c.statuses] } }] },
+              orderBy: byActivity,
+              take: BOARD_COLUMN_LIMIT,
+              select: listSelect,
+            }),
+          ),
+        ),
+      ]);
+      const count = (s: TicketStatus) => counts.find((c) => c.status === s)?._count._all ?? 0;
+      return BOARD_COLUMNS.map((c, i) => ({ key: c.key, total: c.statuses.reduce((n, s) => n + count(s), 0), rows: columns[i] }));
     },
 
     /** Permanently deletes a ticket with its thread, log and attachment rows. Returns the files to remove from Storage. */

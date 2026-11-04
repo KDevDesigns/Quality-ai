@@ -29,7 +29,7 @@ const moves = (t: TicketRef, u: Actor) => allowedTransitions(t, u).map((m) => m.
 describe("ticket workflow", () => {
   it("lets the assigned developer work a new ticket", () => {
     expect(moves(ticket("NEW"), dev)).toEqual(["IN_PROGRESS", "FIXED", "NEED_INFO", "DUPLICATE", "WONT_FIX", "REJECTED"]);
-    expect(moves(ticket("IN_PROGRESS"), dev)).toEqual(["FIXED", "NEED_INFO", "DUPLICATE", "WONT_FIX", "REJECTED"]);
+    expect(moves(ticket("IN_PROGRESS"), dev)).toEqual(["FIXED", "NEED_INFO", "DUPLICATE", "WONT_FIX", "REJECTED", "NEW"]);
     expect(moves(ticket("REOPENED"), dev)).toContain("IN_PROGRESS");
   });
 
@@ -40,7 +40,7 @@ describe("ticket workflow", () => {
 
   it("lets the QA tester who filed it verify, close and reopen, but not fix", () => {
     expect(moves(ticket("FIXED"), qa)).toEqual(["VERIFIED", "REOPENED"]);
-    expect(moves(ticket("VERIFIED"), qa)).toEqual(["CLOSED", "REOPENED"]);
+    expect(moves(ticket("VERIFIED"), qa)).toEqual(["CLOSED", "REOPENED", "FIXED"]);
     for (const s of ["CLOSED", "REJECTED", "DUPLICATE", "WONT_FIX"] as const) expect(moves(ticket(s), qa)).toEqual(["REOPENED"]);
     expect(moves(ticket("IN_PROGRESS"), qa)).toEqual(["DUPLICATE"]);
   });
@@ -51,7 +51,7 @@ describe("ticket workflow", () => {
   });
 
   it("never lets a developer verify, close or reopen", () => {
-    expect(moves(ticket("FIXED"), dev)).toEqual([]);
+    expect(moves(ticket("FIXED"), dev)).toEqual(["IN_PROGRESS"]); // only "Not fixed yet"
     expect(moves(ticket("VERIFIED"), dev)).toEqual([]);
     expect(moves(ticket("CLOSED"), dev)).toEqual([]);
   });
@@ -68,7 +68,26 @@ describe("ticket workflow", () => {
 
   it("lets an admin do both sides", () => {
     expect(moves(ticket("NEW", "dev1"), admin)).toEqual(expect.arrayContaining(["IN_PROGRESS", "FIXED", "CLOSED"]));
-    expect(moves(ticket("FIXED"), admin)).toEqual(["VERIFIED", "REOPENED"]);
+    expect(moves(ticket("FIXED"), admin)).toEqual(["VERIFIED", "REOPENED", "IN_PROGRESS"]);
+  });
+
+  it("lets a move made by mistake be taken back a step, with a note", () => {
+    const back = (s: TicketStatus, u: Actor) => allowedTransitions(ticket(s), u).filter((m) => m.back).map((m) => `${m.label} → ${m.to}`);
+    expect(back("IN_PROGRESS", dev)).toEqual(["Stop work → NEW"]);
+    expect(back("FIXED", dev)).toEqual(["Not fixed yet → IN_PROGRESS"]);
+    expect(back("VERIFIED", qa)).toEqual(["Undo verify → FIXED"]);
+    for (const s of ["REJECTED", "WONT_FIX", "DUPLICATE"] as const) expect(back(s, dev)).toEqual(["Take back → IN_PROGRESS"]);
+    // Only the side that made the move (or an admin), and never once the other side has moved on.
+    expect(back("IN_PROGRESS", qa)).toEqual([]);
+    expect(back("VERIFIED", dev)).toEqual([]);
+    expect(back("FIXED", qa)).toEqual([]);
+    expect(back("CLOSED", dev)).toEqual([]);
+    expect(back("IN_PROGRESS", otherDev)).toEqual([]);
+    expect(back("VERIFIED", admin)).toEqual(["Undo verify → FIXED"]);
+    expect(transitionError(ticket("IN_PROGRESS"), dev, { to: "NEW" })).toBe("Add a note explaining why.");
+    expect(transitionError(ticket("IN_PROGRESS"), dev, { to: "NEW", note: "Started the wrong ticket" })).toBeNull();
+    // A move back is never the main button, and says what to write.
+    expect(allowedTransitions(ticket("FIXED"), dev)[0]).toMatchObject({ back: true, hint: expect.stringMatching(/still needs work/) });
   });
 
   it("returns each target status once", () => {

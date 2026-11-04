@@ -152,13 +152,19 @@ describe("ticketStore", () => {
     const d = (await s.get(2, admin))!;
     expect(d.duplicateOf?.number).toBe(1);
     expect(d.events.at(-1)?.note).toBe("Duplicate of #1.");
+
+    // Taken back by mistake: working on it again, no longer a duplicate, not closed.
+    await s.transition(dev, id, { to: "IN_PROGRESS", note: "Not the same bug after all", duplicateOf: null });
+    const back = (await s.get(2, admin))!;
+    expect(back).toMatchObject({ status: "IN_PROGRESS", duplicateOf: null, closedAt: null });
+    expect(back.events.at(-1)).toMatchObject({ kind: "STATUS", from: "DUPLICATE", to: "IN_PROGRESS", note: "Not the same bug after all" });
   });
 
   it("refuses a move when the status changed underneath", async () => {
     const s = ticketStore(db, now);
     const { id } = await s.create(qa, input({ assigneeId: dev.id }));
-    await db.ticket.update({ where: { id }, data: { status: "FIXED" } });
-    // The dev's page still thinks it is NEW, but the store reloads, so the move is checked against FIXED.
+    await db.ticket.update({ where: { id }, data: { status: "VERIFIED" } });
+    // The dev's page still thinks it is NEW, but the store reloads, so the move is checked against VERIFIED.
     await expect(s.transition(dev, id, { to: "IN_PROGRESS", note: null, duplicateOf: null })).rejects.toThrow(/can't move/);
   });
 
@@ -261,6 +267,68 @@ describe("ticketStore", () => {
 
     expect(await s.counts(qa)).toMatchObject({ open: 1, toStart: 1, fixed: 0 });
     expect((await s.recent(dev2)).map((r) => r.title)).toEqual(["Bea's bug", "Ana's bug"]);
+  });
+
+  it("lays the board out by stage, within the person's scope and filters", async () => {
+    const s = ticketStore(db, now);
+    const one = await s.create(qa, input({ title: "Payroll tax off by one", areaId: billing, assigneeId: dev.id }));
+    tick();
+    const two = await s.create(qa, input({ title: "Meter reading screen slow", areaId: meterReading, assigneeId: dev.id }));
+    tick();
+    const three = await s.create(qa, input({ title: "Export button misaligned", type: "IMPROVEMENT", severity: null, assigneeId: dev2.id }));
+    tick();
+    await s.create(admin, input({ title: "Login page typo" }));
+    tick();
+    await s.transition(dev, one.id, { to: "FIXED", note: null, duplicateOf: null });
+    await s.transition(qa, one.id, { to: "REOPENED", note: "Still off", duplicateOf: null });
+    tick();
+    await s.transition(dev, two.id, { to: "IN_PROGRESS", note: null, duplicateOf: null });
+    await s.transition(dev2, three.id, { to: "WONT_FIX", note: "By design", duplicateOf: null });
+
+    const board = async (who: Actor, raw: Record<string, string> = {}) =>
+      Object.fromEntries((await s.board(filters(raw), who)).map((c) => [c.key, { total: c.total, numbers: c.rows.map((r) => r.number) }]));
+
+    // Reopened sits in To do with the new ones; Won't fix is Done. Newest activity first.
+    expect(await board(admin, { group: "all" })).toEqual({
+      todo: { total: 2, numbers: [1, 4] },
+      doing: { total: 1, numbers: [2] },
+      info: { total: 0, numbers: [] },
+      fixed: { total: 0, numbers: [] },
+      verified: { total: 0, numbers: [] },
+      done: { total: 1, numbers: [3] },
+    });
+    // The same views as the list: Open (the default) leaves Done empty, Done and one status narrow it.
+    expect(await board(admin)).toMatchObject({ todo: { total: 2 }, doing: { total: 1 }, done: { total: 0, numbers: [] } });
+    expect(await board(admin, { group: "done" })).toMatchObject({ todo: { total: 0 }, doing: { total: 0 }, done: { numbers: [3] } });
+    expect(await board(admin, { status: "IN_PROGRESS" })).toMatchObject({ todo: { total: 0 }, doing: { numbers: [2] } });
+    // Developers see their assignments, QA testers what they filed.
+    expect(await board(dev, { group: "all" })).toMatchObject({ todo: { numbers: [1] }, doing: { numbers: [2] }, done: { total: 0 } });
+    expect(await board(qa, { group: "all" })).toMatchObject({ todo: { numbers: [1] }, doing: { numbers: [2] }, done: { numbers: [3] } });
+    // Module, type, people and search filter too.
+    expect(await board(admin, { area: billing })).toMatchObject({ todo: { numbers: [1] }, doing: { numbers: [2] } });
+    expect(await board(admin, { group: "all", type: "IMPROVEMENT" })).toMatchObject({ todo: { total: 0 }, done: { numbers: [3] } });
+    expect(await board(admin, { assignee: "none" })).toMatchObject({ todo: { numbers: [4] }, doing: { total: 0 } });
+    expect(await board(admin, { q: "#4" })).toMatchObject({ todo: { numbers: [4] }, doing: { total: 0 } });
+  });
+
+  it("shows a column's 50 most recent tickets on the board and counts the rest", async () => {
+    const s = ticketStore(db, now);
+    await db.ticket.createMany({
+      data: Array.from({ length: 53 }, (_, i) => ({
+        number: i + 1,
+        type: "BUG" as const,
+        title: `Closed ${i + 1}`,
+        description: "x",
+        status: "CLOSED" as const,
+        reporterId: qa.id,
+        lastActivityAt: new Date(t + i * 1000),
+        closedAt: new Date(t + i * 1000),
+      })),
+    });
+    const done = (await s.board(filters({ group: "done" }), admin)).find((c) => c.key === "done")!;
+    expect(done.total).toBe(53);
+    expect(done.rows).toHaveLength(50);
+    expect(done.rows[0].number).toBe(53);
   });
 
   it("only gives out attachments on tickets the person can see", async () => {

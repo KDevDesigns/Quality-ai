@@ -1,5 +1,10 @@
 import { z } from "zod";
+<<<<<<< Updated upstream
 import { DEVICE_TYPES, PRIORITIES, SEVERITIES, TICKET_STATUSES, TICKET_TYPES } from "@/lib/tickets/workflow";
+=======
+import { TICKET_VIEWS, type TicketView } from "@/lib/tickets/board";
+import { PRIORITIES, SEVERITIES, TICKET_STATUSES, TICKET_TYPES } from "@/lib/tickets/workflow";
+>>>>>>> Stashed changes
 import { optionalText } from "./common";
 
 const emptyToNull = z
@@ -63,5 +68,7 @@ export const ticketFilters = z.object({
   reporter: param.transform((v) => v || null),
   q: param.transform((v) => v.slice(0, 100)),
   page: param.transform((v) => Math.max(1, Math.min(10000, Number.parseInt(v, 10) || 1))),
+  /** "list" or "board" when the address picks one; otherwise the page uses the one last picked (see lib/tickets/board). */
+  view: param.transform((v) => ((TICKET_VIEWS as readonly string[]).includes(v) ? (v as TicketView) : null)),
 });
 export type TicketFilters = z.infer<typeof ticketFilters>;

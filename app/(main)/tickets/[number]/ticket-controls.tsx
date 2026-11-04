@@ -18,9 +18,9 @@ import { AssigneeSelect, submitKeepingInput, TicketForm, type AreaOption, type A
 
 type Ref = { id: string; number: number };
 
-/** Moves that carry the ticket forward. The first of these is shown as the main button; side exits stay outlined. */
+/** Moves that carry the ticket forward. The first of these is shown as the main button; side exits and moves back stay outlined. */
 const FORWARD: readonly TicketStatus[] = ["IN_PROGRESS", "FIXED", "VERIFIED"];
-const isMain = (m: Transition) => FORWARD.includes(m.to) || (m.to === "CLOSED" && m.label === "Close");
+const isMain = (m: Transition) => !m.back && (FORWARD.includes(m.to) || (m.to === "CLOSED" && m.label === "Close"));
 
 /** The status buttons. Each opens a short dialog for the note. */
 export function StatusMoves({ ticket, status, moves }: { ticket: Ref; status: TicketStatus; moves: Transition[] }) {
@@ -52,10 +52,10 @@ const NOTE_HINTS: Partial<Record<TicketStatus, string>> = {
   REOPENED: "What is still wrong? Add a screenshot in a comment if it helps.",
   REJECTED: "Why this isn't a bug, e.g. it works as the business rule says.",
   WONT_FIX: "Why it won't be fixed.",
-  CLOSED: "Optional.",
 };
 
-function MoveForm({ ticket, move, onDone }: { ticket: Ref; move: Transition; onDone: () => void }) {
+/** One status move with its note (and the duplicate's number). Also the dialog for a card dropped on the board. */
+export function MoveForm({ ticket, move, onDone }: { ticket: Ref; move: Transition; onDone: () => void }) {
   const [state, action, pending] = useActionState(async (prev: FormState, fd: FormData) => {
     const r = await moveTicket(prev, fd);
     if (r.ok) onDone();
@@ -72,7 +72,7 @@ function MoveForm({ ticket, move, onDone }: { ticket: Ref; move: Transition; onD
           <Input id="duplicateOf" name="duplicateOf" inputMode="numeric" required placeholder="e.g. 12" className="w-32 font-mono" />
         </Field>
       ) : null}
-      <Field label="Note" htmlFor="note" error={err.note} required={move.needsNote} hint={NOTE_HINTS[move.to] ?? "Optional."}>
+      <Field label="Note" htmlFor="note" error={err.note} required={move.needsNote} hint={move.hint ?? NOTE_HINTS[move.to] ?? (move.needsNote ? undefined : "Optional.")}>
         <Textarea id="note" name="note" rows={3} maxLength={5000} required={move.needsNote} autoFocus />
       </Field>
       <FormMessage state={state} />
@@ -103,12 +103,6 @@ export function AssignControl({
   assigneeName: string | null;
 }) {
   const [open, setOpen] = useState(!assigneeId);
-  const [chosen, setChosen] = useState(assigneeId);
-  const [state, action, pending] = useActionState(async (prev: FormState, fd: FormData) => {
-    const r = await assignTicket(prev, fd);
-    if (r.ok) setOpen(false);
-    return r;
-  }, initialFormState);
 
   if (!open) {
     return (
@@ -120,6 +114,34 @@ export function AssignControl({
       </div>
     );
   }
+  const close = () => setOpen(false);
+  return <AssignForm ticket={ticket} areas={areas} people={people} areaId={areaId} assigneeId={assigneeId} onDone={close} onCancel={assigneeId ? close : undefined} />;
+}
+
+/** The developer picker, with an optional reason when reassigning. Also the board's Assign dialog. */
+export function AssignForm({
+  ticket,
+  areas,
+  people,
+  areaId,
+  assigneeId,
+  onDone,
+  onCancel,
+}: {
+  ticket: Ref;
+  areas: AreaOption[];
+  people: AssigneeOption[];
+  areaId: string;
+  assigneeId: string;
+  onDone: () => void;
+  onCancel?: () => void;
+}) {
+  const [chosen, setChosen] = useState(assigneeId);
+  const [state, action, pending] = useActionState(async (prev: FormState, fd: FormData) => {
+    const r = await assignTicket(prev, fd);
+    if (r.ok) onDone();
+    return r;
+  }, initialFormState);
 
   const changed = chosen !== assigneeId;
   return (
@@ -134,16 +156,8 @@ export function AssignControl({
         <Button type="submit" size="sm" disabled={pending || !changed}>
           {pending ? "Saving…" : assigneeId ? "Save" : "Assign"}
         </Button>
-        {assigneeId ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setChosen(assigneeId);
-              setOpen(false);
-            }}
-          >
+        {onCancel ? (
+          <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
             Cancel
           </Button>
         ) : null}

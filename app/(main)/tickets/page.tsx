@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -13,19 +14,23 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { areaPath, buildTree } from "@/lib/areas/tree";
+import { areaPath } from "@/lib/areas/tree";
 import { can, type Role } from "@/lib/auth/permissions";
 import { requireAction } from "@/lib/auth/session";
 import { db } from "@/lib/db";
-import { timeAgo } from "@/lib/format";
+import { formatDateTime, timeAgo } from "@/lib/format";
 import { ticketFilters, type TicketFilters } from "@/lib/schemas/ticket";
+import { columnInView, TICKETS_VIEW_COOKIE, type BoardColumnKey, type TicketView } from "@/lib/tickets/board";
 import { notificationStore } from "@/lib/tickets/notifications";
-import { PAGE_SIZE, ticketStore } from "@/lib/tickets/store";
-import { STATUS_LABELS, TICKET_TYPES, TYPE_LABELS, type SeverityValue } from "@/lib/tickets/workflow";
+import { PAGE_SIZE, ticketStore, type TicketListRow } from "@/lib/tickets/store";
+import { allowedTransitions, canAssign, isDone, STATUS_LABELS, TICKET_TYPES, TYPE_LABELS, type Actor, type SeverityValue } from "@/lib/tickets/workflow";
 import { cn } from "@/lib/utils";
+import { TicketBoard, type BoardCard } from "./board";
 import { FilterSheet } from "./filter-sheet";
+import { ticketFormOptions } from "./options";
 import { SeverityTag, TicketStatusPill, TicketTypeLabel, typeStyle, UnreadDot } from "./ticket-bits";
 import { PhoneTicketGroups } from "./ticket-card";
+import { ViewSwitch } from "./view-switch";
 
 export const metadata: Metadata = { title: "Tickets" };
 
@@ -68,32 +73,42 @@ function hrefWith(f: TicketFilters, patch: Partial<Record<keyof TicketFilters, s
 }
 
 type Quick = { label: string; patch: { group: string; status: string | null; assignee: string | null; reporter: string | null } };
-const view = (label: string, group: string, status: string | null = null, assignee: string | null = null, reporter: string | null = null): Quick => ({
+const quick = (label: string, group: string, status: string | null = null, assignee: string | null = null, reporter: string | null = null): Quick => ({
   label,
   patch: { group, status, assignee, reporter },
 });
 
-/** Everyone's list is already limited to their own tickets, so these only split it by stage. Admins also get "mine". */
+/**
+ * Everyone's list is already limited to their own tickets, so these only split it by stage. Admins also get "mine".
+ * The board has the same views: it lays out the same tickets by stage.
+ */
 function quickViews(role: Role): Quick[] {
-  const stages = [view("Needs info", "open", "NEED_INFO"), view("Waiting for retest", "open", "FIXED"), view("Done", "done"), view("All", "all")];
-  if (role === "ADMIN") return [view("Open", "open"), view("Assigned to me", "open", null, "me"), view("Reported by me", "open", null, null, "me"), ...stages];
-  return [view(role === "DEV" ? "Assigned to me" : "My open tickets", "open"), ...stages];
+  const stages = [quick("Needs info", "open", "NEED_INFO"), quick("Waiting for retest", "open", "FIXED"), quick("Done", "done"), quick("All", "all")];
+  if (role === "ADMIN") return [quick("Open", "open"), quick("Assigned to me", "open", null, "me"), quick("Reported by me", "open", null, null, "me"), ...stages];
+  return [quick(role === "DEV" ? "Assigned to me" : "My open tickets", "open"), ...stages];
 }
 
 async function TicketList({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   await connection();
   const me = await requireAction("tickets.view");
-  const f = ticketFilters.parse(sp);
+  const parsed = ticketFilters.parse(sp);
+  // The address picks the list or the board; otherwise it's the one last picked in this browser.
+  const saved: TicketView = (await cookies()).get(TICKETS_VIEW_COOKIE)?.value === "board" ? "board" : "list";
+  const view: TicketView = parsed.view ?? saved;
+  // Links on the page name the view only when it isn't the remembered one, so filtering never switches it.
+  const f: TicketFilters = { ...parsed, view: view === saved ? null : view };
   const QUICK = quickViews(me.role);
   const deleted = typeof sp.deleted === "string" && /^\d+$/.test(sp.deleted) ? sp.deleted : null;
 
-  const [{ total, rows }, areas, people] = await Promise.all([
-    tickets.list(f, me),
-    db.erpArea.findMany({ where: { active: true }, select: { id: true, parentId: true, name: true, sortOrder: true } }),
-    db.user.findMany({ where: { active: true, role: { in: ["DEV", "ADMIN"] } }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
+  const [list, board, { areas, people }] = await Promise.all([
+    view === "list" ? tickets.list(f, me) : null,
+    view === "board" ? tickets.board(f, me) : null,
+    ticketFormOptions(),
   ]);
-  const unread = await notifications.unreadIds(me, rows.map((t) => t.id));
+  const rows = list?.rows ?? [];
+  const total = list ? list.total : (board ?? []).reduce((n, c) => n + c.total, 0);
+  const unread = await notifications.unreadIds(me, (board ? board.flatMap((c) => c.rows) : rows).map((t) => t.id));
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const now = new Date();
   const isQuick = (p: Quick["patch"]) => f.group === p.group && f.status === p.status && f.assignee === p.assignee && f.reporter === p.reporter;
@@ -104,7 +119,7 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
     type: [{ value: "", label: "All types" }, ...TICKET_TYPES.map((t) => ({ value: t, label: TYPE_LABELS[t] }))],
     area: [
       { options: [{ value: "", label: "All modules" }] },
-      ...buildTree(areas).map((m) => ({
+      ...areas.map((m) => ({
         label: m.name,
         options: [{ value: m.id, label: `${m.name} (all)` }, ...m.children.map((c) => ({ value: c.id, label: c.name }))],
       })),
@@ -116,9 +131,10 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
       ...people.map((p) => ({ value: p.id, label: p.name })),
     ],
   };
-  // The view the list is in (stage, reporter) rides along when the filters are applied.
+  // The view the list is in (list or board, stage, reporter) rides along when the filters are applied.
   const keep = (
     <>
+      {f.view ? <input type="hidden" name="view" value={f.view} /> : null}
       {f.group !== "open" ? <input type="hidden" name="group" value={f.group} /> : null}
       {f.status ? <input type="hidden" name="status" value={f.status} /> : null}
       {f.reporter ? <input type="hidden" name="reporter" value={f.reporter} /> : null}
@@ -126,6 +142,8 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
   );
   const clearHref = hrefWith(f, { q: null, type: null, area: null, assignee: null });
   const activeFilters = [f.type, f.area, f.assignee && f.assignee !== "me" ? f.assignee : null].filter(Boolean).length;
+  // Switching keeps the view and every filter; only the list's page number resets.
+  const viewHrefs = { list: hrefWith(f, { view: "list" }), board: hrefWith(f, { view: "board" }) };
 
   return (
     <>
@@ -134,6 +152,7 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
         description={SCOPE_TEXT[me.role]}
         actions={
           <>
+            <ViewSwitch view={view} hrefs={viewHrefs} />
             {canFile ? (
               <span className="max-md:hidden">
                 <NewTicketButton />
@@ -225,7 +244,7 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
         {f.status ? <span className="text-[0.8125rem] text-muted-foreground">Status: {STATUS_LABELS[f.status]}</span> : null}
       </form>
 
-      {rows.length === 0 ? (
+      {total === 0 || (list && rows.length === 0) ? (
         <EmptyState
           icon={TicketIcon}
           title={total === 0 && !filtered && f.group === "open" && !f.assignee && !f.reporter && !f.status ? "No open tickets" : "Nothing matches"}
@@ -237,6 +256,17 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
               ? "Nothing is assigned to you right now. Tickets appear here when a QA tester assigns them to you."
               : "File the first one: a bug, a suggestion or an improvement."}
         </EmptyState>
+      ) : board ? (
+        <TicketBoard
+          columns={board.map((c) => ({
+            key: c.key,
+            total: c.total,
+            cards: c.rows.map((t) => boardCard(t, me, unread.has(t.id), now)),
+            more: c.total > c.rows.length ? hrefWith(f, { view: "list", ...MORE[c.key] }) : null,
+            inView: columnInView(c.key, f),
+          }))}
+          assign={canAssign(me) ? { areas, people } : null}
+        />
       ) : (
         <>
         <PhoneTicketGroups
@@ -303,7 +333,7 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
         </Link>
       ) : null}
 
-      {total > 0 ? (
+      {list && total > 0 ? (
         <div className="flex flex-wrap items-center justify-between gap-3 text-[0.8125rem] text-muted-foreground">
           <span>
             {total} ticket{total === 1 ? "" : "s"}
@@ -323,4 +353,38 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
       ) : null}
     </>
   );
+}
+
+/** Where a full column's "See all in the list" goes: that stage in the list. */
+const MORE: Record<BoardColumnKey, { group: string; status: string | null }> = {
+  todo: { group: "open", status: null },
+  doing: { group: "open", status: "IN_PROGRESS" },
+  info: { group: "open", status: "NEED_INFO" },
+  fixed: { group: "open", status: "FIXED" },
+  verified: { group: "open", status: "VERIFIED" },
+  done: { group: "done", status: null },
+};
+
+/** A ticket as a card on the board, with what the viewer may do to it. A developer's cards name who filed it. */
+function boardCard(t: TicketListRow, me: Actor, unread: boolean, now: Date): BoardCard {
+  return {
+    id: t.id,
+    number: t.number,
+    type: t.type,
+    title: t.title,
+    status: t.status,
+    severity: t.severity as SeverityValue | null,
+    priority: t.priority,
+    area: t.area ? areaPath(t.area) : null,
+    areaId: t.areaId,
+    comments: t._count.comments,
+    ago: timeAgo(t.lastActivityAt, now),
+    at: t.lastActivityAt.toISOString(),
+    atLabel: `Last activity ${formatDateTime(t.lastActivityAt)}`,
+    person: me.role === "DEV" ? { role: "Filed by", name: t.reporter.name } : { role: "Developer", name: t.assignee?.name ?? null },
+    assigneeId: t.assignee?.id ?? null,
+    unread,
+    moves: allowedTransitions({ status: t.status, reporterId: t.reporter.id, assigneeId: t.assignee?.id ?? null }, me),
+    canAssign: canAssign(me) && !isDone(t.status),
+  };
 }
