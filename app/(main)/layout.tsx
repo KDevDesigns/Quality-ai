@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { NotificationsProvider } from "@/components/notifications";
 import { PwaSetup } from "@/components/pwa-setup";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Toaster } from "@/components/ui/sonner";
 import { getCurrentUser } from "@/lib/auth/session";
 
 import { PushPrompt } from "./push-prompt";
@@ -44,6 +45,8 @@ export default function MainLayout({ children }: LayoutProps<"/">) {
         <PushPrompt />
       </Suspense>
       <ToneListener />
+      {/* Here, not in a page, so a toast (the board's Undo) and what it does on closing outlive a page change. */}
+      <Toaster position="bottom-right" />
     </NotificationsProvider>
   );
 }

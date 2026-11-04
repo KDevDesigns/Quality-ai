@@ -42,7 +42,7 @@ describe("ticket schemas", () => {
   });
 
   it("reads list filters from the URL with safe defaults", () => {
-    expect(ticketFilters.parse({})).toEqual({ group: "open", status: null, type: null, area: null, assignee: null, reporter: null, q: "", page: 1 });
+    expect(ticketFilters.parse({})).toEqual({ group: "open", status: null, type: null, area: null, assignee: null, reporter: null, q: "", page: 1, view: null });
     expect(ticketFilters.parse({ group: "done", status: "FIXED", type: "BUG", assignee: "me", page: "3", q: ["#4", "x"] })).toMatchObject({
       group: "done",
       status: "FIXED",
@@ -52,5 +52,7 @@ describe("ticket schemas", () => {
       q: "#4",
     });
     expect(ticketFilters.parse({ group: "weird", status: "nope", page: "-5" })).toMatchObject({ group: "open", status: null, page: 1 });
+    expect(ticketFilters.parse({ view: "board" }).view).toBe("board");
+    expect(ticketFilters.parse({ view: "gantt" }).view).toBeNull();
   });
 });
