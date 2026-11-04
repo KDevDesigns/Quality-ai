@@ -12,6 +12,7 @@ import { useTouchScreen } from "@/hooks/use-touch-screen";
 import { initialFormState, type FormState } from "@/lib/form";
 import { STATUS_LABELS, type TicketStatus, type Transition } from "@/lib/tickets/workflow";
 import { addComment, assignTicket, deleteTicket, moveTicket } from "../actions";
+import { AttachMenu } from "../attach-menu";
 import { ImagePicker, useImageAttachments } from "../image-picker";
 import { useVideoUpload, VideoPicker } from "../video-picker";
 import { AssigneeSelect, submitKeepingInput, TicketForm, type AreaOption, type AssigneeOption, type TicketValues } from "../ticket-form";
@@ -171,7 +172,24 @@ export function CommentForm({ ticket }: { ticket: Ref }) {
   const canSend = !busy && !images.failed && !video.blocked && (!!body.trim() || images.items.length > 0 || video.upload.status === "done");
 
   return (
-    <form onSubmit={submitKeepingInput(action)} className="grid gap-3">
+    <form
+      onSubmit={submitKeepingInput(action)}
+      className="grid gap-3"
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes("Files")) e.preventDefault();
+      }}
+      onDrop={(e) => {
+        const files = [...e.dataTransfer.files];
+        if (!files.length) return;
+        e.preventDefault();
+        // The markup dialog is this form's child in React, so what's dropped on it arrives here too.
+        if (!e.currentTarget.contains(e.target as Node)) return;
+        const clip = files.find((f) => f.type.startsWith("video/"));
+        if (clip) void video.start(clip);
+        const rest = files.filter((f) => f !== clip);
+        if (rest.length) images.add(rest);
+      }}
+    >
       <input type="hidden" name="id" value={ticket.id} />
       <input type="hidden" name="number" value={ticket.number} />
       <label htmlFor="body" className="sr-only">Your message</label>
@@ -191,12 +209,13 @@ export function CommentForm({ ticket }: { ticket: Ref }) {
           e.preventDefault();
           if (canSend) e.currentTarget.form?.requestSubmit();
         }}
-        placeholder={touch ? "Write a reply…" : "Write a reply… (Enter to send, Shift+Enter for a new line)"}
+        placeholder={touch ? "Write a reply…" : "Write a reply… (Enter to send, Shift+Enter for a new line, Ctrl+V to paste a screenshot)"}
       />
       <ImagePicker state={images} id="comment-images" compact />
       <VideoPicker state={video} id="comment-video" compact />
       <FormMessage state={state} />
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between gap-2">
+        <AttachMenu images={images} video={video} imagesId="comment-images" videoId="comment-video" />
         <Button type="submit" disabled={!canSend}>
           <SendIcon /> {video.busy ? "Uploading video…" : images.busy ? "Uploading…" : images.failed || video.blocked ? "Finish the files above" : pending ? "Sending…" : "Send"}
         </Button>

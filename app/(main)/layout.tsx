@@ -30,7 +30,7 @@ export default function MainLayout({ children }: LayoutProps<"/">) {
           <main data-main className="page-enter mx-auto w-full max-w-[82.5rem] flex-1 space-y-6 px-4 py-7 max-md:overflow-x-clip max-md:px-5 max-md:py-5 md:px-10">
             {children}
           </main>
-          <footer className="flex h-[3.25rem] shrink-0 items-center justify-center border-t border-line2 px-4 text-center text-[0.8125rem] tracking-[0.02em] text-muted-foreground max-md:hidden">
+          <footer className="z-10 flex [@media(min-height:40rem)]:sticky [@media(min-height:40rem)]:bottom-0 h-[3.25rem] shrink-0 items-center justify-center border-t border-line2 bg-background px-4 text-center text-[0.8125rem] tracking-[0.02em] text-muted-foreground max-md:hidden">
             Davao City Water District · QA Hub for the in-house ERP
           </footer>
         </SidebarInset>

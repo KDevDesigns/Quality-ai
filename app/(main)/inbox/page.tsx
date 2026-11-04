@@ -8,17 +8,19 @@ import { PageHeader } from "@/components/page-header";
 import { InboxSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { areaPath } from "@/lib/areas/tree";
 import { requireAction } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { timeAgo } from "@/lib/format";
 import { INBOX_PAGE, inboxStore, type InboxThread } from "@/lib/tickets/inbox";
 import { ticketStore } from "@/lib/tickets/store";
+import type { SeverityValue } from "@/lib/tickets/workflow";
 import { cn } from "@/lib/utils";
 import { Message, Thread, galleryImages } from "../tickets/[number]/conversation";
 import { ImageGallery } from "../tickets/[number]/image-viewer";
 import { MarkRead } from "../tickets/[number]/mark-read";
 import { CommentForm } from "../tickets/[number]/ticket-controls";
-import { TicketStatusPill, UnreadDot } from "../tickets/ticket-bits";
+import { SeverityTag, TicketStatusPill, TicketTypeLabel, UnreadDot } from "../tickets/ticket-bits";
 import { ScrollToLatest } from "@/components/scroll-to-latest";
 
 // My inbox: the conversations on the tickets this person can see, Messenger-style. The list is on the left, the
@@ -132,26 +134,33 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
         <section aria-label={`Conversation on #${t.number}`} className="flex min-h-0 flex-col">
           <MarkRead ticketId={t.id} number={t.number} lastActivityAt={t.lastActivityAt.toISOString()} />
           <ScrollToLatest targetId="inbox-messages" endId="inbox-reply" version={t.lastActivityAt.toISOString()} />
-          <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line2 px-4 py-3">
-            <div className="min-w-0">
-              <Link href={hrefWith(p, { t: null })} className="mb-1 inline-flex items-center gap-1.5 text-[0.8438rem] text-muted-foreground hover:text-acc lg:hidden">
-                <ArrowLeftIcon className="size-3.5" aria-hidden /> My inbox
-              </Link>
-              <h2 className="truncate text-[1.0625rem] font-semibold" title={t.title}>
+          <header className="grid grid-cols-1 gap-y-1.5 border-b border-line2 px-4 py-3">
+            <Link href={hrefWith(p, { t: null })} className="inline-flex items-center gap-1.5 text-[0.8438rem] text-muted-foreground hover:text-acc lg:hidden">
+              <ArrowLeftIcon className="size-3.5" aria-hidden /> My inbox
+            </Link>
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 xl:flex-nowrap">
+              <h2 className="min-w-0 truncate text-[1.0625rem] font-semibold" title={t.title}>
                 <span className="mr-1.5 font-mono text-muted-foreground">#{t.number}</span>
                 {t.title}
               </h2>
+              <div className="flex shrink-0 items-center gap-2">
+                <TicketStatusPill status={t.status} />
+                <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`/tickets/${t.number}`} />}>
+                  Open ticket <ArrowRightIcon />
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <TicketStatusPill status={t.status} />
-              <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`/tickets/${t.number}`} />}>
-                Open ticket <ArrowRightIcon />
-              </Button>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[0.8125rem] text-muted-foreground">
+              <TicketTypeLabel type={t.type} />
+              <SeverityTag severity={t.severity as SeverityValue | null} />
+              <span>{t.area ? areaPath(t.area) : "Module not set"}</span>
+              <span>Filed by {t.reporter.name}</span>
+              <span>{t.assignee ? `Developer: ${t.assignee.name}` : "Not assigned"}</span>
             </div>
           </header>
           <ImageGallery images={galleryImages(t)}>
             <div id="inbox-messages" className="grid min-h-0 flex-1 grid-cols-1 content-start gap-3 overflow-y-auto p-4">
-              <Message author={t.reporter} mine={t.reporter.id === me.id} at={t.createdAt} now={now} body={t.description} files={t.attachments} />
+              {t.description || t.attachments.length ? <Message author={t.reporter} mine={t.reporter.id === me.id} at={t.createdAt} now={now} body={t.description} files={t.attachments} /> : null}
               <Thread t={t} meId={me.id} now={now} />
             </div>
           </ImageGallery>
@@ -183,13 +192,13 @@ function ThreadRow({ x, href, active, now }: { x: InboxThread; href: string; act
         <span className="flex items-center gap-2">
           {x.unread ? <UnreadDot /> : null}
           <span className={cn("min-w-0 flex-1 truncate text-[0.875rem]", x.unread ? "font-semibold" : "font-medium")}>
-            <span className="mr-1.5 font-mono text-[0.8125rem] text-muted-foreground">#{x.number}</span>
+            <span className={cn("mr-1.5 font-mono text-[0.8125rem]", x.unread ? "text-foreground" : "text-muted-foreground")}>#{x.number}</span>
             {x.title}
           </span>
-          <span className="shrink-0 text-[0.7813rem] text-muted-foreground">{timeAgo(x.lastActivityAt, now)}</span>
+          <span className={cn("shrink-0 text-[0.7813rem]", x.unread ? "font-semibold text-foreground" : "text-muted-foreground")}>{timeAgo(x.lastActivityAt, now)}</span>
         </span>
         <span className="flex items-center gap-2">
-          <span className={cn("min-w-0 flex-1 truncate text-[0.8125rem]", x.unread ? "text-foreground" : "text-muted-foreground")}>{x.preview}</span>
+          <span className={cn("min-w-0 flex-1 truncate text-[0.8125rem]", x.unread ? "font-semibold text-foreground" : "text-muted-foreground")}>{x.preview}</span>
           {x.unreadMessages ? (
             <span className="flex h-[1.125rem] min-w-[1.125rem] shrink-0 items-center justify-center rounded-full bg-bad px-1 text-[0.6875rem] leading-none font-semibold text-primary-foreground">
               {x.unreadMessages > 99 ? "99+" : x.unreadMessages}

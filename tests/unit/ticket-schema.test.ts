@@ -22,9 +22,14 @@ describe("ticket schemas", () => {
     expect(ticketEdit.parse({ ...base, type: "IMPROVEMENT" }).severity).toBeNull();
   });
 
-  it("rejects short titles, empty descriptions and unknown values", () => {
+  it("lets the description be empty, but not too long", () => {
+    expect(ticketCreate.parse({ ...base, description: "   " }).description).toBe("");
+    expect(ticketEdit.parse({ ...base, description: "" }).description).toBe("");
+    expect(ticketCreate.safeParse({ ...base, description: "x".repeat(20001) }).success).toBe(false);
+  });
+
+  it("rejects short titles and unknown values", () => {
     expect(ticketCreate.safeParse({ ...base, title: "Bug" }).success).toBe(false);
-    expect(ticketCreate.safeParse({ ...base, description: "   " }).success).toBe(false);
     expect(ticketCreate.safeParse({ ...base, type: "TASK" }).success).toBe(false);
     expect(ticketCreate.safeParse({ ...base, severity: "S9" }).success).toBe(false);
   });

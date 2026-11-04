@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pinchZoom } from "@/lib/markup/view";
+import { clampViewerZoom, pinchZoom, stepZoom, ZOOM_MAX } from "@/lib/markup/view";
 import { CONVERT_ABOVE_BYTES, convertedName, JPEG, markedName, pickSmallest, PNG, WEBP, worthReplacing } from "@/lib/markup/export";
 import { canRedo, canUndo, emptyHistory, push, redo, undo } from "@/lib/markup/history";
 import { arrowHead, clampRect, cropOf, DEFAULT_TEXT_SIZE, drawOrder, fontSizeFor, isTiny, normalizeRect, strokeFor, TEXT_SIZES, textFontSize, type Shape } from "@/lib/markup/shapes";
@@ -70,6 +70,27 @@ describe("pinchZoom", () => {
 
   it("ignores fingers that landed on the same spot", () => {
     expect(pinchZoom(0.5, 0, 200)).toBe(0.5);
+  });
+});
+
+describe("image viewer zoom", () => {
+  it("steps in and comes back to exactly 100 %", () => {
+    let z = 1;
+    for (let i = 0; i < 3; i++) z = stepZoom(z, 1);
+    expect(z).toBeGreaterThan(1);
+    for (let i = 0; i < 3; i++) z = stepZoom(z, -1);
+    expect(z).toBe(1);
+  });
+
+  it("stays between fitting the viewer and the maximum", () => {
+    expect(stepZoom(1, -1)).toBe(1);
+    expect(stepZoom(ZOOM_MAX, 1)).toBe(ZOOM_MAX);
+    expect(clampViewerZoom(0.2)).toBe(1);
+    expect(clampViewerZoom(99)).toBe(ZOOM_MAX);
+  });
+
+  it("lets a gentle trackpad pinch leave 100 %", () => {
+    expect(clampViewerZoom(1.002)).toBe(1.002);
   });
 });
 
