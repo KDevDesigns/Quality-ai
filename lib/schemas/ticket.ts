@@ -1,10 +1,6 @@
 import { z } from "zod";
-<<<<<<< Updated upstream
-import { DEVICE_TYPES, PRIORITIES, SEVERITIES, TICKET_STATUSES, TICKET_TYPES } from "@/lib/tickets/workflow";
-=======
 import { TICKET_VIEWS, type TicketView } from "@/lib/tickets/board";
-import { PRIORITIES, SEVERITIES, TICKET_STATUSES, TICKET_TYPES } from "@/lib/tickets/workflow";
->>>>>>> Stashed changes
+import { DEVICE_TYPES, PRIORITIES, SEVERITIES, TICKET_STATUSES, TICKET_TYPES } from "@/lib/tickets/workflow";
 import { optionalText } from "./common";
 
 const emptyToNull = z
