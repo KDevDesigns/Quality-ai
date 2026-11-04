@@ -16,5 +16,12 @@
         "reason": "user confirmed 2026-11-03: keep the small bounce on the sidebar opening and closing"
       }
     ]
+  },
+  "hook": {
+    "enabled": true,
+    "limits": {
+      "maxFindings": 5,
+      "maxChars": 8000
+    }
   }
 }
