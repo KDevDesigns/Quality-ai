@@ -406,7 +406,7 @@ function TicketFormFields({
               rows={8}
               className="min-h-40"
               aria-invalid={!!err.description}
-              placeholder={type === "BUG" ? "1. Open …\n2. Click …\n\nExpected: …\nActual: …" : undefined}
+              placeholder={type === "BUG" ? "Input the Ticket Description Here." : undefined}
             />
           </Field>
 
