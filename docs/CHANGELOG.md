@@ -1,6 +1,5 @@
 # Changelog
 
-<<<<<<< Updated upstream
 ## Install as an app (Phase 3.7c, 2026-11-03)
 
 No database changes. It keeps no copy of pages or tickets, so offline it shows the browser's normal "no connection" page.
@@ -59,7 +58,7 @@ reference, while the user designs the new UI in the Claude Design canvas.
   My inbox and conversations fit the screen, including long titles and long unbroken text. On a touch screen, Enter in a
   reply starts a new line, and the conversation scrolls with the page. Unread counts no longer make a page rebuild as
   it loads.
-=======
+
 ## Tickets: move a ticket back a step (2026-11-04)
 
 A move made by mistake can now be taken back on the same ticket, instead of filing a new one. Each asks for a note,
@@ -104,7 +103,6 @@ which shows in the history and in the notification, so the other side knows why.
 - Code: `lib/tickets/board.ts` (columns, which move lands where, which columns a view fills; tested),
   `ticketStore.board()`, `app/(main)/tickets/board.tsx`, `view-switch.tsx`. The ticket page's move and assign forms are
   shared with the board. Toasts (sonner) are now mounted in `app/(main)/layout.tsx`.
->>>>>>> Stashed changes
 
 ## Delete user and the Designer tick-box (2026-11-01)
 
