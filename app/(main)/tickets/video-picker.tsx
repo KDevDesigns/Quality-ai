@@ -123,49 +123,61 @@ export function useVideoUpload(restored?: DraftFile) {
 
 export type VideoUpload = ReturnType<typeof useVideoUpload>;
 
+/** `compact`: the reply box, where the Attach menu (attach-menu.tsx) opens this input and only what's attached shows here. */
 export function VideoPicker({ state, id = "video", compact }: { state: VideoUpload; id?: string; compact?: boolean }) {
   const [over, setOver] = useState(false);
   const { upload } = state;
   const pct = upload.status === "uploading" && upload.size ? Math.min(100, Math.round((upload.loaded / upload.size) * 100)) : 0;
+  const input = (
+    <input
+      id={id}
+      type="file"
+      accept={VIDEO_TYPES.join(",")}
+      className="sr-only"
+      tabIndex={-1}
+      onChange={(e) => {
+        const f = e.target.files?.[0];
+        e.target.value = "";
+        if (f) void state.start(f);
+      }}
+    />
+  );
 
   return (
     <div
-      className={cn("grid gap-2.5 rounded-[0.625rem] border border-dashed border-line p-3 transition-colors", over && "border-acc bg-acc-t2")}
-      onDragOver={(e) => {
-        e.preventDefault();
-        setOver(true);
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setOver(false);
-        const f = e.dataTransfer.files[0];
-        if (f) void state.start(f);
-      }}
+      {...(compact
+        ? { className: "contents" }
+        : {
+            className: cn("grid gap-2.5 rounded-[0.625rem] border border-dashed border-line p-3 transition-colors", over && "border-acc bg-acc-t2"),
+            onDragOver: (e: React.DragEvent) => {
+              e.preventDefault();
+              setOver(true);
+            },
+            onDragLeave: () => setOver(false),
+            onDrop: (e: React.DragEvent) => {
+              e.preventDefault();
+              setOver(false);
+              const f = e.dataTransfer.files[0];
+              if (f) void state.start(f);
+            },
+          })}
     >
       {upload.status === "done" ? <input type="hidden" name="uploadIds" value={upload.id} /> : null}
 
       {upload.status === "idle" ? (
-        <div className="flex flex-wrap items-center gap-3">
-          <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById(id)?.click()}>
-            <FilmIcon /> Add video
-          </Button>
-          <input
-            id={id}
-            type="file"
-            accept={VIDEO_TYPES.join(",")}
-            className="sr-only"
-            tabIndex={-1}
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              e.target.value = "";
-              if (f) void state.start(f);
-            }}
-          />
-          <span className="text-[0.7813rem] text-muted-foreground">
-            {compact ? `One MP4 or WebM, up to 3 min / ${VIDEO_MAX_MB} MB.` : `A screen recording: one MP4 or WebM, up to 3 min and ${VIDEO_MAX_MB} MB. You can also drop it here.`}
-          </span>
-        </div>
+        compact ? (
+          input
+        ) : (
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById(id)?.click()}>
+              <FilmIcon /> Add video
+            </Button>
+            {input}
+            <span className="text-[0.7813rem] text-muted-foreground">
+              {`A screen recording: one MP4 or WebM, up to 3 min and ${VIDEO_MAX_MB} MB. You can also drop it here.`}
+            </span>
+          </div>
+        )
       ) : upload.status === "confirm" ? (
         <div className="grid gap-2 text-[0.8125rem]">
           <p>

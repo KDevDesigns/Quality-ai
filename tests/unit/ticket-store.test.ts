@@ -266,6 +266,8 @@ describe("ticketStore", () => {
     expect(await list(dev2)).toEqual(["Bea's bug", "Ana's bug"]);
 
     expect(await s.counts(qa)).toMatchObject({ open: 1, toStart: 1, fixed: 0 });
+    expect(await s.total(qa)).toBe(1);
+    expect(await s.total(admin)).toBe(3);
     expect((await s.recent(dev2)).map((r) => r.title)).toEqual(["Bea's bug", "Ana's bug"]);
   });
 

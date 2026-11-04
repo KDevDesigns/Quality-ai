@@ -139,9 +139,10 @@ async function TeamBody({ searchParams }: { searchParams: Promise<SearchParams> 
               </TableHeader>
               <TableBody className="stagger">
                 <AreaRow label="Whole module" muted members={mod.members} person={person} admin={admin} />
-                {mod.children.map((sub) => (
+                {mod.children.map((sub, i) => (
                   <AreaRow
                     key={sub.id}
+                    branch={i === mod.children.length - 1 ? "last" : "mid"}
                     label={sub.name}
                     code={sub.code}
                     hidden={!sub.active}
@@ -167,6 +168,7 @@ async function TeamBody({ searchParams }: { searchParams: Promise<SearchParams> 
 }
 
 function AreaRow({
+  branch,
   label,
   code,
   muted,
@@ -176,6 +178,8 @@ function AreaRow({
   admin,
   actions,
 }: {
+  /** A sub-module: draws the tree line joining it to its module. The last one ends the line. */
+  branch?: "mid" | "last";
   label: string;
   code?: string | null;
   muted?: boolean;
@@ -190,7 +194,13 @@ function AreaRow({
   const qa = members.filter((m) => !m.isLead && m.role === "QA");
   return (
     <TableRow className={cn(hidden && "opacity-60")}>
-      <TableCell className={cn("whitespace-normal", muted ? "text-muted-foreground italic" : "font-medium")}>
+      <TableCell className={cn("whitespace-normal", muted ? "text-muted-foreground italic" : "font-medium", branch && "relative pl-11")}>
+        {branch ? (
+          <>
+            <span aria-hidden className="absolute top-0 left-6 h-1/2 w-3.5 rounded-bl-md border-b-2 border-l-2 border-acc-b" />
+            {branch === "mid" ? <span aria-hidden className="absolute bottom-0 left-6 h-1/2 border-l-2 border-acc-b" /> : null}
+          </>
+        ) : null}
         {label}
         {code ? <span className="ml-2 font-mono text-[0.75rem] text-muted-foreground">{code}</span> : null}
         {hidden ? <span className="ml-2 text-[0.75rem] text-muted-foreground">(hidden)</span> : null}

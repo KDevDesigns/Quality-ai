@@ -396,14 +396,12 @@ function TicketFormFields({
             label="Description"
             htmlFor="description"
             error={err.description}
-            required
             hint={type === "BUG" ? "Steps to reproduce, what you expected, and what happened instead. Use QA- test accounts where you can." : "What you'd like and why it helps."}
           >
             <Textarea
               id="description"
               name="description"
               defaultValue={ticket?.description ?? d?.description}
-              required
               maxLength={20000}
               rows={8}
               className="min-h-40"

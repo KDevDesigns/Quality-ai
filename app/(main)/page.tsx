@@ -24,6 +24,7 @@ import { db } from "@/lib/db";
 import { TIME_ZONE, timeAgo } from "@/lib/format";
 import { notificationStore } from "@/lib/tickets/notifications";
 import { ticketStore } from "@/lib/tickets/store";
+import type { Actor } from "@/lib/tickets/workflow";
 import { cn } from "@/lib/utils";
 import { TicketStatusPill, UnreadDot } from "./tickets/ticket-bits";
 import { PhoneTicketList } from "./tickets/ticket-card";
@@ -48,21 +49,7 @@ export default function DashboardPage() {
 async function Overview() {
   await connection();
   const me = await requireUser();
-  // Ticket numbers cover only what this person sees: their own tickets (QA), their assignments (DEV), or all (admin).
-  // Team numbers and people without a module are for whoever manages the directory; everyone else sees only their own work.
-  const manager = can(me, "areas.manage");
-  const [counts, recent, myAreas] = await Promise.all([
-    tickets.counts(me),
-    tickets.recent(me),
-    db.areaMember.findMany({
-      where: { userId: me.id },
-      select: { isLead: true, area: { select: { name: true, parent: { select: { name: true } } } } },
-    }),
-  ]);
-  const ticketStats = TICKET_STATS[me.role](counts);
-
   const { signUps, resets } = can(me, "users.manage") ? await auth.adminRequests() : { signUps: 0, resets: 0 };
-  const unread = await notifications.unreadIds(me, recent.map((t) => t.id));
   const waiting = [
     signUps ? `${signUps} sign-up${signUps === 1 ? "" : "s"}` : null,
     resets ? `${resets} password reset request${resets === 1 ? "" : "s"}` : null,
@@ -85,65 +72,84 @@ async function Overview() {
           <Link href="/admin/users" className="font-medium underline underline-offset-2">Review in Admin → Users</Link>
         </InlineAlert>
       ) : null}
-      <StatRow stats={ticketStats} />
-      <RecentTickets rows={recent} role={me.role} unread={unread} />
-      {manager ? <TeamStats /> : null}
-
-      <div className={cn("grid gap-6", manager && "lg:grid-cols-2")}>
-        <Card>
-          <CardHeader>
-            <CardTitle>My modules</CardTitle>
-            <CardDescription>{MODULES_TEXT[me.role]}</CardDescription>
-            <CardAction>
-              <Link href={`/team?person=${me.id}`} className="text-sm font-medium text-acc hover:underline">View in directory</Link>
-            </CardAction>
-          </CardHeader>
-          {myAreas.length === 0 ? (
-            <CardContent><p className="text-sm text-muted-foreground">You aren’t assigned to a module yet. Ask an admin to add you.</p></CardContent>
-          ) : (
-            <ul className="stagger">
-              {myAreas.map((a, i) => (
-                <li key={i} className="flex items-center justify-between gap-3 border-t border-line2 px-5 py-3 text-[0.9063rem] first:border-t-0">
-                  <span className="truncate font-medium">{a.area.parent ? `${a.area.parent.name} › ` : ""}{a.area.name}</span>
-                  {a.isLead ? <span className="text-[0.7813rem] font-semibold text-acc-ink">Lead</span> : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
-        {manager ? <NotInAnyModule /> : null}
-      </div>
+      {me.role === "ADMIN" ? <AdminHome me={me} /> : <MyWork me={{ ...me, role: me.role }} />}
     </>
   );
 }
 
 const TODAY = new Intl.DateTimeFormat("en-PH", { timeZone: TIME_ZONE, weekday: "long", day: "numeric", month: "long" });
 
-const MODULES_TEXT: Record<Role, string> = {
-  ADMIN: "Where you’ll receive or file tickets",
-  QA: "The modules you test and file tickets for",
-  DEV: "The modules you fix tickets for",
-};
-
-/** Admin only: how big the team and the module directory are. */
-async function TeamStats() {
-  const [qa, devs, modules, subModules] = await Promise.all([
+/** Admins look after people and modules, so their Home is how big the team and directory are, and who needs a module. */
+async function AdminHome({ me }: { me: Actor }) {
+  const [total, qa, devs, modules, subModules] = await Promise.all([
+    tickets.total(me),
     db.user.count({ where: { active: true, role: "QA" } }),
     db.user.count({ where: { active: true, role: "DEV" } }),
     db.erpArea.count({ where: { parentId: null, active: true } }),
     db.erpArea.count({ where: { parentId: { not: null }, active: true } }),
   ]);
   return (
-    <StatRow
-      stats={[
-        { label: "QA testers", value: qa, href: "/team", icon: FlaskConicalIcon },
-        { label: "Developers", value: devs, href: "/team", icon: CodeIcon },
-        { label: "Modules", value: modules, href: "/team", icon: BoxesIcon, note: `${subModules} sub-modules` },
-      ]}
-    />
+    <>
+      <StatRow
+        stats={[
+          { label: "Total tickets", value: total, href: "/tickets?group=all", icon: TicketIcon },
+          { label: "QA testers", value: qa, href: "/team", icon: FlaskConicalIcon },
+          { label: "Developers", value: devs, href: "/team", icon: CodeIcon },
+          { label: "Modules", value: modules, href: "/team", icon: BoxesIcon, note: `${subModules} sub-modules` },
+        ]}
+      />
+      <NotInAnyModule />
+    </>
   );
 }
+
+/** Testers and developers see only their own work: their own tickets (QA) or their assignments (DEV). */
+async function MyWork({ me }: { me: { id: string; role: WorkRole } }) {
+  const [counts, recent, myAreas] = await Promise.all([
+    tickets.counts(me),
+    tickets.recent(me),
+    db.areaMember.findMany({
+      where: { userId: me.id },
+      select: { isLead: true, area: { select: { name: true, parent: { select: { name: true } } } } },
+    }),
+  ]);
+  const unread = await notifications.unreadIds(me, recent.map((t) => t.id));
+  return (
+    <>
+      <StatRow stats={TICKET_STATS[me.role](counts)} />
+      <RecentTickets rows={recent} role={me.role} unread={unread} />
+      <Card>
+        <CardHeader>
+          <CardTitle>My modules</CardTitle>
+          <CardDescription>{MODULES_TEXT[me.role]}</CardDescription>
+          <CardAction>
+            <Link href={`/team?person=${me.id}`} className="text-sm font-medium text-acc hover:underline">View in directory</Link>
+          </CardAction>
+        </CardHeader>
+        {myAreas.length === 0 ? (
+          <CardContent><p className="text-sm text-muted-foreground">You aren’t assigned to a module yet. Ask an admin to add you.</p></CardContent>
+        ) : (
+          <ul className="stagger">
+            {myAreas.map((a, i) => (
+              <li key={i} className="flex items-center justify-between gap-3 border-t border-line2 px-5 py-3 text-[0.9063rem] first:border-t-0">
+                <span className="truncate font-medium">{a.area.parent ? `${a.area.parent.name} › ` : ""}{a.area.name}</span>
+                {a.isLead ? <span className="text-[0.7813rem] font-semibold text-acc-ink">Lead</span> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </>
+  );
+}
+
+/** Whoever files or fixes tickets; an admin has their own Home. */
+type WorkRole = Exclude<Role, "ADMIN">;
+
+const MODULES_TEXT: Record<WorkRole, string> = {
+  QA: "The modules you test and file tickets for",
+  DEV: "The modules you fix tickets for",
+};
 
 /** Admin only: people nobody can send tickets to yet, with a link to fix it. */
 async function NotInAnyModule() {
@@ -183,12 +189,7 @@ type Stat = { label: string; value: number; href: string; icon: LucideIcon; note
 type Counts = Awaited<ReturnType<typeof tickets.counts>>;
 
 /** What each person needs to act on first. */
-const TICKET_STATS: Record<Role, (c: Counts) => Stat[]> = {
-  ADMIN: (c) => [
-    { label: "Open tickets", value: c.open, href: "/tickets", icon: TicketIcon, note: "all testers" },
-    { label: "Needs info", value: c.needInfo, href: "/tickets?status=NEED_INFO", icon: MessageCircleQuestionIcon },
-    { label: "Waiting for retest", value: c.fixed, href: "/tickets?status=FIXED", icon: RotateCcwIcon, note: "fixed, not yet verified" },
-  ],
+const TICKET_STATS: Record<WorkRole, (c: Counts) => Stat[]> = {
   QA: (c) => [
     { label: "My open tickets", value: c.open, href: "/tickets", icon: TicketIcon },
     { label: "Developer needs info", value: c.needInfo, href: "/tickets?status=NEED_INFO", icon: MessageCircleQuestionIcon, note: "answer these" },
@@ -201,9 +202,9 @@ const TICKET_STATS: Record<Role, (c: Counts) => Stat[]> = {
   ],
 };
 
-function RecentTickets({ rows, role, unread }: { rows: Awaited<ReturnType<typeof tickets.recent>>; role: Role; unread: Set<string> }) {
+function RecentTickets({ rows, role, unread }: { rows: Awaited<ReturnType<typeof tickets.recent>>; role: WorkRole; unread: Set<string> }) {
   const now = new Date();
-  const title = role === "ADMIN" ? "Recent activity" : role === "DEV" ? "My assigned tickets" : "My tickets";
+  const title = role === "DEV" ? "My assigned tickets" : "My tickets";
   return (
     <>
     {/* Phones: a section heading over a rounded card of ticket rows. */}
@@ -227,9 +228,9 @@ function RecentTickets({ rows, role, unread }: { rows: Awaited<ReturnType<typeof
     </section>
     <Card className="max-md:hidden">
       <CardHeader>
-        <CardTitle>{role === "ADMIN" ? "Recent activity" : role === "DEV" ? "My assigned tickets" : "My tickets"}</CardTitle>
+        <CardTitle>{title}</CardTitle>
         <CardDescription>
-          {role === "ADMIN" ? "The latest tickets with activity, from every tester" : role === "DEV" ? "Assigned to you, most recent activity first" : "Tickets you filed, most recent activity first"}
+          {role === "DEV" ? "Assigned to you, most recent activity first" : "Tickets you filed, most recent activity first"}
         </CardDescription>
         <CardAction>
           <Link href="/tickets?group=all" className="text-sm font-medium text-acc hover:underline">View all</Link>
@@ -297,7 +298,7 @@ function StatRow({ stats }: { stats: Stat[] }) {
         </Link>
       ))}
     </div>
-    <div className="stagger grid grid-cols-1 gap-4 max-md:hidden sm:grid-cols-3">
+    <div className={cn("stagger grid grid-cols-1 gap-4 max-md:hidden", stats.length === 4 ? "md:grid-cols-2 xl:grid-cols-4" : "sm:grid-cols-3")}>
       {stats.map(({ label, value, href, icon: Icon, note }) => (
         <Link
           key={label}
@@ -309,9 +310,9 @@ function StatRow({ stats }: { stats: Stat[] }) {
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[0.8125rem] text-muted-foreground">{label}</span>
-            <span className="mt-0.5 flex items-baseline gap-2">
+            <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
               <span className="text-[1.75rem] leading-none font-semibold tracking-tight tabular-nums">{value}</span>
-              {note ? <span className="text-[0.7813rem] text-muted-foreground">{note}</span> : null}
+              {note ? <span className="text-[0.7813rem] whitespace-nowrap text-muted-foreground">{note}</span> : null}
             </span>
           </span>
           <ArrowRightIcon className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-acc" aria-hidden />

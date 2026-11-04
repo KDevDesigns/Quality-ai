@@ -382,6 +382,11 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
       return { open: open_, needInfo, toStart, fixed, done };
     },
 
+    /** Every ticket `actor` may see, closed ones included. */
+    async total(actor: Actor) {
+      return db.ticket.count({ where: scopeWhere(actor) });
+    },
+
     /** The most recently active tickets `actor` may see. */
     async recent(actor: Actor, take = 6) {
       return db.ticket.findMany({
