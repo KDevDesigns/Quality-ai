@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { SelectField, type SelectOption, type SelectOptionGroup } from "@/components/select-field";
 
 /**
- * A filter on the Tickets page that applies as soon as a choice is made, by submitting its GET form. Without scripts
+ * A filter (Tickets, Team) that applies as soon as a choice is made, by submitting its GET form. Without scripts
  * the form still works through its own submit button.
  */
 export function FilterSelect(props: {

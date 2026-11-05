@@ -86,6 +86,8 @@
   --color-pending-text: var(--pending-text);
   --color-pending-border: var(--pending-border);
   --color-ok-step: var(--ok-step);
+  /* The markup canvas behind a screenshot, Base DCWD's --sample-black. The same in both themes, like the marks. */
+  --color-sample-black: #111111;
   --color-level-1: var(--level-1);
   --color-level-2: var(--level-2);
   --color-level-3: var(--level-3);

@@ -619,7 +619,7 @@ export function MarkupEditor({
       {open ? (
         // Our own corner X (not the dialog's), so leaving asks first instead of silently dropping the image.
         <DialogContent
-          className="sm:max-w-6xl max-md:inset-0 max-md:flex max-md:h-dvh max-md:max-h-none max-md:max-w-none max-md:flex-col max-md:gap-2 max-md:overflow-hidden max-md:rounded-none max-md:px-3 max-md:pt-[calc(0.75rem+env(safe-area-inset-top))] max-md:pb-[calc(0.75rem+env(safe-area-inset-bottom))] max-md:short:grid max-md:short:grid-cols-[minmax(0,1fr)_17rem] max-md:short:grid-rows-[auto_minmax(0,1fr)_auto_auto]"
+          className="sm:max-w-[73.75rem] max-md:inset-0 max-md:flex max-md:h-dvh max-md:max-h-none max-md:max-w-none max-md:flex-col max-md:gap-2 max-md:overflow-hidden max-md:rounded-none max-md:px-3 max-md:pt-[calc(0.75rem+env(safe-area-inset-top))] max-md:pb-[calc(0.75rem+env(safe-area-inset-bottom))] max-md:short:grid max-md:short:grid-cols-[minmax(0,1fr)_17rem] max-md:short:grid-rows-[auto_minmax(0,1fr)_auto_auto]"
           showGrabber={false}
           showCloseButton={false}
           onKeyDown={onKeyDown} onKeyUp={(e) => e.key === " " && setSpaceHeld(false)}>
@@ -634,7 +634,7 @@ export function MarkupEditor({
             <XIcon className="size-5" aria-hidden />
           </button>
           <DialogHeader className="pr-10 max-md:shrink-0 max-md:short:col-start-2">
-            <DialogTitle className="truncate max-md:text-[1.0625rem]" title={file.name}>
+            <DialogTitle className="truncate font-mono text-[1.125rem] max-md:text-[1.0625rem]" title={file.name}>
               {file.name}
             </DialogTitle>
             <DialogDescription className="max-md:text-[0.8125rem] max-md:short:hidden">
@@ -671,7 +671,7 @@ export function MarkupEditor({
 
           <div
             ref={stage}
-            className="relative flex touch-none overflow-auto rounded-lg border border-line bg-black max-md:order-1 max-md:min-h-0 max-md:flex-1 max-md:short:col-start-1 max-md:short:row-span-4 max-md:short:row-start-1"
+            className="relative flex touch-none overflow-auto rounded-lg bg-sample-black max-md:order-1 max-md:min-h-0 max-md:flex-1 max-md:short:col-start-1 max-md:short:row-span-4 max-md:short:row-start-1"
             style={mobile ? undefined : { height: stageH }}
             onPointerDownCapture={onFingerDown}
             onPointerMoveCapture={onFingerMove}
@@ -728,7 +728,7 @@ export function MarkupEditor({
           ) : null}
 
           <DialogFooter className="sm:justify-between max-md:order-4 max-md:mx-0 max-md:mb-0 max-md:shrink-0 max-md:flex-row max-md:flex-wrap max-md:items-center max-md:justify-between max-md:border-t-0 max-md:p-0 max-md:pt-1 max-md:short:col-start-2 max-md:short:row-start-4">
-            <Button type="button" variant="outline" onClick={() => onDone({ action: "remove" })} disabled={saving} className="hover:bg-bad-t hover:text-bad">
+            <Button type="button" variant="ghost-red" onClick={() => onDone({ action: "remove" })} disabled={saving}>
               Remove
             </Button>
             <div className="flex gap-2 sm:flex-row">

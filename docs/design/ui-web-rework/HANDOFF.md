@@ -406,7 +406,10 @@ Mostly a restyle: dialog 1180 wide, canvas area 470 high on `--sample-black`.
   not the theme.
 - **The board's Shortcuts panel lists only 4 shortcuts. Keep the full `SHORTCUT_HELP` list** (colour keys, nudging, Delete,
   zoom, Esc and more), so nothing people use today disappears.
-- Keep `close-guard` for unsaved marks, and the phone-sideways layout (`short` variant).
+- Keep the guard for unsaved marks (the editor's own "Leave?" question behind its corner X; Esc and a click outside never
+  close it), and the phone-sideways layout (`short` variant).
+- Built (Step C2): the canvas height stays flexible (62% of the window, at least 240 px) instead of the board's fixed 470,
+  so it keeps filling big screens. Fit and Shortcuts are text buttons; the Shortcuts panel lists every shortcut.
 - The Hide tool's black box must be burned into the saved image. It protects customer data (`CLAUDE.md` rule 1).
 
 ### My inbox: `inbox/page.tsx`, `Inbox.dc.html`
@@ -428,6 +431,9 @@ Show more, and the phone's one-pane-at-a-time layout.
 - Selected person's chips turn blue. An empty cell shows "None" as plain muted text.
 - No match: "No module matches. Clear the search or choose Everyone."
 - Admin buttons (Add module, Add sub-module, Edit module, Edit) open the existing `team-dialogs.tsx`. Everyone else sees none.
+- Built (Step C2): the open module is `?module=` (the first in the list without it). The search also matches sub-module
+  names and codes. Admins keep Members and Delete, on the module's header and on each row, though the board has neither.
+  On big screens (D21) the module list and the owners table scroll inside their cards.
 
 ### My DAR: `dar/`, `Dar.dc.html`
 

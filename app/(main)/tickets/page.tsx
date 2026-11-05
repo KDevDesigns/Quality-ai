@@ -28,7 +28,7 @@ import { PAGE_SIZE, ticketStore, type TicketListRow, type ViewPatch } from "@/li
 import { allowedTransitions, canAssign, isDone, STATUS_LABELS, TICKET_TYPES, TYPE_LABELS, type Actor, type SeverityValue, CATEGORY_LABELS, NO_CATEGORY, TICKET_CATEGORIES } from "@/lib/tickets/workflow";
 import { cn } from "@/lib/utils";
 import { TicketBoard, type BoardCard } from "./board";
-import { FilterSelect } from "./filter-select";
+import { FilterSelect } from "@/components/filter-select";
 import { FilterSheet } from "./filter-sheet";
 import { ticketFormOptions } from "./options";
 import { levelDot, levelName, TicketStatusPill, TicketTypeLabel, typeStyle, UnreadDot } from "./ticket-bits";
