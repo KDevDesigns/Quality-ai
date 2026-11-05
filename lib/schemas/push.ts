@@ -30,8 +30,11 @@ const time = z
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Pick a time")
   .transform((v) => Number(v.slice(0, 2)) * 60 + Number(v.slice(3)));
 
-/** Outside work hours and days: as usual, without sound, or nothing on the device (the OffHoursPush enum). */
-export const OFF_HOURS_PUSH = ["SOUND", "SILENT", "NONE"] as const;
+/**
+ * Outside work hours and days: as usual, or nothing on the device. The database's OffHoursPush enum still has SILENT
+ * ("Notify me silently", removed in D7); accounts were moved to NONE, and any left over is treated as NONE.
+ */
+export const OFF_HOURS_PUSH = ["SOUND", "NONE"] as const;
 export type OffHoursPush = (typeof OFF_HOURS_PUSH)[number];
 
 export const workHoursInput = z

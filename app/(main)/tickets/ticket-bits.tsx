@@ -103,10 +103,14 @@ export function SeverityTag({ severity, priority }: { severity: SeverityValue | 
   return priority ? <LevelTag value={priority} /> : null;
 }
 
-/** The red dot on a ticket with activity you haven't opened yet. Screen readers hear "Unread". */
+/**
+ * The red dot on a ticket with activity you haven't opened yet, everywhere in QA Hub. A soft ring pulses out of it now
+ * and then, to catch the eye. Screen readers hear "Unread".
+ */
 export function UnreadDot({ className }: { className?: string }) {
   return (
-    <span className={cn("pop-in inline-block size-2 shrink-0 rounded-full bg-bad", className)}>
+    <span className={cn("pop-in relative inline-block size-2 shrink-0 rounded-full bg-bad", className)}>
+      <span className="qa-ping absolute inset-0 rounded-full bg-bad" aria-hidden />
       <span className="sr-only">Unread</span>
     </span>
   );

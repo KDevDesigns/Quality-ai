@@ -474,6 +474,10 @@ Add errors with `dc-error` and keep the existing save result. Rows behave the sa
   (`tone-select.tsx`).
 - **Work hours:** two choices now. Update `OFF_HOURS_PUSH` in `lib/schemas/push.ts`, `lib/push/recipients.ts`, `send.ts` and
   `notifications-card.tsx` (D7).
+- **Built (Step G):** the banner picture isn't in the project, so the banner is drawn in code: a tinted band with QA
+  Hub's waves in the theme colour. Tabs are Profile, Notifications, Sound, Work hours; `?tab=password` opens Profile at
+  "Change password". Migration `20261106000100_off_hours_no_silent` moves SILENT accounts to NONE; the enum value stays,
+  and the code treats any leftover SILENT as NONE.
 
 ### Users (Admin): `admin/users/`, `Users.dc.html`
 

@@ -104,12 +104,14 @@ export function NotificationBell() {
       onClick={(e) => toggle(e.currentTarget)}
       className={cn("relative size-[2.375rem] rounded-[0.5625rem] text-ink2", open && "border-acc-b bg-acc-t text-primary-text")}
     >
-      <BellIcon />
+      {/* Shakes now and then while something is unread; keyed by the count so a new arrival shakes it straight away. */}
+      <BellIcon key={count} className={cn(count && !open && "qa-ring")} />
       {count ? (
         <span
-          className="absolute -top-1.5 -right-1.5 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-bad px-1 text-[0.6875rem] leading-none font-semibold text-on-tone ring-2 ring-background"
+          className="absolute -top-1.5 -right-1.5 isolate flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-bad px-1 text-[0.6875rem] leading-none font-semibold text-on-tone ring-2 ring-background"
           aria-hidden
         >
+          <span className="qa-ping absolute inset-0 -z-1 rounded-full bg-bad" />
           {count > 9 ? "9+" : count}
         </span>
       ) : null}
@@ -117,7 +119,7 @@ export function NotificationBell() {
   );
 }
 
-/** The panel itself: header, the newest unread tickets, then My inbox and Mark all as read. Nothing when closed. */
+/** The panel itself: header, the newest unread tickets, then My inbox and Mark all as read. */
 export function NotificationsPanel() {
   const { open, close } = usePanel();
   const { data, poll } = useNotifications();
@@ -145,21 +147,30 @@ export function NotificationsPanel() {
     return () => document.removeEventListener("keydown", onKey);
   }, [open, close]);
 
-  if (!open) return null;
-  // Read only once open: the closed panel is part of the prerendered shell, which can't depend on the clock.
-  const now = new Date();
+  // Only once the data has arrived (after hydration): the prerendered shell, which holds the closed panel, can't read
+  // the clock.
+  const now = data ? new Date() : null;
   return (
+    // Always in the page, so it can slide in and out with the sidebar's own timing: a column that widens from 0 on
+    // laptops, a full screen that slides from the right on phones. Closed, it is inert: hidden from keys and readers.
     <aside
       id="notifications-panel"
       aria-label="Notifications"
+      inert={!open}
+      data-open={open ? "" : undefined}
       className={cn(
-        "flex flex-col bg-card text-foreground duration-[260ms] ease-(--ease-out) animate-in fade-in-0 slide-in-from-right-8",
+        "overflow-hidden bg-card text-foreground",
         // Laptops: a third column, as tall as the window, beside the page.
-        "md:sticky md:top-0 md:z-20 md:h-svh md:w-[25rem] md:shrink-0 md:border-l md:border-line",
-        // Phones: full screen over the page.
-        "max-md:fixed max-md:inset-0 max-md:z-50 max-md:pt-[env(safe-area-inset-top)] max-md:pb-[env(safe-area-inset-bottom)]",
+        "md:sticky md:top-0 md:z-20 md:h-svh md:shrink-0 md:transition-[width,border-color] md:duration-(--sidebar-dur) md:ease-(--sidebar-ease)",
+        // Closed it is truly 0 wide: no border, which would otherwise leave a 1 px line at the right edge.
+        open ? "md:w-[25rem] md:border-l md:border-line" : "md:w-0 md:border-l-0",
+        // Phones: full screen over the page. Only opening and closing animate, so turning a tablet past the phone width
+        // doesn't send a closed panel sliding across the screen.
+        "max-md:fixed max-md:inset-0 max-md:z-50 max-md:duration-(--sidebar-dur) max-md:ease-(--sidebar-ease)",
+        open ? "max-md:translate-x-0 max-md:transition-transform" : "max-md:pointer-events-none max-md:invisible max-md:translate-x-full max-md:transition-[transform,visibility]",
       )}
     >
+      <div className="flex h-full flex-col md:w-[25rem] max-md:pt-[env(safe-area-inset-top)] max-md:pb-[env(safe-area-inset-bottom)]">
       <header className="flex h-24 shrink-0 items-center justify-between gap-3 border-b border-line px-6 max-md:h-16 max-md:px-5">
         <div className="min-w-0">
           <h2 className="text-lg font-semibold">Notifications</h2>
@@ -185,7 +196,8 @@ export function NotificationsPanel() {
                   <span className="block truncate text-[0.9063rem] leading-[1.4] font-medium" title={t.title}>{t.title}</span>
                   <span className="block text-[0.8125rem] text-muted-foreground">
                     <span className="font-mono">#{t.number}</span>
-                    {t.actorName ? ` · ${t.actorName}` : ""} · {timeAgo(new Date(t.lastActivityAt), now)}
+                    {t.actorName ? ` · ${t.actorName}` : ""}
+                    {now ? ` · ${timeAgo(new Date(t.lastActivityAt), now)}` : ""}
                   </span>
                 </span>
               </Link>
@@ -222,6 +234,7 @@ export function NotificationsPanel() {
           </Button>
         ) : null}
       </footer>
+      </div>
     </aside>
   );
 }

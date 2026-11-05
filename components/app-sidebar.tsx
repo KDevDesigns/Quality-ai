@@ -152,7 +152,9 @@ function SidebarView({ pathname, user }: { pathname: string | null; user: Sideba
                             <NavCount {...counts[href]} />
                           </SidebarMenuBadge>
                           {/* Minimised, the count becomes a dot on the icon. */}
-                          <span className={cn("pointer-events-none absolute top-2 left-7 pop-in hidden size-2.5 rounded-full border-2 border-sidebar bg-bad", "group-data-[collapsible=icon]:block")} aria-hidden />
+                          <span className={cn("pointer-events-none absolute top-2 left-7 pop-in hidden size-2.5 rounded-full border-2 border-sidebar bg-bad", "group-data-[collapsible=icon]:block")} aria-hidden>
+                            <span className="qa-ping absolute inset-0 rounded-full bg-bad" />
+                          </span>
                         </>
                       ) : null}
                     </SidebarMenuItem>

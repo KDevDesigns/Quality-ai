@@ -4,6 +4,7 @@ import Link from "next/link";
 import { startTransition, useActionState, useState } from "react";
 import { CodeIcon, FlaskConicalIcon, MailCheckIcon, MailIcon, UserIcon } from "lucide-react";
 import { Field, FormMessage } from "@/components/form-field";
+import { InfoTip } from "@/components/info-tip";
 import { IconField } from "@/components/password-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,7 +63,10 @@ export function SignupForm() {
       </div>
 
       <fieldset className="grid gap-2">
-        <legend className="mb-2 text-sm font-medium">I am a…</legend>
+        <legend className="mb-2 flex items-center gap-1.5 text-sm font-medium">
+          I am a…
+          <InfoTip label="I am a…" text="QA testers file tickets; developers fix the ones assigned to them. An admin can change it later." />
+        </legend>
         <div className="grid grid-cols-2 gap-2.5">
           {SIGNUP_ROLES.map((r) => {
             const { label, hint, icon: Icon } = ROLE_CARDS[r];
@@ -87,12 +91,12 @@ export function SignupForm() {
         {err.role?.length ? <p className="text-[0.7813rem] font-medium text-destructive">{err.role.join(" ")}</p> : null}
       </fieldset>
 
-      <Field label="Nickname" htmlFor="name" error={err.name} hint="What the team calls you. It's shown on your tickets and replies.">
+      <Field label="Nickname" htmlFor="name" error={err.name} tip="What the team calls you. It's shown on your tickets and replies.">
         <IconField icon={UserIcon}>
           <Input id="name" name="name" placeholder="e.g. Kevin" autoComplete="nickname" required minLength={2} maxLength={NICKNAME_MAX} aria-invalid={!!err.name} className="h-12 pl-[2.625rem]" />
         </IconField>
       </Field>
-      <Field label="Email" htmlFor="email" error={err.email} hint={`Your @${EMAIL_DOMAIN} office email.`}>
+      <Field label="Email" htmlFor="email" error={err.email} tip={`Your @${EMAIL_DOMAIN} office email. The admin checks it before approving.`}>
         <IconField icon={MailIcon}>
           <Input id="email" name="email" type="email" placeholder="you@davao-water.gov.ph" autoComplete="email" required maxLength={200} aria-invalid={!!err.email} className="h-12 pl-[2.625rem]" />
         </IconField>

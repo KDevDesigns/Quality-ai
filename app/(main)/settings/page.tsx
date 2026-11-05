@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { BellIcon, ChevronRightIcon, ClockIcon, KeyRoundIcon, ShieldIcon, UserRoundIcon, UsersRoundIcon, Volume2Icon } from "lucide-react";
 import { AvatarUpload } from "@/components/avatar-upload";
 import { PageHeader } from "@/components/page-header";
-import { AccountSkeleton } from "@/components/skeletons";
+import { SettingsSkeleton } from "@/components/skeletons";
 import { ROLE_LABELS } from "@/lib/auth/permissions";
 import { requireUser } from "@/lib/auth/session";
 import { db } from "@/lib/db";
@@ -23,7 +23,7 @@ export default function SettingsPage() {
   return (
     <>
       <PageHeader title="Settings" />
-      <Suspense fallback={<AccountSkeleton />}>
+      <Suspense fallback={<SettingsSkeleton />}>
         <SettingsBody />
       </Suspense>
     </>

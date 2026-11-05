@@ -81,7 +81,9 @@ export function NavCount({ count, label }: { count: number; label: string }) {
   if (!count) return null;
   return (
     <span className="inline-flex items-center gap-1.5 rounded-md bg-bad-t px-1.5 py-0.5 text-[0.75rem] leading-none font-semibold text-bad">
-      <span className="size-1.5 rounded-full bg-bad" aria-hidden />
+      <span className="relative size-1.5 rounded-full bg-bad" aria-hidden>
+        <span className="qa-ping absolute inset-0 rounded-full bg-bad" />
+      </span>
       {count > 99 ? "99+" : count}
       <span className="sr-only"> {label}</span>
     </span>

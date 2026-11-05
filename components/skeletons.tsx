@@ -266,13 +266,47 @@ export function FormSkeleton({ sections = 2 }: { sections?: number }) {
 /** Account settings: the side tabs and one panel. */
 export function AccountSkeleton() {
   return (
-    <Loading className="gap-6 md:grid-cols-[13.75rem_minmax(0,1fr)]">
-      <div className="flex gap-2 md:grid md:content-start">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <Bone key={i} className="h-10 w-28 rounded-[0.5625rem] md:w-full" />
+    <Loading className="gap-5">
+      {/* The banner: photo, name and email. */}
+      <div className="flex items-center gap-7 rounded-2xl border border-line p-[1.875rem] max-md:gap-3.5 max-md:p-5">
+        <Bone className="size-[8.25rem] shrink-0 rounded-full max-md:size-20" />
+        <div className="grid flex-1 gap-2.5">
+          <Bone className="h-7 w-48" />
+          <Bone className="h-4 w-64 max-w-full" />
+        </div>
+      </div>
+      {/* The tabs along the top (laptops). */}
+      <div className="hidden gap-6 border-b border-line pb-3 md:flex">
+        {["4rem", "6.5rem", "3.5rem", "6rem"].map((w, i) => (
+          <Bone key={i} className="h-5 rounded-md" width={w} />
         ))}
       </div>
       <FormSkeleton sections={1} />
+    </Loading>
+  );
+}
+
+/** Settings (phones): the photo card, then grouped rows, like a phone's own Settings app. */
+export function SettingsSkeleton() {
+  return (
+    <Loading className="gap-5">
+      <div className={cn(card, "flex items-center gap-3.5 p-4")}>
+        <Bone className="size-14 shrink-0 rounded-full" />
+        <div className="grid flex-1 gap-2">
+          <Bone className="h-5 w-32" />
+          <Bone className="h-3.5 w-48" />
+        </div>
+      </div>
+      {[2, 4].map((rows, g) => (
+        <div key={g} className={cn(card, "divide-y divide-line overflow-hidden")}>
+          {Array.from({ length: rows }, (_, i) => (
+            <div key={i} className="flex items-center gap-3 px-4 py-3.5">
+              <Bone className="size-7 shrink-0 rounded-lg" />
+              <Bone className="h-4 w-32" />
+            </div>
+          ))}
+        </div>
+      ))}
     </Loading>
   );
 }

@@ -106,11 +106,12 @@ const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const OFF_HOURS: { value: OffHoursPush; label: string; hint: string }[] = [
   { value: "SOUND", label: "Notify me with sound", hint: "The same as during work hours." },
-  { value: "SILENT", label: "Notify me silently", hint: "No sound or vibration; it waits in your notification list. iPhones still play their sound." },
   { value: "NONE", label: "Don't notify me", hint: "Nothing on your devices. You'll see it in the bell and My inbox." },
 ];
 
-export function WorkHoursCard({ initial }: { initial: { offHoursPush: OffHoursPush; workStartMin: number; workEndMin: number; workDays: number } }) {
+/** `SILENT`: the old "Notify me silently" (D7), shown as "Don't notify me", which is what it now does. */
+export function WorkHoursCard({ initial }: { initial: { offHoursPush: OffHoursPush | "SILENT"; workStartMin: number; workEndMin: number; workDays: number } }) {
+  const chosen: OffHoursPush = initial.offHoursPush === "SOUND" ? "SOUND" : "NONE";
   const [state, action, pending] = useActionState(saveWorkHours, initialFormState);
   const err = state.fieldErrors ?? {};
 
@@ -151,7 +152,7 @@ export function WorkHoursCard({ initial }: { initial: { offHoursPush: OffHoursPu
             <legend className="mb-2 text-sm font-medium">Outside my work hours and days</legend>
             {OFF_HOURS.map((o) => (
               <label key={o.value} className="grid grid-cols-[auto_1fr] items-baseline gap-x-2.5 text-sm">
-                <input type="radio" name="offHoursPush" value={o.value} defaultChecked={initial.offHoursPush === o.value} />
+                <input type="radio" name="offHoursPush" value={o.value} defaultChecked={chosen === o.value} />
                 {o.label}
                 <span className="col-start-2 text-[0.7813rem] text-muted-foreground">{o.hint}</span>
               </label>
