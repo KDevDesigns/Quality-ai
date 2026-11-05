@@ -67,6 +67,11 @@ model User {
   mustChangePassword Boolean            @default(true)
   /// Set when they asked for a new password on the sign-in page; cleared when an admin resets or dismisses it.
   resetRequestedAt   DateTime?
+  /// SHA-256 of the secret the sign-up's browser keeps in a cookie. After approval only that browser can get the
+  /// temporary password. Cleared once they choose their own password.
+  claimHash          String?            @unique
+  /// When that browser last got a temporary password, for the once-a-minute limit.
+  claimAt            DateTime?
   /// What device notifications do outside workStartMin–workEndMin (minutes after midnight, Asia/Manila) on workDays.
   offHoursPush       OffHoursPush       @default(SOUND)
   workStartMin       Int                @default(420)

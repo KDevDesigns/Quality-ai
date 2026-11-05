@@ -9,7 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 import { focusSoon, type SidebarUser } from "./app-sidebar";
 import { backTarget, breadcrumbs, isTabRoot, mobileTitle } from "./nav";
-import { NotificationBell } from "./notifications";
+import { NotificationBell } from "./notifications-panel";
 
 /** Pages seen in this tab since QA Hub loaded. More than one means Back can return inside QA Hub. */
 let pagesSeen = 0;

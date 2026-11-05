@@ -27,7 +27,7 @@ export const SIGNUP_ROLES = ["QA", "DEV"] as const;
 export const NICKNAME_MAX = 40;
 const nickname = z.string().trim().min(2, "Enter a nickname of at least 2 characters").max(NICKNAME_MAX, `Keep it to ${NICKNAME_MAX} characters`);
 
-/** No password: the admin who approves the request hands over a temporary one. */
+/** No password: once an admin approves the request, the browser that sent it gets a temporary one (lib/auth/store.ts). */
 export const signupInput = z.object({
   role: z.enum(SIGNUP_ROLES, "Choose QA tester or Developer"),
   name: nickname,

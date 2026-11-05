@@ -4,6 +4,7 @@ import { AppSidebar, AppSidebarShell, type SidebarUser } from "@/components/app-
 import { AppTopbar, AppTopbarShell } from "@/components/app-topbar";
 import { BottomNav } from "@/components/bottom-nav";
 import { NotificationsProvider } from "@/components/notifications";
+import { NotificationsPanel, NotificationsPanelProvider } from "@/components/notifications-panel";
 import { PwaSetup } from "@/components/pwa-setup";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
@@ -22,18 +23,23 @@ export default function MainLayout({ children }: LayoutProps<"/">) {
       <AppSplash />
       <PwaSetup />
       <SidebarProvider style={{ "--sidebar-width": "17.5rem", "--sidebar-width-icon": "5.5rem" } as React.CSSProperties}>
-        <Suspense fallback={<AppSidebarShell />}>
-          <SessionSidebar />
-        </Suspense>
-        <SidebarInset className="min-w-0">
-          <Suspense fallback={<AppTopbarShell />}>
-            <SessionTopbar />
+        {/* The notifications panel is the third column, beside the page; its state lives here so it stays open across pages. */}
+        <NotificationsPanelProvider>
+          <Suspense fallback={<AppSidebarShell />}>
+            <SessionSidebar />
           </Suspense>
-          <main data-main className="page-enter relative z-1 w-full flex-1 space-y-6 max-md:overflow-x-clip max-md:px-5 max-md:py-5 md:px-8 md:pt-8 md:pb-18">
-            {children}
-          </main>
-          <WaveFooter />
-        </SidebarInset>
+          <SidebarInset className="min-w-0">
+            <Suspense fallback={<AppTopbarShell />}>
+              <SessionTopbar />
+            </Suspense>
+            {/* A CSS container, so a page can respond to the room it has when the notifications panel takes some. */}
+            <main data-main className="page-enter @container/main relative z-1 w-full flex-1 space-y-6 max-md:overflow-x-clip max-md:px-5 max-md:py-5 md:px-8 md:pt-8 md:pb-18">
+              {children}
+            </main>
+            <WaveFooter />
+          </SidebarInset>
+          <NotificationsPanel />
+        </NotificationsPanelProvider>
       </SidebarProvider>
       {/* Phones: the tab bar. It reads the URL, so it's inside Suspense too. */}
       <Suspense fallback={null}>

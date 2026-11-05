@@ -90,15 +90,18 @@ export async function deleteUser(_prev: FormState, fd: FormData): Promise<FormSt
   return { ok: true };
 }
 
-/** Approves a sign-up and returns its one-time temporary password for the admin to hand over. */
+/**
+ * Approves a sign-up. A request its browser remembers needs nothing more: that browser gets the temporary password on
+ * the sign-in page. One made before that gets a one-time temporary password, returned for the admin to hand over.
+ */
 export async function approveSignUp(id: string): Promise<UserFormState> {
   await requireAction("users.manage");
   const user = await db.user.findUnique({ where: { id }, select: { email: true } });
-  const tempPassword = generateTempPassword();
-  if (!user || !(await auth.approveSignUp(id, tempPassword))) return { ok: false, message: "This request was already handled. Refresh the page." };
-  // No revalidatePath here: refreshing now would remove the request's row, and the dialog showing the password with it.
-  // The dialog refreshes the page when the admin closes it.
-  return { ok: true, tempPassword, email: user.email };
+  const result = user ? await auth.approveSignUp(id, () => generateTempPassword()) : null;
+  if (!user || !result) return { ok: false, message: "This request was already handled. Refresh the page." };
+  // No revalidatePath here: refreshing now would remove the request's row, and the dialog with it. The dialog refreshes
+  // the page when it closes (straight away when there's no temporary password to show).
+  return { ok: true, tempPassword: result.tempPassword ?? undefined, email: user.email };
 }
 
 export async function rejectSignUp(id: string): Promise<FormState> {

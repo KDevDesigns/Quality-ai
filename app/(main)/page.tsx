@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { InfoTip } from "@/components/info-tip";
 import { InlineAlert } from "@/components/inline-alert";
-import { NotificationBell } from "@/components/notifications";
+import { NotificationBell } from "@/components/notifications-panel";
 import { DashboardSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -92,7 +92,7 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
       {waiting.length ? (
         <InlineAlert tone="info" role="status">
           {waiting.join(" and ")} {plural(signUps + resets, "is", "are")} waiting for you.{" "}
-          <Link href="/admin/users" className="font-medium underline underline-offset-2">Review requests</Link>
+          <Link href={`/admin/users?tab=${signUps ? "approval" : "reset"}`} className="font-medium underline underline-offset-2">Review requests</Link>
         </InlineAlert>
       ) : null}
       {home.body}
@@ -340,7 +340,7 @@ function RecentTickets({
           <p className="rounded-2xl bg-card px-4 py-5 text-sm text-muted-foreground">{emptyText}</p>
         )}
       </section>
-      <Card role="region" aria-labelledby="list-title" className="max-md:hidden">
+      <Card role="region" aria-labelledby="list-title" className="@container/list max-md:hidden">
         <CardHead id="list-title" title={title} tip={tip} link={{ href: "/tickets?group=all", label: "View all" }} />
         {rows.length === 0 ? (
           <p className="border-t border-line2 px-5 py-4 text-sm text-muted-foreground">{emptyText}</p>
@@ -365,7 +365,8 @@ function RecentTickets({
                   >
                     {t.title}
                   </Link>
-                  <span className="w-32 shrink-0 truncate text-[0.8125rem] text-muted-foreground max-lg:hidden">{person(t)}</span>
+                  {/* Hidden when the card itself is narrow (a small window, or the notifications panel open). */}
+                  <span className="w-32 shrink-0 truncate text-[0.8125rem] text-muted-foreground @max-[38rem]/list:hidden">{person(t)}</span>
                   <span className="w-[6.5rem] shrink-0"><TicketStatusPill status={t.status} /></span>
                   <span className="w-12 shrink-0 text-right text-[0.8125rem] text-muted-foreground">{shortAgo(byFiled ? t.createdAt : t.lastActivityAt, now)}</span>
                 </li>

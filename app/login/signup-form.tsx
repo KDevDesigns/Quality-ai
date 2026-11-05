@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { initialFormState } from "@/lib/form";
 import { EMAIL_DOMAIN, NICKNAME_MAX, SIGNUP_ROLES } from "@/lib/schemas/user";
 import { cn } from "@/lib/utils";
-import { signup } from "./actions";
+import { signup, type SignupState } from "./actions";
 
 const ROLE_CARDS: Record<(typeof SIGNUP_ROLES)[number], { label: string; hint: string; icon: typeof CodeIcon }> = {
   QA: { label: "QA tester", hint: "I test the ERP and file tickets", icon: FlaskConicalIcon },
@@ -18,25 +18,27 @@ const ROLE_CARDS: Record<(typeof SIGNUP_ROLES)[number], { label: string; hint: s
 };
 
 export function SignupForm() {
-  const [state, action, pending] = useActionState(signup, initialFormState);
+  const [state, action, pending] = useActionState(signup, initialFormState as SignupState);
   const [role, setRole] = useState<string>("");
   const err = state.fieldErrors ?? {};
 
   if (state.ok) {
+    const approved = state.again === "approved";
     return (
       <div className="auth-enter grid gap-5 text-center">
         <span className="mx-auto flex size-16 items-center justify-center rounded-full bg-ok-t text-ok" aria-hidden>
           <MailCheckIcon className="size-7" />
         </span>
         <div>
-          <h2 className="text-[1.75rem] leading-tight font-semibold tracking-[-0.02em]">Request sent</h2>
+          <h2 className="text-[1.75rem] leading-tight font-semibold tracking-[-0.02em]">{approved ? "You're already approved" : state.again ? "Request updated" : "Request sent"}</h2>
           <p className="mt-2.5 text-base leading-normal text-muted-foreground">
-            A QA Hub admin will review it. Once it&apos;s approved, they&apos;ll give you a temporary password. Sign in with your email and that
-            password, then choose your own.
+            {approved
+              ? "Go to Sign in on this browser and press Show my temporary password."
+              : "Message a QA Hub admin that you signed up, so they know it's you. Once it's approved, open Sign in on this same browser to get your temporary password."}
           </p>
         </div>
         <Button nativeButton={false} render={<Link href="/login" />} className="h-[3.125rem] text-base">
-          Back to sign in
+          {approved ? "Go to sign in" : "Back to sign in"}
         </Button>
       </div>
     );
@@ -55,7 +57,7 @@ export function SignupForm() {
       <div className="mb-1.5">
         <h2 className="text-[2rem] leading-tight font-semibold tracking-[-0.02em]">Request an account</h2>
         <p className="mt-2.5 text-base leading-normal text-muted-foreground">
-          An admin reviews your request and gives you a temporary password. You choose your own password at first sign-in.
+          An admin reviews your request. Once it&apos;s approved, this browser gets your temporary password on the sign-in page. You choose your own at first sign-in.
         </p>
       </div>
 

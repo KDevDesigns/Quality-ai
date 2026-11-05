@@ -249,6 +249,11 @@ Style the app's existing component; don't add a second one.
 | Narrow windows | Under 1800 px wide, a full sidebar minimizes while the panel is open, and comes back when it closes unless the person changed it meanwhile |
 | Phones | Full screen over the page, not a column (D1) |
 
+**Built (Step B):** `components/notifications-panel.tsx`. The bell's dropdown is gone. Rows keep opening the ticket's
+Conversation tab (`?tab=conversation`, as the bell has since Step D). When more are unread than the 8 shown, a line
+points to My inbox. `<main>` is the `main` container; only the Dashboard's ticket list needed a container breakpoint (its
+person column hides when the card is narrow). The other pages were already flexible enough.
+
 **How the page adjusts while it is open.** `tokens.css` does this with selectors that read inline styles, such as
 `[style*="flex: 999 1 560px"]`. Those can't be copied. Make `<main>` a CSS container (Tailwind `@container`) and let each page
 respond to its own width. The result must be:
@@ -499,6 +504,18 @@ The brand pane and footer stay as they are, apart from D10. The change is in Sig
 | Request sent | Board wording for sign-up and forgot password |
 
 Keep `?mode=` and `?next=`. Add the `InfoTip` styles here too: this page doesn't load the shell.
+
+**Built (Step F, revised 2026-11-06, D22):** the owner chose to keep temporary passwords instead of "choose your own
+password at sign-up". Sign-up asks for email, nickname and role. The browser that sends it keeps a random secret in an
+HTTP-only cookie (`lib/auth/signup-cookie.ts`); only its hash is stored (`User.claimHash`). The admin approves by the
+email, once the person has told them (by chat) that they signed up; the owner dropped a request-code check as too much
+for an in-house team. Approval makes no password: on the sign-in page of that same browser, "Show my
+temporary password" makes one (`auth.claimTempPassword`), at most once a minute (`User.claimAt`), each replacing the last
+and signing out earlier sessions. Signing up again with the same email only works from that browser; one request per
+browser. Signing in, or any new password, ends the claim. Requests made before this have no code and still give the admin
+a temporary password. Users has `?tab=users|approval|reset` and the filters `q`, `role`, `module`, `status`
+(`lib/users/filter.ts`); the Dashboard's Review requests opens the tab with items. Reject asks first (D9), and both end
+with a toast.
 
 ---
 
