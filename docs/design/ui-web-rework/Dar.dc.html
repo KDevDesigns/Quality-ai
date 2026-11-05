@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>QA Hub My DAR</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/base-dcwd/tokens.css">
+<link rel="stylesheet" href="ds/base-dcwd/components/bundle.css">
+<script src="ds/base-dcwd/shell.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:var(--primary-text)}a:hover{color:var(--primary-hover)}
+.q-sel{flex:1 1 0;min-width:0;height:100%;border:0;outline:0;background:transparent;font:inherit;color:inherit}
+.q-day{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;height:64px;padding:0;border:1px solid var(--line);border-radius:var(--radius-option);background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
+.q-day:hover{background:var(--row-hover)}
+.q-day.sel,.q-day.sel:hover{border:2px solid var(--primary);background:var(--primary-wash)}
+.q-day.rest{background:var(--surface-subtle)}
+.q-day.today span:first-child{color:var(--primary-text);font-weight:600}
+</style>
+</helmet>
+<div data-theme="{{theme}}" class="dc-shell" style="height: auto; min-height: 1440px; font-family: var(--font-sans);">
+
+<aside class="dc-sb">
+  <div class="dc-brand">
+    <img src="/_blob/742e667a5119e671388fc806e6c51c40" alt="Davao City Water District seal">
+    <div class="txt">
+      <div class="wm">QA Hub</div>
+      <div class="tag">DCWD ERP ticket hub</div>
+    </div>
+  </div>
+  <button class="dc-iconbtn expand" type="button" aria-label="Expand sidebar" title="Expand sidebar"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 3v18M14 9l3 3-3 3"></path></svg></button>
+  <div class="dc-sb-search">
+    <svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"></path></svg>
+    <input type="search" placeholder="Search menu" aria-label="Search menu">
+  </div>
+  <p class="dc-sb-label">Menu</p>
+  <nav class="dc-navlist" aria-label="Main">
+    <a class="dc-nav" href="Main.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM15 3h5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM15 12h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1zM4 16h5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z"></path></svg><span>Dashboard</span></a>
+    <a class="dc-nav" href="Tickets.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2ZM13 5v2M13 17v2M13 11v2"></path></svg><span>Tickets</span></a>
+    <a class="dc-nav" href="Inbox.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg><span class="dc-grow">My inbox</span><span class="dc-pill blue">3</span></a>
+    <a class="dc-nav" href="Team.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 21a8 8 0 0 0-16 0M10 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"></path></svg><span>Team &amp; modules</span></a>
+    <a class="dc-nav on" href="Dar.dc.html" aria-current="page"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7ZM14 2v4a2 2 0 0 0 2 2h4M8 13h2M14 13h2M8 17h2M14 17h2"></path></svg><span>My DAR</span></a>
+  </nav>
+  <div class="q-sb-user">
+    <button class="dc-prof" type="button" aria-label="Open profile menu" aria-haspopup="menu" aria-expanded="false">
+      <span class="dc-avatar">AR</span>
+      <span class="txt"><span class="n">Ana Reyes</span><span class="r">QA tester</span></span>
+      <svg class="dc-i sm q-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"></path></svg>
+    </button>
+  </div>
+</aside>
+
+<header class="dc-topbar">
+  <div class="dc-row" style="gap: 16px;">
+    <button class="dc-iconbtn collapse" type="button" aria-label="Minimize sidebar"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 3v18"></path></svg></button>
+    <ol class="dc-crumbs">
+      <li><a class="home" href="Main.dc.html" aria-label="Home"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"></path></svg></a></li>
+      <li class="sep" aria-hidden="true">/</li>
+      <li class="cur">My DAR</li>
+    </ol>
+  </div>
+  <div class="dc-tb-right">
+    <button class="dc-iconbtn" type="button" aria-label="Notifications, new items waiting"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg><span class="dot" style="background: var(--danger);"></span></button>
+  </div>
+</header>
+
+<main class="dc-main" style="display: flex; flex-direction: column; gap: 20px;">
+  <div>
+    <h1 class="dc-h1">My DAR</h1>
+    <p class="dc-sub">Your Daily Accomplishment Report for each half-month. The days are filled in from your ticket work. Check them, add anything done outside QA Hub, then download.</p>
+  </div>
+
+  <sc-if value="{{notSetUp}}" hint-placeholder-val="{{false}}">
+    <section class="dc-card" style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 56px 24px; text-align: center;">
+      <span class="dc-ibox lg"><svg class="dc-i lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7ZM14 2v4a2 2 0 0 0 2 2h4M8 13h2M14 13h2M8 17h2M14 17h2"></path></svg></span>
+      <h2 class="dc-h2">Set up your DAR</h2>
+      <p style="margin: 0; max-width: 560px; font-size: 14.5px; color: var(--muted);">Add your full name, position, office, who confirms and notes your report, and your core and support duties. You do this once, and it is used for every period after.</p>
+      <button class="dc-btn primary" type="button">Set up my DAR</button>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{setUp}}" hint-placeholder-val="{{true}}">
+    <section class="dc-card" aria-label="Report period and actions" style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 20px; padding: 16px 20px;">
+      <div class="dc-field" style="flex: 0 1 280px;">
+        <label class="dc-label" for="period">Period</label>
+        <div class="dc-input"><select id="period" class="q-sel"><option>Nov 1 to 15, 2026</option><option>Oct 16 to 31, 2026 (saved)</option><option>Oct 1 to 15, 2026 (saved)</option></select></div>
+      </div>
+      <div class="dc-row" style="flex-wrap: wrap;">
+        <button class="dc-btn" type="button" onClick="{{refill}}"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M8 16H3v5"></path></svg>Refill from tickets</button>
+        <button class="dc-btn" type="button" onClick="{{save}}"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>{{saveLabel}}</button>
+        <button class="dc-btn" type="button"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6z"></path></svg>Print</button>
+        <button class="dc-btn primary" type="button"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path></svg>Download Excel</button>
+      </div>
+    </section>
+
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px;">
+      <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+        <div class="dc-seg" role="group" aria-label="View" style="align-self: flex-start;">
+          <button type="button" aria-pressed="{{dayPressed}}" onClick="{{showDay}}">By day</button>
+          <button type="button" aria-pressed="{{formPressed}}" onClick="{{showForm}}">Official form</button>
+        </div>
+
+        <sc-if value="{{isDay}}" hint-placeholder-val="{{true}}">
+          <section class="dc-card" aria-label="Choose a day" style="padding: 16px; overflow-x: auto;">
+            <p style="margin: 0 0 12px; font-size: 14px; color: var(--muted);">{{filledLine}}</p>
+            <div style="display: grid; grid-template-columns: repeat(15, minmax(44px, 1fr)); gap: 6px; min-width: 720px;">
+              <sc-for list="{{days}}" as="d" hint-placeholder-count="15">
+                <button class="q-day {{d.cls}}" type="button" aria-current="{{d.current}}" aria-label="{{d.aria}}" onClick="{{d.pick}}">
+                  <span style="font-size: 12px; color: var(--muted);">{{d.strip}}</span>
+                  <span class="dc-mono" style="font-size: 15px; font-weight: 600;">{{d.n}}</span>
+                  <span style="width: 6px; height: 6px; border-radius: 50%; background: {{d.dot}};"></span>
+                </button>
+              </sc-for>
+            </div>
+          </section>
+
+          <section class="dc-card" aria-labelledby="day-title">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 20px 20px 14px;">
+              <h2 class="dc-h2" id="day-title">{{dayTitle}}</h2>
+              <span class="dc-pill {{dayTone}}">{{dayState}}</span>
+            </div>
+            <sc-for list="{{sections}}" as="s" hint-placeholder-count="2">
+              <p class="dc-overline" style="margin: 0; padding: 14px 20px 8px; border-top: 1px solid var(--line-2);">{{s.label}}</p>
+              <sc-for list="{{s.rows}}" as="r" hint-placeholder-count="2">
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding: 8px 20px 12px;">
+                  <div style="flex: 1 1 260px; min-width: 0;">
+                    <label for="{{r.id}}" style="display: block; font-size: 14.5px; font-weight: 500;">{{r.duty}}</label>
+                    <sc-if value="{{r.auto}}" hint-placeholder-val="{{false}}">
+                      <span class="dc-row" style="gap: 4px; margin-top: 2px; font-size: 12.5px; color: var(--primary-text);"><svg class="dc-i xs" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M8 16H3v5"></path></svg>From my ticket work</span>
+                    </sc-if>
+                  </div>
+                  <div class="dc-input" style="flex: 2 1 320px; width: auto;">
+                    <input id="{{r.id}}" type="text" value="{{r.value}}" placeholder="Type what you did" onChange="{{r.edit}}">
+                  </div>
+                </div>
+              </sc-for>
+            </sc-for>
+          </section>
+        </sc-if>
+
+        <sc-if value="{{isForm}}" hint-placeholder-val="{{false}}">
+          <section class="dc-card" aria-label="Official form preview" style="padding: 20px;">
+            <div style="text-align: center;">
+              <div style="font-size: 12.5px;">Republic of the Philippines</div>
+              <div style="font-size: 15px; font-weight: 600;">Davao City Water District</div>
+              <div style="margin-top: 4px; font-size: 13.5px; color: var(--muted);">Daily Accomplishment Report · Nov 1 to 15, 2026</div>
+            </div>
+            <div style="margin-top: 16px; overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-list);">
+              <div role="table" aria-label="Accomplishments by duty and day" style="min-width: 1500px; font-size: 12.5px;">
+                <div role="row" style="display: grid; grid-template-columns: 240px repeat(15, minmax(0, 1fr)); background: var(--table-head); color: var(--navy); font-weight: 600;">
+                  <span role="columnheader" style="padding: 10px 12px;">Duty</span>
+                  <sc-for list="{{days}}" as="d" hint-placeholder-count="15">
+                    <span role="columnheader" style="padding: 10px 6px; text-align: center; border-left: 1px solid var(--line);">{{d.wd}} {{d.n}}</span>
+                  </sc-for>
+                </div>
+                <sc-for list="{{matrix}}" as="m" hint-placeholder-count="4">
+                  <div role="row" style="display: grid; grid-template-columns: 240px repeat(15, minmax(0, 1fr)); border-top: 1px solid var(--line-2);">
+                    <span role="rowheader" style="padding: 10px 12px; font-weight: 500;">{{m.duty}}</span>
+                    <sc-for list="{{m.cells}}" as="c" hint-placeholder-count="15">
+                      <span role="cell" style="padding: 10px 6px; border-left: 1px solid var(--line-2); text-align: center; line-height: 1.3; color: {{c.color}};">{{c.text}}</span>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </section>
+        </sc-if>
+      </div>
+
+      <section class="dc-card" aria-labelledby="report-title" style="flex: 1 1 320px; min-width: 0; padding: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px;">
+          <h2 class="dc-h2" id="report-title">This report</h2>
+          <a href="DarSetup.dc.html" style="font-size: 14px; font-weight: 500;">My details</a>
+        </div>
+        <dl class="dc-dl">
+          <div class="r"><dt>Name of PBE</dt><dd>Ana M. Reyes</dd></div>
+          <div class="r"><dt>Position Title</dt><dd>[Position]</dd></div>
+          <div class="r"><dt>Department</dt><dd>[Department]</dd></div>
+          <div class="r"><dt>Unit</dt><dd>[Unit]</dd></div>
+          <div class="r"><dt>Immediate Supervisor</dt><dd>[Supervisor]</dd></div>
+          <div class="r"><dt>Noted by</dt><dd>[Noted by]</dd></div>
+          <div class="r"><dt>Date submitted</dt><dd>Not yet</dd></div>
+          <div class="r tot"><dt>Days attended</dt><dd class="dc-mono">{{attended}}</dd></div>
+        </dl>
+      </section>
+    </div>
+  </sc-if>
+</main>
+
+<footer class="dc-foot">
+  <svg class="wave w1" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 70Q400 20 800 70T1600 70T2400 70T3200 70T4000 70T4800 70T5600 70T6400 70V150H0Z"></path></svg>
+  <svg class="wave w2" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 92Q400 52 800 92T1600 92T2400 92T3200 92T4000 92T4800 92T5600 92T6400 92V150H0Z"></path></svg>
+  <svg class="wave w3" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 116Q400 88 800 116T1600 116T2400 116T3200 116T4000 116T4800 116T5600 116T6400 116V150H0Z"></path></svg>
+  <div class="copy">Davao City Water District · QA Hub for the in-house ERP</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"isSetUp":{"editor":"boolean","default":true},"$preview":{"width":2560,"height":1440}}'>
+const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAYS = Array.from({ length: 15 }, (_, i) => ({ n: i + 1, wd: WD[i % 7] }));
+const isRest = (n) => WD[(n - 1) % 7] === 'Sun' || WD[(n - 1) % 7] === 'Sat';
+const TODAY = 4;
+const DUTIES = [
+  { id: 'core1', group: 'Core duties', duty: 'Test ERP modules and file tickets', auto: true },
+  { id: 'core2', group: 'Core duties', duty: 'Retest fixed tickets', auto: true },
+  { id: 'sup1', group: 'Support duties', duty: 'Attend coordination meetings', auto: false },
+  { id: 'sup2', group: 'Support duties', duty: 'Other work outside QA Hub', auto: false }
+];
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = {
+      day: 4, mode: 'day', dirty: false,
+      cells: {
+        'core1:2': 'BAM: 2 tickets filed', 'core1:3': 'Collection: 1 ticket filed', 'core1:4': 'Posting: 1 ticket filed',
+        'core2:3': 'Books: 1 retested', 'core2:4': 'Collection: 1 retested',
+        'sup1:2': 'Weekly QA meeting'
+      }
+    };
+  }
+  cell(id, n) {
+    return this.state.cells[id + ':' + n] ?? '';
+  }
+  renderVals() {
+    const { day, mode, dirty, cells } = this.state;
+    const worked = (n) => DUTIES.some((d) => cells[d.id + ':' + n]);
+    const groups = ['Core duties', 'Support duties'];
+    const rest = isRest(day);
+    const future = day > TODAY;
+    return {
+      theme: this.props.theme ?? 'light',
+      setUp: this.props.isSetUp ?? true,
+      notSetUp: !(this.props.isSetUp ?? true),
+      isDay: mode === 'day',
+      isForm: mode === 'form',
+      dayPressed: mode === 'day' ? 'true' : 'false',
+      formPressed: mode === 'form' ? 'true' : 'false',
+      showDay: () => this.setState({ mode: 'day' }),
+      showForm: () => this.setState({ mode: 'form' }),
+      saveLabel: dirty ? 'Save' : 'Saved',
+      save: () => this.setState({ dirty: false }),
+      refill: () => this.setState({ dirty: true }),
+      attended: DAYS.filter((d) => worked(d.n)).length,
+      filledLine: DAYS.filter((d) => !isRest(d.n) && worked(d.n)).length + ' of ' + DAYS.filter((d) => !isRest(d.n)).length + ' workdays filled',
+      dayTitle: WD[(day - 1) % 7] + ', Nov ' + day + ', 2026',
+      dayState: rest && !worked(day) ? 'Rest day' : worked(day) ? 'Filled' : future ? 'Not yet' : 'Empty',
+      dayTone: worked(day) ? 'green' : 'gray',
+      days: DAYS.map((d) => {
+        const r = isRest(d.n);
+        const w = worked(d.n);
+        const state = w ? 'filled' : r ? 'rest day' : d.n > TODAY ? 'not yet' : 'empty';
+        return {
+          ...d,
+          strip: d.n === TODAY ? 'Today' : d.wd,
+          cls: (d.n === day ? 'sel ' : '') + (d.n === TODAY ? 'today ' : '') + (r ? 'rest' : ''),
+          current: d.n === day ? 'date' : 'false',
+          aria: d.wd + ' Nov ' + d.n + ', ' + state,
+          dot: w ? 'var(--success-step)' : 'transparent',
+          pick: () => this.setState({ day: d.n })
+        };
+      }),
+      sections: groups.map((label) => ({
+        label,
+        rows: DUTIES.filter((d) => d.group === label).map((d) => ({
+          ...d,
+          value: this.cell(d.id, day),
+          edit: (e) => this.setState({ dirty: true, cells: { ...cells, [d.id + ':' + day]: e.target.value } })
+        }))
+      })),
+      matrix: DUTIES.map((d) => ({
+        duty: d.duty,
+        cells: DAYS.map((x) => {
+          const text = this.cell(d.id, x.n);
+          return text ? { text, color: 'var(--ink)' } : isRest(x.n) ? { text: 'REST DAY', color: 'var(--muted)' } : { text: '', color: 'var(--muted)' };
+        })
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

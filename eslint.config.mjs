@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "lib/generated/**",
+    // Copies of the design canvas, for reference only.
+    "docs/design/**",
   ]),
 ]);
 

@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>QA Hub inbox</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/base-dcwd/tokens.css">
+<link rel="stylesheet" href="ds/base-dcwd/components/bundle.css">
+<script src="ds/base-dcwd/shell.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:var(--primary-text)}a:hover{color:var(--primary-hover)}
+.q-thread{display:block;width:100%;padding:12px 16px;border:0;border-bottom:1px solid var(--line-2);background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.q-thread:hover{background:var(--row-hover)}
+.q-thread.sel,.q-thread.sel:hover{background:var(--primary-wash)}
+.q-clip{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style>
+</helmet>
+<div data-theme="{{theme}}" class="dc-shell" style="height: auto; min-height: 1440px; font-family: var(--font-sans);">
+
+<aside class="dc-sb">
+  <div class="dc-brand">
+    <img src="/_blob/742e667a5119e671388fc806e6c51c40" alt="Davao City Water District seal">
+    <div class="txt">
+      <div class="wm">QA Hub</div>
+      <div class="tag">DCWD ERP ticket hub</div>
+    </div>
+  </div>
+  <button class="dc-iconbtn expand" type="button" aria-label="Expand sidebar" title="Expand sidebar"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 3v18M14 9l3 3-3 3"></path></svg></button>
+  <div class="dc-sb-search">
+    <svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"></path></svg>
+    <input type="search" placeholder="Search menu" aria-label="Search menu">
+  </div>
+  <p class="dc-sb-label">Menu</p>
+  <nav class="dc-navlist" aria-label="Main">
+    <a class="dc-nav" href="Main.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM15 3h5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM15 12h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1zM4 16h5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z"></path></svg><span>Dashboard</span></a>
+    <a class="dc-nav" href="Tickets.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2ZM13 5v2M13 17v2M13 11v2"></path></svg><span>Tickets</span></a>
+    <a class="dc-nav on" href="Inbox.dc.html" aria-current="page"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg><span>My inbox</span></a>
+    <a class="dc-nav" href="Team.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 21a8 8 0 0 0-16 0M10 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"></path></svg><span>Team &amp; modules</span></a>
+    <a class="dc-nav" href="Dar.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7ZM14 2v4a2 2 0 0 0 2 2h4M8 13h2M14 13h2M8 17h2M14 17h2"></path></svg><span>My DAR</span></a>
+  </nav>
+  <div class="q-sb-user">
+    <button class="dc-prof" type="button" aria-label="Open profile menu" aria-haspopup="menu" aria-expanded="false">
+      <span class="dc-avatar">AR</span>
+      <span class="txt"><span class="n">Ana Reyes</span><span class="r">QA tester</span></span>
+      <svg class="dc-i sm q-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"></path></svg>
+    </button>
+  </div>
+</aside>
+
+<header class="dc-topbar">
+  <div class="dc-row" style="gap: 16px;">
+    <button class="dc-iconbtn collapse" type="button" aria-label="Minimize sidebar"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 3v18"></path></svg></button>
+    <ol class="dc-crumbs">
+      <li><a class="home" href="Main.dc.html" aria-label="Home"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"></path></svg></a></li>
+      <li class="sep" aria-hidden="true">/</li>
+      <li class="cur">My inbox</li>
+    </ol>
+  </div>
+  <div class="dc-tb-right">
+    <button class="dc-iconbtn" type="button" aria-label="Notifications, new items waiting"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg><span class="dot" style="background: var(--danger);"></span></button>
+  </div>
+</header>
+
+<main class="dc-main" style="display: flex; flex-direction: column; gap: 20px;">
+  <div>
+    <h1 class="dc-h1">My inbox</h1>
+    <p class="dc-sub">The conversations on your tickets, newest first. Replies you send here go to the ticket.</p>
+  </div>
+
+  <div class="dc-card" style="display: flex; flex-wrap: wrap; overflow: hidden; min-height: 680px;">
+    <section aria-label="Conversations" style="flex: 1 1 320px; max-width: 100%; min-width: 0; display: flex; flex-direction: column; border-right: 1px solid var(--line);">
+      <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line-2);">
+        <label class="dc-input" style="height: 40px;">
+          <svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--muted);"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"></path></svg>
+          <input type="search" placeholder="Search title or #number" aria-label="Search conversations" value="{{q}}" onChange="{{onSearch}}">
+        </label>
+        <div class="dc-seg" role="group" aria-label="Conversation view" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));">
+          <button type="button" aria-pressed="{{allPressed}}" onClick="{{showAll}}" style="justify-content: center;">All</button>
+          <button type="button" aria-pressed="{{unreadPressed}}" onClick="{{showUnread}}" style="justify-content: center;">Unread <span class="dc-mono">{{unreadCount}}</span></button>
+        </div>
+      </div>
+      <div style="flex: 1 1 auto;">
+        <sc-for list="{{threads}}" as="x" hint-placeholder-count="6">
+          <button class="q-thread {{x.cls}}" type="button" aria-current="{{x.current}}" onClick="{{x.pick}}">
+            <span style="display: flex; align-items: center; gap: 8px;">
+              <span class="dc-mono" style="font-size: 13px; color: var(--muted);">#{{x.no}}</span>
+              <span style="flex: 1 1 0;"></span>
+              <span style="font-size: 12.5px; color: var(--muted);">{{x.ago}}</span>
+            </span>
+            <span class="q-clip" style="display: block; margin-top: 3px; font-size: 14.5px; font-weight: {{x.weight}}; color: var(--ink);">{{x.title}}</span>
+            <span style="display: flex; align-items: center; gap: 8px; margin-top: 3px;">
+              <span class="q-clip" style="flex: 1 1 0; min-width: 0; font-size: 13.5px; color: var(--muted);">{{x.preview}}</span>
+              <sc-if value="{{x.unread}}" hint-placeholder-val="{{false}}"><span class="dc-pill red" style="height: 20px; padding: 0 7px; font-size: 12px;">{{x.unread}} new</span></sc-if>
+            </span>
+          </button>
+        </sc-for>
+        <sc-if value="{{noThreads}}" hint-placeholder-val="{{false}}">
+          <p style="margin: 0; padding: 32px 20px; text-align: center; font-size: 14px; color: var(--muted);">Nothing matches. Try All, or clear the search.</p>
+        </sc-if>
+      </div>
+    </section>
+
+    <section aria-label="Selected conversation" style="flex: 999 1 360px; min-width: 0; display: flex; flex-direction: column;">
+      <header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 14px 20px; border-bottom: 1px solid var(--line-2);">
+        <div style="flex: 1 1 280px; min-width: 0;">
+          <h2 class="dc-h2" style="font-size: 16px;"><span class="dc-mono" style="margin-right: 6px; font-weight: 500; color: var(--muted);">#{{cur.no}}</span>{{cur.title}}</h2>
+          <p style="margin: 3px 0 0; font-size: 13px; color: var(--muted);">{{cur.area}} · Developer: {{cur.dev}}</p>
+        </div>
+        <div class="dc-row">
+          <span class="dc-pill {{cur.tone}}">{{cur.status}}</span>
+          <a class="dc-btn sm" href="Ticket.dc.html">Open ticket<svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"></path></svg></a>
+        </div>
+      </header>
+      <div aria-label="Messages" style="flex: 1 1 auto; display: flex; flex-direction: column; justify-content: flex-end; gap: 14px; padding: 20px; background: var(--surface-subtle);">
+        <sc-for list="{{messages}}" as="m" hint-placeholder-count="3">
+          <sc-if value="{{m.mine}}" hint-placeholder-val="{{false}}">
+            <div style="align-self: flex-end; max-width: 78%;">
+              <div style="margin-bottom: 4px; text-align: right; font-size: 12.5px; color: var(--muted);">You · {{m.at}}</div>
+              <div style="padding: 11px 14px; background: var(--primary-wash); border: 1px solid var(--primary-border); border-radius: var(--radius-list); font-size: 14.5px; line-height: 1.5; color: var(--ink);">{{m.text}}</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{m.other}}" hint-placeholder-val="{{true}}">
+            <div style="display: flex; align-items: flex-start; gap: 10px; max-width: 78%;">
+              <span class="dc-avatar" style="width: 34px; height: 34px; font-size: 12.5px;">{{m.initials}}</span>
+              <div style="min-width: 0;">
+                <div style="margin-bottom: 4px; font-size: 12.5px; color: var(--muted);"><strong style="font-weight: 600; color: var(--ink);">{{m.who}}</strong> · {{m.at}}</div>
+                <div style="padding: 11px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-list); font-size: 14.5px; line-height: 1.5; color: var(--ink);">{{m.text}}</div>
+              </div>
+            </div>
+          </sc-if>
+        </sc-for>
+      </div>
+      <form onSubmit="{{send}}" style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--line-2);">
+        <button class="dc-iconbtn" type="button" aria-label="Attach a file" style="width: 44px; height: 44px;"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg></button>
+        <label class="dc-input" style="flex: 1 1 240px; width: auto;">
+          <input type="text" placeholder="Write a reply" aria-label="Reply" value="{{draft}}" onChange="{{onDraft}}">
+        </label>
+        <button class="dc-btn primary" type="submit" style="height: 44px;"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4zM22 2 11 13"></path></svg>Send</button>
+      </form>
+    </section>
+  </div>
+</main>
+
+<footer class="dc-foot">
+  <svg class="wave w1" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 70Q400 20 800 70T1600 70T2400 70T3200 70T4000 70T4800 70T5600 70T6400 70V150H0Z"></path></svg>
+  <svg class="wave w2" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 92Q400 52 800 92T1600 92T2400 92T3200 92T4000 92T4800 92T5600 92T6400 92V150H0Z"></path></svg>
+  <svg class="wave w3" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 116Q400 88 800 116T1600 116T2400 116T3200 116T4000 116T4800 116T5600 116T6400 116V150H0Z"></path></svg>
+  <div class="copy">Davao City Water District · QA Hub for the in-house ERP</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":2560,"height":1440}}'>
+const MT = { who: 'Marco Tan', initials: 'MT' };
+const JU = { who: 'Jenny Uy', initials: 'JU' };
+const PL = { who: 'Paolo Lim', initials: 'PL' };
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = {
+      sel: 1042, q: '', onlyUnread: false, draft: '',
+      threads: [
+        { no: 1042, title: 'BAM posting shows the old balance until the page is reloaded', ago: '25m', unread: 2, area: 'Billing and Collection › BAM', dev: 'Marco Tan', status: 'Needs info', tone: 'amber', msgs: [
+          { mine: true, text: 'The balance updates only after I reload the page. The recording is on the ticket.', at: 'Yesterday, 4:12 PM' },
+          { ...MT, text: 'Thank you. Does this happen right after posting, or also after approval?', at: 'Today, 9:48 AM' },
+          { ...MT, text: 'Please also confirm the browser you used.', at: 'Today, 9:50 AM' } ] },
+        { no: 1039, title: 'OR number skips one value after a voided payment', ago: '1h', unread: 1, area: 'Billing and Collection › Collection', dev: 'Marco Tan', status: 'Fixed', tone: 'green', msgs: [
+          { mine: true, text: 'Every collector I tried. The recording shows two of them.', at: 'Oct 28, 3:02 PM' },
+          { ...MT, text: 'Fixed. The void step no longer takes the next number from the series. Please retest with a new payment.', at: 'Today, 10:05 AM' } ] },
+        { no: 1033, title: 'JMS sequence gate message is cut off on small screens', ago: '3h', unread: 0, area: 'JMS › Maintenance orders', dev: 'Jenny Uy', status: 'Needs info', tone: 'amber', msgs: [
+          { ...JU, text: 'What screen width were you using when the message was cut off?', at: 'Today, 7:30 AM' } ] },
+        { no: 1036, title: 'Add a module filter to the MCR approval list', ago: '5h', unread: 0, area: 'Customer Records › MCR', dev: 'Paolo Lim', status: 'Fixed', tone: 'green', msgs: [
+          { ...PL, text: 'The filter is on the approval list now. Please check it with a Submitted MCR.', at: 'Today, 5:20 AM' } ] },
+        { no: 1031, title: 'Keep the chosen zone when returning to the bill run list', ago: '1d', unread: 0, area: 'Billing and Collection › Bill run', dev: 'Paolo Lim', status: 'In progress', tone: 'blue', msgs: [
+          { ...PL, text: 'I started on this. It should also keep the billing period.', at: 'Yesterday, 11:02 AM' },
+          { mine: true, text: 'Noted. Please keep the period too.', at: 'Yesterday, 11:30 AM' } ] }
+      ]
+    };
+  }
+  renderVals() {
+    const { sel, q, onlyUnread, draft, threads } = this.state;
+    const query = q.trim().toLowerCase().replace(/^#/, '');
+    const shown = threads.filter((x) => (!onlyUnread || x.unread) && (!query || x.title.toLowerCase().includes(query) || String(x.no).includes(query)));
+    const cur = threads.find((x) => x.no === sel);
+    return {
+      theme: this.props.theme ?? 'light',
+      q, draft, cur,
+      noThreads: shown.length === 0,
+      unreadCount: threads.filter((x) => x.unread).length,
+      allPressed: onlyUnread ? 'false' : 'true',
+      unreadPressed: onlyUnread ? 'true' : 'false',
+      showAll: () => this.setState({ onlyUnread: false }),
+      showUnread: () => this.setState({ onlyUnread: true }),
+      onSearch: (e) => this.setState({ q: e.target.value }),
+      onDraft: (e) => this.setState({ draft: e.target.value }),
+      messages: cur.msgs.map((m) => ({ ...m, mine: !!m.mine, other: !m.mine })),
+      send: (e) => {
+        e.preventDefault();
+        const text = draft.trim();
+        if (!text) return;
+        this.setState({ draft: '', threads: threads.map((x) => x.no === sel ? { ...x, ago: 'now', msgs: [...x.msgs, { mine: true, text, at: 'Just now' }] } : x) });
+      },
+      threads: shown.map((x) => {
+        const last = x.msgs[x.msgs.length - 1];
+        return {
+          ...x,
+          preview: (last.mine ? 'You: ' : last.who + ': ') + last.text,
+          weight: x.unread ? 600 : 500,
+          cls: x.no === sel ? 'sel' : '',
+          current: x.no === sel ? 'true' : 'false',
+          pick: () => this.setState({ sel: x.no, threads: threads.map((y) => y.no === x.no ? { ...y, unread: 0 } : y) })
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

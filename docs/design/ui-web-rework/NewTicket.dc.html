@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>QA Hub new ticket</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/base-dcwd/tokens.css">
+<link rel="stylesheet" href="ds/base-dcwd/components/bundle.css">
+<script src="ds/base-dcwd/shell.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:var(--primary-text)}a:hover{color:var(--primary-hover)}
+.q-sel{flex:1 1 0;min-width:0;height:100%;border:0;outline:0;background:transparent;font:inherit;color:inherit}
+.q-lab{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.q-lab .dc-label{margin:0}
+.q-tip{position:relative;display:inline-flex}
+.q-info{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border:0;border-radius:50%;background:none;color:var(--muted);cursor:help}
+.q-info:hover{color:var(--primary-text)}
+.q-tiptext{position:absolute;left:0;bottom:calc(100% + 6px);z-index:10;width:260px;padding:8px 10px;border-radius:var(--radius-button);background:var(--ink);color:var(--surface);font-size:13px;font-weight:400;line-height:1.4;box-shadow:var(--shadow-dropdown);visibility:hidden;opacity:0;pointer-events:none}
+.q-tip:hover .q-tiptext,.q-tip:focus-within .q-tiptext{visibility:visible;opacity:1}
+.q-dot{flex:none;width:10px;height:10px;border-radius:50%}
+.q-opt{width:100%;border:0;background:transparent;font-family:inherit;text-align:left}
+.q-paste:hover{border-color:var(--primary)}
+.q-paste:focus-visible{outline:0}
+.q-paste.armed{border:2px solid var(--primary);padding:23px!important;background:var(--primary-tint);box-shadow:var(--shadow-focus)}
+</style>
+</helmet>
+<div data-theme="{{theme}}" class="dc-shell" style="height: auto; min-height: 1440px; font-family: var(--font-sans);">
+
+<aside class="dc-sb">
+  <div class="dc-brand">
+    <img src="/_blob/742e667a5119e671388fc806e6c51c40" alt="Davao City Water District seal">
+    <div class="txt">
+      <div class="wm">QA Hub</div>
+      <div class="tag">DCWD ERP ticket hub</div>
+    </div>
+  </div>
+  <button class="dc-iconbtn expand" type="button" aria-label="Expand sidebar" title="Expand sidebar"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 3v18M14 9l3 3-3 3"></path></svg></button>
+  <div class="dc-sb-search">
+    <svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"></path></svg>
+    <input type="search" placeholder="Search menu" aria-label="Search menu">
+  </div>
+  <p class="dc-sb-label">Menu</p>
+  <nav class="dc-navlist" aria-label="Main">
+    <a class="dc-nav" href="Main.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM15 3h5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM15 12h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1zM4 16h5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z"></path></svg><span>Dashboard</span></a>
+    <a class="dc-nav on" href="Tickets.dc.html" aria-current="page"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2ZM13 5v2M13 17v2M13 11v2"></path></svg><span>Tickets</span></a>
+    <a class="dc-nav" href="Inbox.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg><span class="dc-grow">My inbox</span><span class="dc-pill blue">3</span></a>
+    <a class="dc-nav" href="Team.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 21a8 8 0 0 0-16 0M10 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"></path></svg><span>Team &amp; modules</span></a>
+    <a class="dc-nav" href="Dar.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7ZM14 2v4a2 2 0 0 0 2 2h4M8 13h2M14 13h2M8 17h2M14 17h2"></path></svg><span>My DAR</span></a>
+  </nav>
+  <div class="q-sb-user">
+    <button class="dc-prof" type="button" aria-label="Open profile menu" aria-haspopup="menu" aria-expanded="false">
+      <span class="dc-avatar">AR</span>
+      <span class="txt"><span class="n">Ana Reyes</span><span class="r">QA tester</span></span>
+      <svg class="dc-i sm q-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"></path></svg>
+    </button>
+  </div>
+</aside>
+
+<header class="dc-topbar">
+  <div class="dc-row" style="gap: 16px;">
+    <button class="dc-iconbtn collapse" type="button" aria-label="Minimize sidebar"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 3v18"></path></svg></button>
+    <ol class="dc-crumbs">
+      <li><a class="home" href="Main.dc.html" aria-label="Home"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"></path></svg></a></li>
+      <li class="sep" aria-hidden="true">/</li>
+      <li><a href="Tickets.dc.html">Tickets</a></li>
+      <li class="sep" aria-hidden="true">/</li>
+      <li class="cur">New ticket</li>
+    </ol>
+  </div>
+  <div class="dc-tb-right">
+    <button class="dc-iconbtn" type="button" aria-label="Notifications, new items waiting"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg><span class="dot" style="background: var(--danger);"></span></button>
+  </div>
+</header>
+
+<main class="dc-main" style="display: flex; flex-direction: column; gap: 20px;">
+  <div>
+    <h1 class="dc-h1">New ticket</h1>
+    <p class="dc-sub">Report a bug, or suggest an improvement to the ERP. The developer you pick finds it under Assigned to me.</p>
+  </div>
+
+  <form onSubmit="{{stop}}" style="flex: 1 1 auto; display: flex; flex-wrap: wrap; align-items: stretch; gap: 24px;">
+    <section class="dc-card" aria-label="What happened" style="flex: 999 1 560px; min-width: 0; padding: 24px; display: flex; flex-direction: column; gap: 20px;">
+      <fieldset style="margin: 0; padding: 0; border: 0;">
+        <legend class="dc-label">What is it?</legend>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+          <sc-for list="{{types}}" as="t" hint-placeholder-count="3">
+            <label class="dc-opt">
+              <input type="radio" name="type" checked="{{t.checked}}" onChange="{{t.pick}}">
+              <span class="dc-ibox {{t.box}}"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="{{t.icon}}"></path></svg></span>
+              <span><span class="t" style="display: block;">{{t.label}}</span><span class="d" style="display: block;">{{t.hint}}</span></span>
+            </label>
+          </sc-for>
+        </div>
+      </fieldset>
+
+      <sc-if value="{{isUiux}}" hint-placeholder-val="{{false}}">
+        <div class="dc-field">
+          <div class="q-lab"><label class="dc-label" for="approved">Approved design<span style="margin-left: 2px; color: var(--danger-text);"> *<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);">required</span></span></label><span class="q-tip"><button class="q-info" type="button" aria-label="About Approved design: only designs approved in Design reviews are listed. The developer builds from this design."><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16v-4M12 8h.01"></path></svg></button><span class="q-tiptext" role="tooltip">Only designs approved in Design reviews are listed. The developer builds from this design.</span></span></div>
+          <div class="dc-select {{ap.cls}}">
+            <button id="approved" class="dc-input" type="button" aria-haspopup="listbox" aria-expanded="{{ap.expanded}}" onClick="{{ap.toggle}}" onBlur="{{ap.close}}">
+              <span class="dc-grow">{{ap.value}}</span>
+              <svg class="dc-i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+            </button>
+            <sc-if value="{{ap.open}}" hint-placeholder-val="{{false}}">
+              <div class="dc-dd" role="listbox" aria-label="Approved design">
+                <sc-for list="{{ap.items}}" as="o" hint-placeholder-count="2">
+                  <button class="dc-dd-i q-opt {{o.cls}}" type="button" role="option" aria-selected="{{o.selected}}" onMouseDown="{{o.pick}}">{{o.label}}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <div class="dc-field">
+        <div class="q-lab"><label class="dc-label" for="title">Title<span style="margin-left: 2px; color: var(--danger-text);"> *<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);">required</span></span></label><span class="q-tip"><button class="q-info" type="button" aria-label="About Title: one line someone can understand from the list."><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16v-4M12 8h.01"></path></svg></button><span class="q-tiptext" role="tooltip">One line someone can understand from the list, e.g. “Senior citizen discount not applied on bill reprint”.</span></span></div>
+        <div class="dc-input"><input id="title" type="text" value="{{title}}" onChange="{{onTitle}}"></div>
+      </div>
+
+      <div class="dc-field" style="flex: 1 1 0; min-height: 190px;">
+        <div class="q-lab"><label class="dc-label" for="desc">Description</label><span class="q-tip"><button class="q-info" type="button" aria-label="About Description: {{descHint}}"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16v-4M12 8h.01"></path></svg></button><span class="q-tiptext" role="tooltip">{{descHint}}</span></span></div>
+        <div class="dc-input ta" style="flex: 1 1 auto; min-height: 96px;"><textarea id="desc" rows="3" placeholder="{{descPlaceholder}}" style="height: auto; align-self: stretch;"></textarea></div>
+      </div>
+
+      <div class="dc-field" style="flex: 1 1 0; min-height: 190px;">
+        <div class="q-lab"><span class="dc-label" id="evidence-label">Screenshots and video<span style="margin-left: 2px; color: var(--danger-text);"> *<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);">required</span></span></span><span class="q-tip"><button class="q-info" type="button" aria-label="About Screenshots and video: up to 6 images, 10 MB each, opened in the markup tools first. One MP4 or WebM video, up to 3 min and 50 MB."><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16v-4M12 8h.01"></path></svg></button><span class="q-tiptext" role="tooltip">Up to 6 images, 10 MB each, opened in the markup tools first. One MP4 or WebM video, up to 3 min and 50 MB.</span></span></div>
+        <div class="dc-drop q-paste {{pasteCls}}" tabIndex="0" role="group" aria-labelledby="evidence-label" onFocus="{{onPasteFocus}}" onBlur="{{onPasteBlur}}" onPaste="{{onPaste}}" style="flex: 1 1 auto; justify-content: center; padding: 24px; cursor: pointer;">
+          <div class="dc-row" style="flex-wrap: wrap; justify-content: center;">
+            <a class="dc-btn sm" href="Markup.dc.html"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM21 15l-3.1-3.1a2 2 0 0 0-2.8 0L6 21M9 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"></path></svg>Add image/video</a>
+            <a class="dc-btn sm" href="Markup.dc.html"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path></svg>Capture screen</a>
+          </div>
+          <span aria-live="polite" style="font-weight: {{pasteWeight}}; color: {{pasteColor}};">{{pasteText}}</span>        </div>
+        <a id="to-markup" href="Markup.dc.html" hidden>Open the markup tools</a>
+      </div>
+    </section>
+
+    <section class="dc-card" aria-labelledby="details-title" style="flex: 1 1 320px; min-width: 0; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+      <h2 class="dc-h2" id="details-title">Details</h2>
+      <sc-for list="{{fields}}" as="f" hint-placeholder-count="6">
+        <div class="dc-field">
+          <div class="q-lab"><label class="dc-label" for="{{f.id}}">{{f.label}}<sc-if value="{{f.required}}" hint-placeholder-val="{{true}}"><span style="margin-left: 2px; color: var(--danger-text);"> *<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);">required</span></span></sc-if></label><span class="q-tip"><button class="q-info" type="button" aria-label="About {{f.label}}: {{f.tip}}"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16v-4M12 8h.01"></path></svg></button><span class="q-tiptext" role="tooltip">{{f.tip}}</span></span></div>
+          <sc-if value="{{f.isInput}}" hint-placeholder-val="{{false}}">
+            <div class="dc-input"><input id="{{f.id}}" type="text" placeholder="{{f.placeholder}}"></div>
+          </sc-if>
+          <sc-if value="{{f.isPicker}}" hint-placeholder-val="{{true}}">
+            <div class="dc-select {{f.p.cls}}">
+              <button id="{{f.id}}" class="dc-input" type="button" aria-haspopup="listbox" aria-expanded="{{f.p.expanded}}" onClick="{{f.p.toggle}}" onBlur="{{f.p.close}}">
+                <sc-if value="{{f.p.hasDot}}" hint-placeholder-val="{{false}}"><span class="q-dot" style="background: {{f.p.dot}};"></span></sc-if>
+                <span class="dc-grow">{{f.p.value}}</span>
+                <svg class="dc-i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+              </button>
+              <sc-if value="{{f.p.open}}" hint-placeholder-val="{{false}}">
+                <div class="dc-dd" role="listbox" aria-label="{{f.label}}">
+                  <sc-for list="{{f.p.items}}" as="o" hint-placeholder-count="4">
+                    <button class="dc-dd-i q-opt {{o.cls}}" type="button" role="option" aria-selected="{{o.selected}}" onMouseDown="{{o.pick}}">
+                      <sc-if value="{{o.hasDot}}" hint-placeholder-val="{{false}}"><span class="q-dot" style="background: {{o.dot}};"></span></sc-if>{{o.label}}
+                    </button>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+      <a class="dc-btn primary lg" href="Ticket.dc.html" style="width: 100%; margin-top: auto;">File ticket</a>
+    </section>
+  </form>
+</main>
+
+<footer class="dc-foot">
+  <svg class="wave w1" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 70Q400 20 800 70T1600 70T2400 70T3200 70T4000 70T4800 70T5600 70T6400 70V150H0Z"></path></svg>
+  <svg class="wave w2" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 92Q400 52 800 92T1600 92T2400 92T3200 92T4000 92T4800 92T5600 92T6400 92V150H0Z"></path></svg>
+  <svg class="wave w3" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 116Q400 88 800 116T1600 116T2400 116T3200 116T4000 116T4800 116T5600 116T6400 116V150H0Z"></path></svg>
+  <div class="copy">Davao City Water District · QA Hub for the in-house ERP</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"designerView":{"editor":"boolean","default":true},"$preview":{"width":2560,"height":1440}}'>
+const TYPES = [
+  { key: 'BUG', label: 'Bug', hint: 'Something in the ERP is wrong or broken.', box: 'red', icon: 'M8 2l1.88 1.88M14.12 3.88 16 2M9 7.13v-1a3 3 0 1 1 6 0v1M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6zM12 20v-9M6.53 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M20.97 5c0 2.1-1.6 3.8-3.5 4M22 13h-4M17.2 17c2.1.1 3.8 1.9 3.8 4' },
+  { key: 'SUGGESTION', label: 'Suggestion', hint: 'An idea for something new.', box: 'amb', icon: 'M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5M9 18h6M10 22h4' },
+  { key: 'IMPROVEMENT', label: 'Improvement', hint: 'Something that works but could be better.', box: '', icon: 'M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3z' },
+  { key: 'UIUX', label: 'UI/UX', hint: 'An approved design for a developer to build.', box: '', icon: 'm12 19 7-7 3 3-7 7zM18 13l-1.5-7.5L2 2l3.5 14.5L13 18zM2 2l7.59 7.59M11 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4z' }
+];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { type: 'BUG', title: '', armed: false, noImage: false, open: null, sev: 'S3 Minor', pri: 'P3 Normal', module: 'Choose a module', cat: 'Choose a category', device: 'Computer', dev: 'Not assigned yet', ap: 'Choose an approved design' }; }
+  picker(key, labels, withDots) {
+    const dots = withDots ? ['var(--danger)', 'var(--warning)', 'var(--primary)', 'var(--muted-2)'] : [];
+    const value = this.state[key];
+    const open = this.state.open === key;
+    return {
+      value, open,
+      hasDot: !!withDots,
+      cls: open ? 'open' : '',
+      expanded: open ? 'true' : 'false',
+      dot: dots[labels.indexOf(value)],
+      toggle: () => this.setState({ open: open ? null : key }),
+      close: () => this.setState({ open: null }),
+      items: labels.map((label, i) => ({
+        label,
+        hasDot: !!withDots,
+        dot: dots[i],
+        cls: label === value ? 'hl' : '',
+        selected: label === value ? 'true' : 'false',
+        pick: () => this.setState({ [key]: label, open: null })
+      }))
+    };
+  }
+  renderVals() {
+    const { type, title, armed, noImage } = this.state;
+    const isBug = type === 'BUG';
+    // A UI/UX ticket is always the UI/UX category; every other type must choose one.
+    const category = type === 'UIUX'
+      ? this.picker('cat', ['UI/UX'])
+      : this.picker('cat', ['Front-end', 'Back-end', 'UI/UX']);
+    if (type === 'UIUX') category.value = 'UI/UX';
+    return {
+      pasteCls: armed ? 'armed' : '',
+      pasteWeight: armed ? 600 : 400,
+      pasteColor: armed ? (noImage ? 'var(--danger-text)' : 'var(--primary-text)') : 'var(--body-2)',
+      pasteText: !armed ? 'Or click this box and paste a screenshot (Ctrl+V), or drop files here.' : noImage ? 'No image was copied. Copy a screenshot, then press Ctrl+V.' : 'Ready to paste. Press Ctrl+V.',
+      onPasteFocus: (e) => { if (e.target === e.currentTarget) this.setState({ armed: true, noImage: false }); },
+      onPasteBlur: () => this.setState({ armed: false, noImage: false }),
+      onPaste: (e) => {
+        const hasImage = Array.from(e.clipboardData?.items ?? []).some((i) => i.type.startsWith('image/'));
+        if (!hasImage) return this.setState({ noImage: true });
+        e.preventDefault();
+        document.getElementById('to-markup')?.click();
+      },
+      theme: this.props.theme ?? 'light',
+      isBug, title,
+      isUiux: type === 'UIUX',
+      ap: this.picker('ap', ['[Sample] Tickets list redesign', '[Sample] My account banner']),
+      fields: [
+        { id: 'module', label: 'Module', required: true, tip: 'Where in the ERP. It decides who is suggested for Developer.', isPicker: true, p: this.picker('module', ['Billing and Collection (whole module)', 'BAM', 'Collection', 'Posting', 'Meter Reading (whole module)', 'Books']) },
+        { id: 'category', label: 'Category', required: true, tip: 'Front-end is what you see on screen. Back-end is data and processing. UI/UX is design work. It counts in Module progress on the Dashboard, and the developer can correct it later.', isPicker: true, p: category },
+        { id: 'found', label: 'Found in', tip: 'Optional: ERP build, server or page.', isInput: true, placeholder: 'e.g. staging, build 2026.10.2' },
+        ...(isBug ? [
+          { id: 'sev', label: 'Severity', required: true, tip: 'How bad the effect is: S1 blocks work or gets money wrong.', isPicker: true, p: this.picker('sev', ['S1 Critical', 'S2 Major', 'S3 Minor', 'S4 Trivial'], true) },
+          { id: 'device', label: 'Device type', required: true, tip: 'What the bug happened on.', isPicker: true, p: this.picker('device', ['Computer', 'Android phone', 'iPhone', 'Tablet', 'Not set']) }
+        ] : []),
+        { id: 'priority', label: 'Priority', required: true, tip: 'How soon it should be looked at.', isPicker: true, p: this.picker('pri', ['P1 Urgent', 'P2 High', 'P3 Normal', 'P4 Low'], true) },
+        { id: 'dev', label: 'Developer', required: true, tip: 'Who should fix it. You can change it later.', isPicker: true, p: this.picker('dev', ['Not assigned yet', 'Marco Tan (lead)', 'Paolo Lim', 'Jenny Uy']) }
+      ],
+      onTitle: (e) => this.setState({ title: e.target.value }),
+      stop: (e) => e.preventDefault(),
+      descPlaceholder: isBug ? 'Input the Ticket Description Here.' : '',
+      descHint: isBug ? 'Steps to reproduce, what you expected, and what happened instead. Use QA- test accounts where you can.' : type === 'UIUX' ? 'What the developer needs to build from this design.' : 'What you would like and why it helps.',
+      types: TYPES.filter((t) => t.key !== 'UIUX' || (this.props.designerView ?? true)).map((t) => ({ ...t, checked: t.key === type, pick: () => this.setState({ type: t.key }) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Account.dc.html": {
+      "expand": "fill",
+      "h": 1440,
+      "is_interactive": true,
+      "title": "My account",
+      "w": 2560,
+      "x": 0,
+      "y": 4960
+    },
+    "Dar.dc.html": {
+      "expand": "fill",
+      "h": 1440,
+      "is_interactive": true,
+      "title": "My DAR",
+      "w": 2560,
+      "x": 5280,
+      "y": 1560
+    },
+    "DarSetup.dc.html": {
+      "expand": "fill",
+      "h": 1440,
+      "is_interactive": true,
+      "title": "My DAR set-up",
+      "w": 2560,
+      "x": 0,
+      "y": 6520
+    },
+    "ErpMenu-0hwh-rjba.dc.html": {
+      "expand": "fill",
+      "h": 1440,
+      "is_interactive": true,
+      "title": "DCWD ERP · Menu · All modules (interactive)",
+      "w": 2560,
+      "x": -6319,
+      "y": 4608
+    },
+    "FreshCareersDashboardDone-caum.dc.html": {
+      "h": 1080,
+      "is_interactive": true,
+      "title": "Fresh graduate · 3.2 · Dashboard — PDS + documents complete",
+      "w": 1920,
+      "x": -2199,
+      "y": 1740
+    },
+    "Inbox.dc.html": {
+      "expand": "fill",
+      "h": 1440,
+      "is_interactive": true,
+      "title": "My inbox",
+      "w": 2560,
+      "x": 0,
+      "y": 1560
+    },
+    "Login.dc.html": {
+      "expand": "fill",
+      "h": 1440,
+      "is_interactive": true,
+      "title": "Sign in",
+      "w": 2560,
+      "x": 0,
+      "y": 3400
+    },
+    "Main.dc.html": {
+      "expand": "fill",
+      "h": 1440,
+      "is_interactive": true,
+      "title": "Dashboard",
+      "w": 2560,
+      "x": 0,
+      "y": 0
+    },
+    "Markup.dc.html": {
+      "expand": "fill",
+      "h": 1440,
+      "is_interactive": true,
+      "title": "Screenshot markup",
+      "w": 2560,
+      "x": 5280,
+      "y": 3400
+    },
+    "NewTicket.dc.html": {
+      "expand": "fill",
+      "h": 1440,
+      "is_interactive": true,
+      "title": "New ticket",
+      "w": 2560,
+      "x": 2640,
+      "y": 3400
+    },
+    "Team.dc.html": {
+      "expand": "fill",
+      "h": 1440,
+      "is_interactive": true,
+      "title": "Team and modules",
+      "w": 2560,
+      "x": 2640,
+      "y": 1560
+    },
+    "Ticket.dc.html": {
+      "expand": "fill",
+      "h": 1440,
+      "is_interactive": true,
+      "title": "Ticket detail",
+      "w": 2560,
+      "x": 5280,
+      "y": 0
+    },
+    "Tickets.dc.html": {
+      "expand": "fill",
+      "h": 1440,
+      "is_interactive": true,
+      "title": "Tickets",
+      "w": 2560,
+      "x": 2640,
+      "y": 0
+    },
+    "Users.dc.html": {
+      "expand": "fill",
+      "h": 1440,
+      "is_interactive": true,
+      "title": "Users (Admin)",
+      "w": 2560,
+      "x": 2640,
+      "y": 4960
+    },
+    "XmasLogin-k4r2-emf1.dc.html": {
+      "h": 1440,
+      "is_interactive": true,
+      "title": "Pasko · Sign in",
+      "w": 2560,
+      "x": -6239,
+      "y": 13950
+    },
+    "XmasLoginBrand-uyop-13vj.dc.html": {
+      "h": 1080,
+      "title": "Pasko · Login brand panel (used by Pasko sign in)",
+      "w": 800,
+      "x": -3599,
+      "y": 4608
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-11-04T09:00:00Z",
+    "v": 1
+  },
+  "designSystems": [
+    {
+      "artifact": "https://claude.ai/code/artifact/73aa9c54-fdd7-49ef-b830-effadceb5513",
+      "copiedAt": "2026-11-04T09:00:00Z",
+      "namespace": "base-dcwd",
+      "title": "Base DCWD Design System",
+      "version": "1793789696-36bf"
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "mainPages": {
+      "kind": "title1",
+      "maxW": 7840,
+      "text": "QA Hub main pages",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "otherPages": {
+      "kind": "title1",
+      "maxW": 7840,
+      "text": "QA Hub other pages",
+      "w": 240,
+      "x": 0,
+      "y": 3100
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Tickets.dc.html",
+    "Ticket.dc.html",
+    "Inbox.dc.html",
+    "Team.dc.html",
+    "Dar.dc.html",
+    "Login.dc.html",
+    "NewTicket.dc.html",
+    "Markup.dc.html",
+    "Account.dc.html",
+    "Users.dc.html",
+    "DarSetup.dc.html",
+    "FreshCareersDashboardDone-caum.dc.html",
+    "ErpMenu-0hwh-rjba.dc.html",
+    "XmasLogin-k4r2-emf1.dc.html",
+    "XmasLoginBrand-uyop-13vj.dc.html"
+  ],
+  "pages": [],
+  "title": "QA Hub Redesign"
+}

@@ -1,0 +1,146 @@
+/* Hallmark · checked: 2026-11-04 · genre: modern-minimal (inferred) · shape: app screen · redesign: targeted, Base DCWD kept
+ * critique: type too small for 2560 boards, repeated status pills, thin DAR cues; fixed. Uppercase table heads and overlines stay because the user's design system sets them.
+ * waive 54 (labels) and 24b (6, 10 and 14 px) · both are the Base DCWD scale and type the user chose */
+/* Base DCWD Design System tokens, written out from tokens.json for this canvas. */
+:root, [data-theme="light"] {
+  color-scheme: light;
+  --page:#f4f6fd; --head:rgba(255,255,255,.85); --surface:#ffffff; --surface-sunken:#eef2fd; --surface-subtle:#f7f8fe;
+  --ink:#1e2a78; --ink-2:#2a3170; --body-2:#3d4580; --muted:#525a8c; --muted-2:#8a90b8; --placeholder:#8a90b8;
+  --line:#dde3f7; --line-2:#e8ecfa;
+  --primary:#4f56d3; --primary-hover:#3f45c0; --primary-text:#4f56d3; --on-primary:#ffffff; --primary-tint:#eef0fc; --primary-wash:#f6f6fe; --primary-border:#dfe2f8;
+  --brand-wordmark:#1e2a78; --navy:#1e2a78; --kicker:#4a52c2; --pill-blue-text:#3b40b8;
+  --table-head:#edf1fb; --table-head-border:#e1e6f5; --row-hover:#f1f3fd;
+  --danger:#c42f2a; --danger-text:#c42f2a; --danger-tint:#fdeeed; --danger-wash:#fff8f7; --danger-border:#f6d3d1;
+  --success:#12805c; --success-step:#219a6d; --success-tint:#e7f5ef; --success-wash:#f1faf5; --success-border:#bfe3d2;
+  --warning:#b45309; --warning-tint:#fff4df; --pending-bg:#fffbeb; --pending-text:#b45309; --pending-border:#f7d56b;
+  --disabled-bg:#e9ecf8; --disabled-text:#a3a8c6; --scrim:rgba(20,28,90,.28); --map-chrome:#ffffff;
+  --shadow-card:0 2px 6px rgba(20,28,90,.06); --shadow-stepper:0 2px 6px rgba(20,20,50,.04); --shadow-dropdown:0 20px 50px rgba(20,28,90,.22);
+  --shadow-modal:0 30px 70px -20px rgba(15,20,70,.45); --shadow-nav-active:0 4px 14px rgba(79,86,211,.32); --shadow-focus:0 0 0 3px rgba(79,86,211,.12); --shadow-hover:0 2px 8px rgba(20,22,60,.08);
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+  --page:#0b1240; --head:rgba(11,18,64,.85); --surface:#141c55; --surface-sunken:#1b2466; --surface-subtle:#111a4d;
+  --ink:#eef2fd; --ink-2:#d6dbf7; --body-2:#c3c9ee; --muted:#b3bbea; --muted-2:#5d669e; --placeholder:#7f87c4;
+  --line:#2a3373; --line-2:#212a68;
+  --primary:#5b62e0; --primary-hover:#6b72ea; --primary-text:#a9b0f5; --on-primary:#ffffff; --primary-tint:#252e7c; --primary-wash:#19225f; --primary-border:#36408f;
+  --brand-wordmark:#eef2fd; --navy:#c7ccf7; --kicker:#a9b0f5; --pill-blue-text:#c3c8fa;
+  --table-head:#1b2466; --table-head-border:#2a3474; --row-hover:#1a2364;
+  --danger:#d2433d; --danger-text:#f07a74; --danger-tint:#3a1e1f; --danger-wash:#2a1819; --danger-border:#5a2a2a;
+  --success:#4cc79a; --success-step:#2fae7f; --success-tint:#16332a; --success-wash:#132a22; --success-border:#24503f;
+  --warning:#f0a24b; --warning-tint:#3a2a12; --pending-bg:#2e2510; --pending-text:#f4c24f; --pending-border:#6b5418;
+  --disabled-bg:#1f2860; --disabled-text:#5d669e; --scrim:rgba(3,6,30,.6); --map-chrome:#141c55;
+  --shadow-card:0 2px 6px rgba(0,0,0,.25); --shadow-stepper:0 2px 6px rgba(0,0,0,.3); --shadow-dropdown:0 20px 50px rgba(3,6,30,.5);
+  --shadow-modal:0 30px 70px -20px rgba(0,0,0,.6); --shadow-nav-active:0 4px 14px rgba(91,98,224,.35); --shadow-focus:0 0 0 3px rgba(139,144,240,.28); --shadow-hover:0 2px 8px rgba(0,0,0,.35);
+}
+:root {
+  --font-sans:Geist, system-ui, sans-serif; --font-mono:"Geist Mono", ui-monospace, monospace;
+  --space-4:4px; --space-6:6px; --space-8:8px; --space-10:10px; --space-12:12px; --space-14:14px; --space-16:16px; --space-20:20px; --space-24:24px; --space-32:32px; --space-40:40px;
+  --radius-checkbox:4px; --radius-button:8px; --radius-input:9px; --radius-option:10px; --radius-icon-lg:11px; --radius-list:12px; --radius-card:14px; --radius-modal:16px; --radius-pill:999px;
+  --size-button:40px; --size-button-lg:50px; --size-button-sm:34px; --size-input:44px; --size-icon-button:38px; --size-nav-item:44px; --size-sidebar:280px; --size-sidebar-collapsed:88px; --size-topbar:96px; --size-wizard-footer:86px; --size-stepper:68px; --size-table-head:50px; --size-pill:24px; --size-drawer:400px; --size-menu:360px;
+  --sample-paper:#ffffff; --sample-ink:#1e2a78; --sample-head:#edf1fb; --sample-line:#dde3f7; --sample-black:#111111;
+}
+html, body { overflow-x: clip; }
+/* Matches the app, which scales its text up on screens wider than 1920 (html font-size in app/globals.css). */
+[data-theme] { min-height: 100vh !important; }
+/* A field's explanation, shown from an info icon beside its label instead of text under it. */
+[data-theme] .q-lab { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+[data-theme] .q-lab .dc-label { margin: 0; }
+[data-theme] .q-tip { position: relative; display: inline-flex; }
+[data-theme] .q-info { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: help; }
+[data-theme] .q-info:hover { color: var(--primary-text); }
+[data-theme] .q-tiptext { position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 10; width: 260px; padding: 8px 10px; border-radius: var(--radius-button); background: var(--ink); color: var(--surface); font-size: 13px; font-weight: 400; line-height: 1.4; box-shadow: var(--shadow-dropdown); visibility: hidden; opacity: 0; pointer-events: none; }
+[data-theme] .q-tip:hover .q-tiptext, [data-theme] .q-tip:focus-within .q-tiptext { visibility: visible; opacity: 1; }
+/* Every other tooltip (cut-off text, icon buttons, the minimized sidebar) looks the same; shell.js places it. */
+[data-theme] .q-floattip { position: fixed; z-index: 50; box-sizing: border-box; width: max-content; max-width: 260px; padding: 8px 10px; border-radius: var(--radius-button); background: var(--ink); color: var(--surface); font-size: 13px; font-weight: 400; line-height: 1.4; box-shadow: var(--shadow-dropdown); pointer-events: none; }
+/* White page, with the waves as a true background: they sit behind the content and take no space of their own. */
+[data-theme].dc-shell { background: var(--surface); }
+@media (min-width: 901px) {
+  [data-theme].dc-shell .dc-foot { grid-column: 2; grid-row: 2 / 4; align-self: end; position: sticky; bottom: 0; z-index: 0; pointer-events: none; }
+  [data-theme].dc-shell .dc-main { grid-row: 2 / 4; position: relative; z-index: 1; overflow: visible; padding-bottom: 72px; }
+}
+/* The profile sits at the bottom of the sidebar. The sidebar holds to the window height, so it stays in view on long pages. */
+[data-theme] { --q-vh: 100vh; }
+[data-theme] .q-sb-user { position: relative; flex-shrink: 0; margin-top: auto; padding: 12px 16px 0; border-top: 1px solid var(--line); }
+[data-theme] .q-sb-user .dc-prof { width: 100%; padding: 6px; }
+[data-theme] .q-sb-user .txt { flex: 1 1 0; min-width: 0; }
+[data-theme] .q-sb-user .q-chev { flex-shrink: 0; color: var(--muted); }
+[data-theme] .q-sb-menu { top: auto; right: auto; left: 16px; bottom: calc(100% + 8px); width: 248px; padding: 8px; }
+[data-theme].dc-shell.q-menu-open .dc-sb { overflow: visible; }
+[data-theme].dc-shell.collapsed .q-sb-user { display: flex; justify-content: center; padding: 12px 0 0; }
+[data-theme].dc-shell.collapsed .q-sb-user .dc-prof { width: auto; padding: 4px; }
+[data-theme].dc-shell.collapsed .q-sb-user .txt, [data-theme].dc-shell.collapsed .q-sb-user .q-chev { display: none; }
+/* Notifications open as a sidebar on the right, beside the page, instead of a pop-up. */
+[data-theme] .q-notif { position: fixed; top: 0; right: 0; bottom: 0; z-index: 2; box-sizing: border-box; width: min(var(--size-drawer), 100vw); overflow: hidden; background: var(--surface); border-left: 1px solid var(--line); visibility: hidden; transition: visibility 0s .26s; }
+[data-theme].dc-shell.q-notif-open .q-notif { visibility: visible; transition-delay: 0s; }
+[data-theme] .q-notif-in { display: flex; flex-direction: column; box-sizing: border-box; width: min(calc(var(--size-drawer) - 1px), 100vw); height: 100%; }
+[data-theme] .q-notif-h { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 12px; box-sizing: border-box; height: var(--size-topbar); padding: 0 24px; border-bottom: 1px solid var(--line); }
+[data-theme] .q-notif-h p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+[data-theme] .q-notif-list { flex: 1 1 0; min-height: 0; overflow-y: auto; }
+[data-theme] .q-notif-row { display: flex; align-items: flex-start; gap: 12px; padding: 14px 24px; border-bottom: 1px solid var(--line-2); color: var(--ink); text-decoration: none; }
+[data-theme] .q-notif-row:hover { background: var(--row-hover); color: var(--ink); }
+[data-theme] .q-notif-dot { flex-shrink: 0; width: 8px; height: 8px; margin-top: 7px; border-radius: 50%; background: var(--primary); }
+[data-theme] .q-notif-tx { flex: 1 1 0; min-width: 0; }
+[data-theme] .q-notif-tx .t { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 14.5px; font-weight: 500; line-height: 1.4; }
+[data-theme] .q-notif-tx .t .dc-mono { font-size: 13px; font-weight: 400; color: var(--muted); }
+[data-theme] .q-notif-tx .m { display: block; margin-top: 4px; font-size: 13px; color: var(--muted); }
+[data-theme] .q-notif-none { margin: 0; padding: 48px 24px; text-align: center; font-size: 14px; color: var(--muted); }
+[data-theme] .q-notif-f { display: flex; flex-shrink: 0; gap: 8px; padding: 16px 24px; border-top: 1px solid var(--line); }
+[data-theme] .q-notif-f .dc-btn { flex: 1 1 0; justify-content: center; white-space: nowrap; }
+[data-theme].dc-shell.q-notif-open .dc-iconbtn[aria-expanded="true"] { background: var(--primary-tint); border-color: var(--primary-border); color: var(--primary-text); }
+@media (min-width: 901px) {
+  [data-theme].dc-shell { grid-template-columns: var(--size-sidebar) minmax(0, 1fr) 0px; }
+  [data-theme].dc-shell.collapsed { grid-template-columns: var(--size-sidebar-collapsed) minmax(0, 1fr) 0px; }
+  [data-theme].dc-shell.q-notif-open { grid-template-columns: var(--size-sidebar) minmax(0, 1fr) var(--size-drawer); }
+  [data-theme].dc-shell.collapsed.q-notif-open { grid-template-columns: var(--size-sidebar-collapsed) minmax(0, 1fr) var(--size-drawer); }
+  [data-theme].dc-shell .dc-sb { position: sticky; top: 0; align-self: start; height: var(--q-vh); box-sizing: border-box; z-index: 2; }
+  [data-theme] .q-notif { position: sticky; grid-column: 3; grid-row: 1 / 4; align-self: start; width: auto; min-width: 0; height: var(--q-vh); }
+  /* While notifications are open the page is narrower: labels and titles stay on one line and end in "…" if they must.
+     Messages, the ticket's report and dialogs are reading text, so they still wrap. */
+  [data-theme].dc-shell.q-notif-open .dc-main { white-space: nowrap; }
+  [data-theme].dc-shell.q-notif-open .dc-main :is([aria-label="Messages"], [aria-labelledby="talk-title"], p[style*="72ch"], .dc-modal, [role="dialog"], .q-tiptext) { white-space: normal; }
+  [data-theme].dc-shell.q-notif-open .dc-main :is(h1, h2, h3, p, dd, dt, a.q-title, span[style*="min-width: 0"], div[role="cell"]):not(.q-tiptext) { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  [data-theme].dc-shell.q-notif-open .dc-main :is(p, .dc-h2)[style*="72ch"] { overflow: visible; }
+  /* Page headers and rows hold their title and actions on one line; the title gives way first. */
+  [data-theme].dc-shell.q-notif-open .dc-main [style*="flex-wrap: wrap"][style*="justify-content: space-between"] { flex-wrap: nowrap !important; }
+  [data-theme].dc-shell.q-notif-open .dc-main [style*="flex-wrap: wrap"][style*="justify-content: space-between"] > :first-child { flex: 1 1 0 !important; min-width: 0; }
+  [data-theme].dc-shell.q-notif-open .dc-main [style*="flex-wrap: wrap"][style*="justify-content: space-between"] > :not(:first-child), [data-theme].dc-shell.q-notif-open .dc-main .dc-row[style*="flex-wrap: wrap"] { flex-shrink: 0; flex-wrap: nowrap !important; }
+  [data-theme].dc-shell.q-notif-open .dc-main .q-row { flex-wrap: nowrap !important; }
+  [data-theme].dc-shell.q-notif-open .dc-main .q-row > :is(div, span)[style*="flex: 1 1 280px"] { overflow: hidden; text-overflow: ellipsis; }
+  [data-theme].dc-shell.q-notif-open .dc-main [role="cell"] > [style*="flex-wrap: wrap"] { flex-wrap: nowrap !important; overflow: hidden; }
+  /* Filter rows stay one row: the fields share the width. */
+  [data-theme].dc-shell.q-notif-open .dc-main [style*="flex-wrap: wrap"]:has(> .dc-field) { flex-wrap: nowrap !important; }
+  [data-theme].dc-shell.q-notif-open .dc-main [style*="flex-wrap: wrap"]:has(> .dc-field) > .dc-field { flex-basis: 0 !important; }
+  /* Two-column pages keep their columns longer before the side column moves under. */
+  [data-theme].dc-shell.q-notif-open .dc-main [style*="flex: 999 1 560px"] { flex-basis: 460px !important; }
+  [data-theme].dc-shell.q-notif-open .dc-main [style*="flex: 1 1 320px"] { flex-basis: 300px !important; }
+  /* Choice cards stay inside their border. New ticket's type cards go 2x2. */
+  [data-theme].dc-shell.q-notif-open .dc-main .dc-opt > span:last-child { min-width: 0; overflow: hidden; }
+  [data-theme].dc-shell.q-notif-open .dc-main .dc-opt :is(.t, .d) { overflow: hidden; text-overflow: ellipsis; }
+  [data-theme].dc-shell.q-notif-open .dc-main [style*="repeat(auto-fit, minmax(180px, 1fr))"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  /* Detail lists: the label always shows in full; only the value gives way. */
+  [data-theme].dc-shell.q-notif-open .dc-main dt { flex-shrink: 0; overflow: visible; }
+  /* Users: Modules steps aside while notifications are open, so the other columns stay whole without sideways scrolling. */
+  [data-theme].dc-shell.q-notif-open .dc-main [role="table"][aria-label="Users"] { min-width: 760px !important; }
+  [data-theme].dc-shell.q-notif-open .dc-main [role="table"][aria-label="Users"] [role="row"] { grid-template-columns: 150px minmax(0, 1fr) 180px 168px 152px !important; }
+  [data-theme].dc-shell.q-notif-open .dc-main [role="table"][aria-label="Users"] [role="row"] > :nth-child(4) { display: none; }
+  [data-theme].dc-shell.q-notif-open .dc-main [role="table"][aria-label="Users"] [role="cell"] { overflow: hidden; text-overflow: ellipsis; }
+  /* Team: names in the module list end in "…", and the owners table shares the card instead of scrolling. */
+  [data-theme].dc-shell.q-notif-open .dc-main .q-mod .dc-grow { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  [data-theme].dc-shell.q-notif-open .dc-main [role="table"][style*="min-width: 680px"] { min-width: 0 !important; }
+  /* Dashboard's ticket list keeps its columns, so its modules card moves under. */
+  [data-theme].dc-shell.q-notif-open .dc-main [style*="flex: 999 1 560px"]:has([aria-label="Recent tickets"]) { flex-basis: 720px !important; }
+  /* My DAR needs its whole day strip, so This report moves under instead of the days scrolling. */
+  [data-theme].dc-shell.q-notif-open .dc-main [style*="flex: 999 1 560px"]:has([style*="repeat(15, minmax(44px"]) { flex-basis: 760px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-theme].dc-shell { transition: none; }
+}
+[data-theme] .dc-opt input:checked + .dc-radio { border-color: var(--primary); background: var(--primary); box-shadow: inset 0 0 0 3.5px var(--surface); }
+[data-theme] .q-tab { margin-bottom: 0; }
+nav[aria-label="Account sections"], nav[aria-label="User sections"], nav[aria-label="Ticket sections"] { overflow-y: hidden; }
+@media (min-width: 2200px) {
+  [data-theme] { zoom: 1.3333; min-height: 1080px !important; --q-vh: calc(100vh / 1.3333); }
+}
+[data-theme] .q-sel option { color: var(--ink); background: var(--surface); }
+[data-theme] .dc-btn:active, [data-theme] .dc-pg:active { transform: translateY(1px); box-shadow: none; }
+[data-theme] button:disabled { cursor: not-allowed; }
