@@ -13,8 +13,8 @@ export function PasswordForm() {
 
   return (
     <form action={action} className="grid gap-4">
-      {/* Side by side on a wide screen, as on the board; one under another when narrow. */}
-      <div className="grid gap-4 sm:grid-cols-[repeat(auto-fit,minmax(15rem,1fr))]">
+      {/* One under another, at a comfortable width (the owner's choice over the board's three columns). */}
+      <div className="grid max-w-md gap-4">
         <Field label="Current password" htmlFor="current" error={err.current}>
           <PasswordInput id="current" name="current" autoComplete="current-password" required maxLength={200} aria-invalid={!!err.current} />
         </Field>
