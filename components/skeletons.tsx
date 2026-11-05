@@ -28,20 +28,23 @@ export function HeaderSkeleton() {
   );
 }
 
-/** Tickets list: quick views, filters and rows (cards on phones). */
+/** Tickets list: the view tabs, the filter card and rows (chips and cards on phones). */
 export function TicketListSkeleton({ rows = 8, header = false }: { rows?: number; header?: boolean }) {
   return (
     <Loading>
       {header ? <HeaderSkeleton /> : null}
-      <div className="flex flex-wrap gap-2">
-        {["5rem", "6rem", "7rem", "5rem", "6rem"].map((w, i) => (
-          <Bone key={i} className="h-8 rounded-full" width={w} />
+      <div className="flex flex-wrap gap-2 md:gap-6 md:border-b md:border-line md:pb-3">
+        {["7rem", "6rem", "9rem", "4rem", "3.5rem"].map((w, i) => (
+          <Bone key={i} className="h-8 rounded-full md:h-5 md:rounded-md" width={w} />
         ))}
       </div>
-      <div className="flex flex-wrap gap-2">
-        <Bone className="h-9 w-64" />
-        <Bone className="h-9 w-40" />
-        <Bone className="h-9 w-56" />
+      <div className={cn(card, "flex flex-wrap items-end gap-2.5 p-4 max-md:hidden")}>
+        {["flex-[2_1_17.5rem]", "flex-[1_1_9.5rem]", "flex-[1_1_12rem]", "flex-[1_1_10rem]"].map((c, i) => (
+          <div key={i} className={cn("grid min-w-0 gap-2", c)}>
+            <Bone className="h-3.5 w-16" />
+            <Bone className="h-11 w-full rounded-[0.5625rem]" />
+          </div>
+        ))}
       </div>
       <ListRows rows={rows} />
     </Loading>
@@ -148,16 +151,29 @@ export function DashboardSkeleton() {
   );
 }
 
-/** My inbox: tabs and rows. */
+/** My inbox: the conversation list beside an empty conversation pane (the list alone on phones). */
 export function InboxSkeleton() {
   return (
-    <Loading>
-      <div className="flex gap-2">
-        <Bone className="h-8 w-28 rounded-full" />
-        <Bone className="h-8 w-24 rounded-full" />
-        <Bone className="h-8 w-32 rounded-full" />
+    <Loading className="desk:min-h-0 desk:flex-1">
+      <div className={cn(card, "grid overflow-hidden lg:h-[calc(100dvh-17.5rem)] lg:min-h-130 lg:grid-cols-[minmax(18.75rem,23.75rem)_minmax(0,1fr)] desk:h-full!")}>
+        <div className="flex flex-col border-line lg:border-r">
+          <div className="grid gap-2.5 border-b border-line2 px-4 py-3.5">
+            <Bone className="h-10 w-full" />
+            <Bone className="h-9 w-full rounded-[0.625rem]" />
+          </div>
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="grid gap-1.5 border-b border-line2 px-4 py-3">
+              <div className="flex justify-between">
+                <Bone className="h-3 w-12" />
+                <Bone className="h-3 w-8" />
+              </div>
+              <Bone className={cn("h-4", i % 2 ? "w-4/5" : "w-3/5")} />
+              <Bone className="h-3 w-full" />
+            </div>
+          ))}
+        </div>
+        <div className="hidden bg-surface2 lg:block" />
       </div>
-      <ListRows rows={6} />
     </Loading>
   );
 }

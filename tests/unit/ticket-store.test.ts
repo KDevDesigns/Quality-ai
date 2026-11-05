@@ -482,6 +482,30 @@ describe("ticket category", () => {
   });
 });
 
+describe("view counts", () => {
+  it("counts each view tab within the person's scope, with the other filters applied", async () => {
+    const s = ticketStore(db, now);
+    const one = await s.create(qa, input({ title: "Payroll tax", type: "BUG", assigneeId: dev.id }));
+    await s.create(qa, input({ title: "Meter screen", type: "IMPROVEMENT", severity: null, assigneeId: dev.id }));
+    await s.create(admin, input({ title: "Export button", type: "BUG" }));
+    await s.transition(dev, one.id, { to: "NEED_INFO", note: "Which month?", duplicateOf: null });
+
+    const views = [
+      { group: "open" as const, status: null, assignee: null, reporter: null },
+      { group: "open" as const, status: "NEED_INFO" as const, assignee: null, reporter: null },
+      { group: "all" as const, status: null, assignee: null, reporter: "me" },
+    ];
+    expect(await s.viewCounts(filters(), admin, views)).toEqual([3, 1, 1]);
+    // QA sees only their own tickets; a type filter narrows every tab.
+    expect(await s.viewCounts(filters(), qa, views)).toEqual([2, 1, 2]);
+    expect(await s.viewCounts(filters({ type: "BUG" }), admin, views)).toEqual([2, 1, 1]);
+    // A view's own people replace the page's: here every view says "anyone", so a developer filter doesn't narrow them.
+    expect(await s.viewCounts(filters({ assignee: dev2.id }), admin, views)).toEqual([3, 1, 1]);
+    // When the page passes the developer filter along in each view, the counts follow it.
+    expect(await s.viewCounts(filters(), admin, views.map((v) => ({ ...v, assignee: dev2.id })))).toEqual([0, 0, 0]);
+  });
+});
+
 describe("not started filter", () => {
   it("lists new and reopened tickets together", async () => {
     const s = ticketStore(db, now);

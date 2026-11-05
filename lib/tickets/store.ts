@@ -38,6 +38,9 @@ export class TicketError extends Error {}
 
 export const PAGE_SIZE = 50;
 
+/** What a view tab on the Tickets page sets: its stage and its people (see viewCounts). */
+export type ViewPatch = Pick<TicketFilters, "group" | "status" | "assignee" | "reporter">;
+
 /** Uploads never sent with a ticket or reply are removed after this long. */
 export const PENDING_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -133,18 +136,21 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
     await tx.pendingUpload.deleteMany({ where: { id: { in: ids } } });
   }
 
-  /** The list (and board) filters, within what `actor` may see. */
-  async function filterWhere(f: TicketFilters, actor: Actor): Promise<Prisma.TicketWhereInput> {
+  /** A module and its sub-modules, for the module filter. */
+  async function withSubModules(areaId: string): Promise<string[]> {
+    const subs = await db.erpArea.findMany({ where: { parentId: areaId }, select: { id: true } });
+    return [areaId, ...subs.map((s) => s.id)];
+  }
+
+  /** The list (and board) filters, within what `actor` may see. `areaIds`: the module filter, already looked up. */
+  async function filterWhere(f: TicketFilters, actor: Actor, areaIds?: string[]): Promise<Prisma.TicketWhereInput> {
     const filters: Prisma.TicketWhereInput = {};
     if (f.status === TO_START) filters.status = { in: [...TO_START_STATUSES] };
     else if (f.status) filters.status = f.status;
     else if (f.group !== "all") filters.status = { in: [...(f.group === "open" ? OPEN_STATUSES : DONE_STATUSES)] as TicketStatus[] };
     if (f.type) filters.type = f.type;
     if (f.category) filters.category = f.category === "none" ? null : f.category;
-    if (f.area) {
-      const subs = await db.erpArea.findMany({ where: { parentId: f.area }, select: { id: true } });
-      filters.areaId = { in: [f.area, ...subs.map((s) => s.id)] };
-    }
+    if (f.area) filters.areaId = { in: areaIds ?? (await withSubModules(f.area)) };
     if (f.assignee === "none") filters.assigneeId = null;
     else if (f.assignee) filters.assigneeId = f.assignee === "me" ? actor.id : f.assignee;
     if (f.reporter) filters.reporterId = f.reporter === "me" ? actor.id : f.reporter;
@@ -360,6 +366,16 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
         db.ticket.findMany({ where, orderBy: byActivity, skip: (f.page - 1) * PAGE_SIZE, take: PAGE_SIZE, select: listSelect }),
       ]);
       return { total, rows };
+    },
+
+    /**
+     * How many tickets each view tab would show, with the other filters (search, type, module, category) as they are now.
+     * A view sets its own stage and people, exactly as clicking its tab does, so the number matches what opens.
+     */
+    async viewCounts(f: TicketFilters, actor: Actor, views: ViewPatch[]): Promise<number[]> {
+      // The module filter is the same for every tab, so it is looked up once.
+      const areaIds = f.area ? await withSubModules(f.area) : undefined;
+      return Promise.all(views.map(async (v) => db.ticket.count({ where: await filterWhere({ ...f, ...v, page: 1 }, actor, areaIds) })));
     },
 
     /**

@@ -142,11 +142,12 @@ export function TicketBoard({ columns: fromServer, assign }: { columns: BoardCol
   };
 
   return (
-    <div data-full-width className="grid gap-3">
+    // Big screens (D21): the board takes the rest of the window and each column scrolls inside itself.
+    <div data-full-width className="grid gap-3 desk:flex desk:min-h-0 desk:flex-1 desk:flex-col">
       <ColumnTabs columns={columns} board={scroller} />
       <div
         ref={scroller}
-        className="relative -mx-5 flex snap-x snap-mandatory scroll-px-5 items-start gap-3 overflow-x-auto px-5 pb-2 md:mx-0 md:items-stretch md:snap-none md:px-0 md:pb-3"
+        className="relative -mx-5 flex snap-x snap-mandatory scroll-px-5 items-start gap-3 overflow-x-auto px-5 pb-2 md:mx-0 md:items-stretch md:snap-none md:px-0 md:pb-3 desk:min-h-0 desk:flex-1"
         aria-label="Ticket board"
         role="region"
       >
@@ -182,7 +183,7 @@ export function TicketBoard({ columns: fromServer, assign }: { columns: BoardCol
               }}
               className={cn(
                 "relative flex w-[min(20rem,85vw)] shrink-0 snap-start flex-col rounded-[0.875rem] bg-surface2 outline-2 -outline-offset-2 outline-transparent transition-[opacity,background-color,outline-color] duration-150 outline-dashed",
-                "md:h-[max(24rem,calc(100dvh-21.25rem))] md:w-auto md:min-w-[14rem] md:flex-1 md:basis-0",
+                "md:h-[max(24rem,calc(100dvh-21.25rem))] md:w-auto md:min-w-[14rem] md:flex-1 md:basis-0 desk:h-auto!",
                 drag && !source && !droppable && "opacity-45",
                 droppable && "outline-acc-b",
                 droppable && over === col.key && "bg-acc-t outline-acc",
@@ -377,7 +378,8 @@ function Card({
       }}
       onDragEnd={onDragEnd}
       className={cn(
-        "group/card relative grid shrink-0 grid-cols-[minmax(0,1fr)] gap-2 rounded-[0.625rem] border border-line bg-card py-2.5 pr-2.5 pl-3.5 shadow-[0_0.0625rem_0.125rem_rgba(20,22,40,0.05)] transition-[border-color,box-shadow,opacity] duration-150 hover:border-acc-b hover:shadow-[0_0.25rem_0.75rem_rgba(20,22,40,0.08)]",
+        // The design system's board card: theme shadow, and on hover it lifts 1 px with a deeper shadow.
+        "group/card relative grid shrink-0 grid-cols-[minmax(0,1fr)] gap-2 rounded-[0.625rem] border border-line bg-card py-3 pr-2.5 pl-3.5 shadow-(--shadow-card) transition-[border-color,box-shadow,opacity,transform] duration-150 ease-(--ease-out) hover:-translate-y-px hover:border-acc-b hover:shadow-(--shadow-hover)",
         draggable && "cursor-grab active:cursor-grabbing",
         dragged && "opacity-40",
       )}

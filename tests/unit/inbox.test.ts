@@ -98,6 +98,8 @@ describe("inbox threads", () => {
     tick();
     await n.markRead(admin, a.id);
     expect((await inbox.threads(admin, { unreadOnly: true })).threads).toHaveLength(2);
+    // The number beside Unread matches what that view lists.
+    expect(await inbox.unreadCount(admin)).toBe(2);
 
     const page = await inbox.threads(admin, { take: 2 });
     expect(page.threads).toHaveLength(2);
