@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>QA Hub users</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/base-dcwd/tokens.css">
+<link rel="stylesheet" href="ds/base-dcwd/components/bundle.css">
+<script src="ds/base-dcwd/shell.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:var(--primary-text)}a:hover{color:var(--primary-hover)}
+.q-tr:hover{background:var(--row-hover)}
+.q-icon{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border:0;border-radius:var(--radius-button);background:transparent;color:var(--ink-2);cursor:pointer}
+.q-icon:hover{background:var(--surface-sunken)}
+.q-icon.bad:hover{background:var(--danger-tint);color:var(--danger-text)}
+.q-sel{flex:1 1 0;min-width:0;height:100%;border:0;outline:0;background:transparent;font:inherit;color:inherit}
+.q-tab{display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 16px;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:transparent;color:var(--muted);font:500 15px var(--font-sans);white-space:nowrap;cursor:pointer}
+.q-tab:hover{color:var(--ink);background:var(--row-hover)}
+.q-tab.sel,.q-tab.sel:hover{color:var(--primary-text);border-bottom-color:var(--primary);background:transparent}
+</style>
+</helmet>
+<div data-theme="{{theme}}" class="dc-shell" style="position: relative; height: auto; min-height: 1440px; font-family: var(--font-sans);">
+
+<aside class="dc-sb">
+  <div class="dc-brand">
+    <img src="/_blob/742e667a5119e671388fc806e6c51c40" alt="Davao City Water District seal">
+    <div class="txt">
+      <div class="wm">QA Hub</div>
+      <div class="tag">DCWD ERP ticket hub</div>
+    </div>
+  </div>
+  <button class="dc-iconbtn expand" type="button" aria-label="Expand sidebar" title="Expand sidebar"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 3v18M14 9l3 3-3 3"></path></svg></button>
+  <div class="dc-sb-search">
+    <svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"></path></svg>
+    <input type="search" placeholder="Search menu" aria-label="Search menu">
+  </div>
+  <p class="dc-sb-label">Menu</p>
+  <nav class="dc-navlist" aria-label="Main">
+    <a class="dc-nav" href="Main.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM15 3h5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM15 12h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1zM4 16h5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z"></path></svg><span>Dashboard</span></a>
+    <a class="dc-nav" href="Tickets.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2ZM13 5v2M13 17v2M13 11v2"></path></svg><span>Tickets</span></a>
+    <a class="dc-nav" href="Inbox.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg><span>My inbox</span></a>
+    <a class="dc-nav" href="Team.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 21a8 8 0 0 0-16 0M10 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"></path></svg><span>Team &amp; modules</span></a>
+  </nav>
+  <p class="dc-sb-label">Admin</p>
+  <nav class="dc-navlist" aria-label="Admin">
+    <a class="dc-nav on" href="Users.dc.html" aria-current="page"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg><span>Users</span></a>
+  </nav>
+  <div class="q-sb-user">
+    <button class="dc-prof" type="button" aria-label="Open profile menu" aria-haspopup="menu" aria-expanded="false">
+      <span class="dc-avatar">RS</span>
+      <span class="txt"><span class="n">Rosa Santos</span><span class="r">Admin</span></span>
+      <svg class="dc-i sm q-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"></path></svg>
+    </button>
+  </div>
+</aside>
+
+<header class="dc-topbar">
+  <div class="dc-row" style="gap: 16px;">
+    <button class="dc-iconbtn collapse" type="button" aria-label="Minimize sidebar"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 3v18"></path></svg></button>
+    <ol class="dc-crumbs">
+      <li><a class="home" href="Main.dc.html" aria-label="Home"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"></path></svg></a></li>
+      <li class="sep" aria-hidden="true">/</li>
+      <li>Admin</li>
+      <li class="sep" aria-hidden="true">/</li>
+      <li class="cur">Users</li>
+    </ol>
+  </div>
+  <div class="dc-tb-right">
+    <button class="dc-iconbtn" type="button" aria-label="Notifications, new items waiting"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg><span class="dot" style="background: var(--danger);"></span></button>
+  </div>
+</header>
+
+<main class="dc-main" style="display: flex; flex-direction: column; gap: 20px;">
+  <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px;">
+    <div style="flex: 1 1 480px; min-width: 0;">
+      <h1 class="dc-h1">Users</h1>
+      <p class="dc-sub">Everyone who can sign in. People request an account on the sign-in page with their own password; accounts you add here get a one-time temporary password.</p>
+    </div>
+    <button class="dc-btn primary" type="button"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"></path></svg>New user</button>
+  </div>
+
+  <nav aria-label="User sections" style="display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--line);">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+      <button class="q-tab {{t.cls}}" type="button" aria-current="{{t.current}}" onClick="{{t.pick}}">{{t.label}} <span class="dc-pill {{t.tone}}">{{t.count}}</span></button>
+    </sc-for>
+  </nav>
+
+  <sc-if value="{{isUsers}}" hint-placeholder-val="{{true}}">
+    <section class="dc-card" aria-label="All users" style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        <label class="dc-input" style="flex: 2 1 300px; width: auto;">
+          <svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--muted);"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"></path></svg>
+          <input type="search" placeholder="Search nickname or email" aria-label="Search users" value="{{q}}" onChange="{{onSearch}}">
+        </label>
+        <div class="dc-input" style="flex: 1 1 170px; width: auto;"><select class="q-sel" aria-label="Role" onChange="{{onRole}}"><option value="">All roles</option><option>Admin</option><option>Developer</option><option>QA tester</option></select></div>
+        <div class="dc-input" style="flex: 1 1 220px; width: auto;"><select class="q-sel" aria-label="Module" onChange="{{onModule}}"><option value="">All modules</option><option>Billing and Collection</option><option>Financial Management</option><option>JMS</option><option>Meter Reading</option><option value="None">No module</option></select></div>
+        <div class="dc-input" style="flex: 1 1 190px; width: auto;"><select class="q-sel" aria-label="Status" onChange="{{onStatus}}"><option value="">All statuses</option><option>Active</option><option>Temporary password</option><option>Turned off</option></select></div>
+      </div>
+      <div style="overflow-x: auto;">
+        <div role="table" aria-label="Users" style="min-width: 960px; font-size: 14px;">
+          <div role="row" style="display: grid; grid-template-columns: 200px 320px 190px minmax(0, 1fr) 190px 152px; align-items: center; height: var(--size-table-head); background: var(--table-head); border: 1px solid var(--table-head-border); border-radius: var(--radius-button); color: var(--navy); font-size: 12.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;">
+            <span role="columnheader" style="padding: 0 14px;">Nickname</span>
+            <span role="columnheader" style="padding: 0 14px;">Email</span>
+            <span role="columnheader" style="padding: 0 14px;">Role</span>
+            <span role="columnheader" style="padding: 0 14px;">Modules</span>
+            <span role="columnheader" style="padding: 0 14px;">Status</span>
+            <span role="columnheader" style="padding: 0 14px; color: transparent;">Actions</span>
+          </div>
+          <sc-for list="{{users}}" as="u" hint-placeholder-count="7">
+            <div role="row" class="q-tr" style="display: grid; grid-template-columns: 200px 320px 190px minmax(0, 1fr) 190px 152px; align-items: center; min-height: 56px; border-bottom: 1px solid var(--line-2); opacity: {{u.opacity}};">
+              <span role="cell" style="padding: 8px 14px; font-weight: 600;">{{u.name}}<span style="margin-left: 6px; font-size: 12.5px; font-weight: 400; color: var(--muted);">{{u.you}}</span></span>
+              <span role="cell" class="dc-mono" style="padding: 8px 14px; font-size: 13px;">{{u.email}}</span>
+              <span role="cell" class="dc-row" style="flex-wrap: wrap; gap: 4px; padding: 8px 14px;">
+                <span class="dc-pill gray">{{u.role}}</span>
+                <sc-if value="{{u.designer}}" hint-placeholder-val="{{false}}"><span class="dc-pill gray">Designer</span></sc-if>
+              </span>
+              <span role="cell" style="padding: 8px 14px; font-size: 13.5px; color: var(--body-2);">{{u.modules}}</span>
+              <span role="cell" style="padding: 8px 14px;"><span class="dc-pill {{u.tone}}">{{u.status}}</span></span>
+              <span role="cell" class="dc-row" style="justify-content: flex-end; gap: 2px; padding: 0 8px;">
+                <button class="q-icon" type="button" aria-label="Edit {{u.name}}" title="Edit user"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg></button>
+                <sc-if value="{{u.other}}" hint-placeholder-val="{{true}}">
+                  <button class="q-icon" type="button" aria-label="Reset password for {{u.name}}" title="Reset password"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2zM7 11V7a5 5 0 0 1 10 0v4"></path></svg></button>
+                  <button class="q-icon" type="button" aria-label="Sign out all devices for {{u.name}}" title="Sign out all devices"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg></button>
+                  <button class="q-icon bad" type="button" aria-label="Delete {{u.name}}" title="Delete user"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </sc-if>
+              </span>
+            </div>
+          </sc-for>
+          <sc-if value="{{noUsers}}" hint-placeholder-val="{{false}}">
+            <p style="margin: 0; padding: 40px 16px; text-align: center; font-size: 14.5px; color: var(--muted);">No users match. Try another search or filter.</p>
+          </sc-if>
+        </div>
+      </div>
+      <p style="margin: 0; font-size: 14px; color: var(--muted);">{{countLine}}</p>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{isApproval}}" hint-placeholder-val="{{false}}">
+    <section class="dc-card" aria-labelledby="req-title">
+      <div style="padding: 20px 20px 14px;">
+        <h2 class="dc-h2" id="req-title">Waiting for approval</h2>
+        <p style="margin: 6px 0 0; font-size: 14px; color: var(--muted);">They signed up on the sign-in page and chose their own password. Check that each one is really on the team before approving.</p>
+      </div>
+      <sc-for list="{{requests}}" as="r" hint-placeholder-count="2">
+        <div class="q-tr" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 20px; border-top: 1px solid var(--line-2);">
+          <span style="flex: 1 1 140px; font-size: 14.5px; font-weight: 600;">{{r.name}}</span>
+          <span class="dc-mono" style="flex: 2 1 240px; font-size: 13.5px;">{{r.email}}</span>
+          <span class="dc-pill gray">{{r.role}}</span>
+          <span style="width: 64px; font-size: 13.5px; color: var(--muted);">{{r.ago}}</span>
+          <div class="dc-row">
+            <button class="dc-btn soft sm" type="button" aria-label="Approve {{r.name}}" onClick="{{r.ask}}"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>Approve</button>
+            <button class="dc-btn ghost-red sm" type="button" aria-label="Reject {{r.name}}" onClick="{{r.reject}}"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg>Reject</button>
+          </div>
+        </div>
+      </sc-for>
+      <sc-if value="{{noRequests}}" hint-placeholder-val="{{false}}">
+        <p style="margin: 0; padding: 40px 20px; border-top: 1px solid var(--line-2); text-align: center; font-size: 14.5px; color: var(--muted);">No sign-ups are waiting for approval.</p>
+      </sc-if>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{isReset}}" hint-placeholder-val="{{false}}">
+    <section class="dc-card" aria-labelledby="reset-title">
+      <div style="padding: 20px 20px 14px;">
+        <h2 class="dc-h2" id="reset-title">Password reset requests</h2>
+        <p style="margin: 6px 0 0; font-size: 14px; color: var(--muted);">They used “Forgot your password?” on the sign-in page. Reset gives you a temporary password to hand over in person; check it is really them first.</p>
+      </div>
+      <sc-for list="{{resets}}" as="r" hint-placeholder-count="1">
+        <div class="q-tr" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 20px; border-top: 1px solid var(--line-2);">
+          <span style="flex: 1 1 140px; font-size: 14.5px; font-weight: 600;">{{r.name}}</span>
+          <span class="dc-mono" style="flex: 2 1 240px; font-size: 13.5px;">{{r.email}}</span>
+          <span class="dc-pill gray">{{r.role}}</span>
+          <span style="width: 64px; font-size: 13.5px; color: var(--muted);">{{r.ago}}</span>
+          <div class="dc-row">
+            <button class="dc-btn soft sm" type="button" aria-label="Reset password for {{r.name}}" onClick="{{r.done}}"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2zM7 11V7a5 5 0 0 1 10 0v4"></path></svg>Reset password</button>
+            <button class="dc-btn ghost-red sm" type="button" aria-label="Dismiss the request from {{r.name}}" onClick="{{r.done}}"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg>Dismiss</button>
+          </div>
+        </div>
+      </sc-for>
+      <sc-if value="{{noResets}}" hint-placeholder-val="{{false}}">
+        <p style="margin: 0; padding: 40px 20px; border-top: 1px solid var(--line-2); text-align: center; font-size: 14.5px; color: var(--muted);">No password reset requests.</p>
+      </sc-if>
+    </section>
+  </sc-if>
+</main>
+
+<footer class="dc-foot">
+  <svg class="wave w1" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 70Q400 20 800 70T1600 70T2400 70T3200 70T4000 70T4800 70T5600 70T6400 70V150H0Z"></path></svg>
+  <svg class="wave w2" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 92Q400 52 800 92T1600 92T2400 92T3200 92T4000 92T4800 92T5600 92T6400 92V150H0Z"></path></svg>
+  <svg class="wave w3" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 116Q400 88 800 116T1600 116T2400 116T3200 116T4000 116T4800 116T5600 116T6400 116V150H0Z"></path></svg>
+  <div class="copy">Davao City Water District · QA Hub for the in-house ERP</div>
+</footer>
+
+<sc-if value="{{confirming}}" hint-placeholder-val="{{false}}">
+  <div class="dc-scrim" style="z-index: 60;">
+    <section class="dc-modal" role="dialog" aria-modal="true" aria-labelledby="approve-title">
+      <div class="dc-modal-hd">
+        <span class="dc-ibox lg amb"><svg class="dc-i lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21a6 6 0 0 0-12 0M10 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM19 8v6M22 11h-6"></path></svg></span>
+        <div class="title" id="approve-title">Approve {{pendingName}}?</div>
+        <button class="dc-close" type="button" aria-label="Close" onClick="{{cancel}}"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+      </div>
+      <div class="dc-modal-bd">
+        <p style="margin: 0;">They will be able to sign in as <strong style="font-weight: 600;">{{pendingRole}}</strong> with the password they chose. Check that this person is really on the team.</p>
+        <p class="dc-mono" style="margin: 12px 0 0; font-size: 14px;">{{pendingEmail}}</p>
+      </div>
+      <div class="dc-modal-ft">
+        <button class="dc-btn" type="button" onClick="{{cancel}}">Cancel</button>
+        <button class="dc-btn primary" type="button" onClick="{{confirm}}">Yes, approve</button>
+      </div>
+    </section>
+  </div>
+</sc-if>
+
+<sc-if value="{{toast}}" hint-placeholder-val="{{false}}">
+  <div class="dc-toast" role="status" style="z-index: 61;"><span class="ok"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>{{toast}}</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"startTab":{"editor":"enum","options":["Users","Approval","Password reset"],"default":"Users"},"$preview":{"width":2560,"height":1440}}'>
+const USERS = [
+  ['Rosa Santos', 'rosa.santos', 'Admin', false, 'None', 'Active', 'green', true],
+  ['Grace Yu', 'grace.yu', 'Developer', true, 'Financial Management (lead)', 'Active', 'green', true],
+  ['Jenny Uy', 'jenny.uy', 'Developer', false, 'Meter Reading › Books (lead), JMS (lead)', 'Active', 'green', true],
+  ['Marco Tan', 'marco.tan', 'Developer', false, 'Billing and Collection › BAM (lead), Posting (lead)', 'Active', 'green', true],
+  ['Paolo Lim', 'paolo.lim', 'Developer', false, 'None', 'Temporary password', 'amber', true],
+  ['Ana Reyes', 'ana.reyes', 'QA tester', false, 'Billing and Collection › BAM, Collection', 'Active', 'green', true],
+  ['Ben Cruz', 'ben.cruz', 'QA tester', false, 'Billing and Collection › Bill run', 'Active', 'green', true],
+  ['Tess Lao', 'tess.lao', 'QA tester', false, 'None', 'Turned off', 'gray', false]
+];
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = {
+      tab: null, q: '', role: '', module: '', status: '', pending: null, toast: '',
+      requests: [
+        { name: 'Liza Ramos', email: 'liza.ramos@davao-water.gov.ph', role: 'QA tester', ago: '2h' },
+        { name: 'Noel Ang', email: 'noel.ang@davao-water.gov.ph', role: 'Developer', ago: '1d' }
+      ],
+      resets: [{ name: 'Carla Go', email: 'carla.go@davao-water.gov.ph', role: 'QA tester', ago: '40m' }]
+    };
+  }
+  renderVals() {
+    const { q, role, module, status, pending, toast, requests, resets } = this.state;
+    const tab = this.state.tab ?? (this.props.startTab ?? 'Users');
+    const query = q.trim().toLowerCase();
+    const users = USERS.map(([name, mail, r, designer, modules, s, tone, active]) => ({
+      name, role: r, designer, modules, status: s, tone,
+      email: mail + '@davao-water.gov.ph',
+      you: name === 'Rosa Santos' ? '(you)' : '',
+      other: name !== 'Rosa Santos',
+      opacity: active ? 1 : 0.6
+    })).filter((u) =>
+      (!query || u.name.toLowerCase().includes(query) || u.email.includes(query)) &&
+      (!role || u.role === role) &&
+      (!module || u.modules.includes(module)) &&
+      (!status || u.status === status)
+    );
+    const tabs = [
+      ['Users', USERS.length, 'gray'],
+      ['Approval', requests.length, requests.length ? 'amber' : 'gray'],
+      ['Password reset', resets.length, resets.length ? 'amber' : 'gray']
+    ];
+    return {
+      theme: this.props.theme ?? 'light',
+      q,
+      isUsers: tab === 'Users', isApproval: tab === 'Approval', isReset: tab === 'Password reset',
+      tabs: tabs.map(([label, count, tone]) => ({ label, count, tone, cls: tab === label ? 'sel' : '', current: tab === label ? 'page' : 'false', pick: () => this.setState({ tab: label, toast: '' }) })),
+      users,
+      noUsers: users.length === 0,
+      countLine: users.length + ' of ' + USERS.length + ' users',
+      onSearch: (e) => this.setState({ q: e.target.value }),
+      onRole: (e) => this.setState({ role: e.target.value }),
+      onModule: (e) => this.setState({ module: e.target.value }),
+      onStatus: (e) => this.setState({ status: e.target.value }),
+      noRequests: requests.length === 0,
+      noResets: resets.length === 0,
+      requests: requests.map((r) => ({
+        ...r,
+        ask: () => this.setState({ pending: r, toast: '' }),
+        reject: () => this.setState({ requests: requests.filter((x) => x !== r), toast: r.name + ' was rejected.' })
+      })),
+      resets: resets.map((r) => ({ ...r, done: () => this.setState({ resets: resets.filter((x) => x !== r) }) })),
+      confirming: !!pending,
+      pendingName: pending?.name ?? '',
+      pendingRole: pending?.role ?? '',
+      pendingEmail: pending?.email ?? '',
+      cancel: () => this.setState({ pending: null }),
+      confirm: () => this.setState({ pending: null, requests: requests.filter((x) => x !== pending), toast: pending.name + ' can now sign in.' }),
+      toast
+    };
+  }
+}
+</script>
+</body>
+</html>

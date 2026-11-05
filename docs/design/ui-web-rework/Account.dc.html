@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>QA Hub my account</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/base-dcwd/tokens.css">
+<link rel="stylesheet" href="ds/base-dcwd/components/bundle.css">
+<script src="ds/base-dcwd/shell.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:var(--primary-text)}a:hover{color:var(--primary-hover)}
+.q-sel{flex:1 1 0;min-width:0;height:100%;border:0;outline:0;background:transparent;font:inherit;color:inherit}
+.q-tab{display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 16px;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:transparent;color:var(--muted);font:500 15px var(--font-sans);white-space:nowrap;cursor:pointer}
+.q-tab:hover{color:var(--ink);background:var(--row-hover)}
+.q-tab.sel,.q-tab.sel:hover{color:var(--primary-text);border-bottom-color:var(--primary);background:transparent}
+</style>
+</helmet>
+<div data-theme="{{theme}}" class="dc-shell" style="height: auto; min-height: 1440px; background: var(--surface); font-family: var(--font-sans);">
+
+<aside class="dc-sb">
+  <div class="dc-brand">
+    <img src="/_blob/742e667a5119e671388fc806e6c51c40" alt="Davao City Water District seal">
+    <div class="txt">
+      <div class="wm">QA Hub</div>
+      <div class="tag">DCWD ERP ticket hub</div>
+    </div>
+  </div>
+  <button class="dc-iconbtn expand" type="button" aria-label="Expand sidebar" title="Expand sidebar"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 3v18M14 9l3 3-3 3"></path></svg></button>
+  <div class="dc-sb-search">
+    <svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"></path></svg>
+    <input type="search" placeholder="Search menu" aria-label="Search menu">
+  </div>
+  <p class="dc-sb-label">Menu</p>
+  <nav class="dc-navlist" aria-label="Main">
+    <a class="dc-nav" href="Main.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM15 3h5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM15 12h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1zM4 16h5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z"></path></svg><span>Dashboard</span></a>
+    <a class="dc-nav" href="Tickets.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2ZM13 5v2M13 17v2M13 11v2"></path></svg><span>Tickets</span></a>
+    <a class="dc-nav" href="Inbox.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg><span class="dc-grow">My inbox</span><span class="dc-pill blue">3</span></a>
+    <a class="dc-nav" href="Team.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 21a8 8 0 0 0-16 0M10 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"></path></svg><span>Team &amp; modules</span></a>
+    <a class="dc-nav" href="Dar.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7ZM14 2v4a2 2 0 0 0 2 2h4M8 13h2M14 13h2M8 17h2M14 17h2"></path></svg><span>My DAR</span></a>
+  </nav>
+  <div class="q-sb-user">
+    <button class="dc-prof" type="button" aria-label="Open profile menu" aria-haspopup="menu" aria-expanded="false">
+      <span class="dc-avatar">AR</span>
+      <span class="txt"><span class="n">Ana Reyes</span><span class="r">QA tester</span></span>
+      <svg class="dc-i sm q-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"></path></svg>
+    </button>
+  </div>
+</aside>
+
+<header class="dc-topbar">
+  <div class="dc-row" style="gap: 16px;">
+    <button class="dc-iconbtn collapse" type="button" aria-label="Minimize sidebar"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 3v18"></path></svg></button>
+    <ol class="dc-crumbs">
+      <li><a class="home" href="Main.dc.html" aria-label="Home"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"></path></svg></a></li>
+      <li class="sep" aria-hidden="true">/</li>
+      <li class="cur">My account</li>
+    </ol>
+  </div>
+  <div class="dc-tb-right">
+    <button class="dc-iconbtn" type="button" aria-label="Notifications, new items waiting"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg><span class="dot" style="background: var(--danger);"></span></button>
+  </div>
+</header>
+
+<main class="dc-main" style="display: flex; flex-direction: column; gap: 20px;">
+  <div>
+    <h1 class="dc-h1">My account</h1>
+    <p class="dc-sub">Your profile, password and how QA Hub notifies you.</p>
+  </div>
+
+  <sc-if value="{{tempPassword}}" hint-placeholder-val="{{false}}">
+    <div class="dc-info" role="status" style="background: var(--pending-bg); border-color: var(--pending-border); color: var(--pending-text);">You signed in with a temporary password. Choose your own password to continue.</div>
+  </sc-if>
+
+  <section aria-label="Profile banner" style="position: relative; overflow: hidden; padding: 30px; background: var(--primary-wash); border: 1px solid var(--primary-border); border-radius: var(--radius-modal); box-shadow: var(--shadow-card);">
+    <img src="/_blob/3b52082e652a82a795c84dd7a945da26" alt="" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: right 40%; opacity: .85; pointer-events: none;">
+    <span aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, var(--primary-wash) 0%, color-mix(in srgb, var(--primary-wash) 94%, transparent) 32%, color-mix(in srgb, var(--primary-wash) 55%, transparent) 58%, color-mix(in srgb, var(--primary-wash) 15%, transparent) 100%);"></span>
+    <div style="position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 28px;">
+      <button type="button" aria-label="Change your photo" class="dc-avatar" style="position: relative; overflow: hidden; width: 132px; height: 132px; padding: 0; border: 4px solid var(--surface); font-size: 44px; cursor: pointer; box-shadow: 0 0 0 1px var(--primary-border), var(--shadow-hover);">AR
+        <span style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0 12px; background: color-mix(in srgb, var(--sample-black) 62%, transparent); color: var(--on-primary); font-size: 12px; font-weight: 500; line-height: 1.2;">
+          <svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3zM12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path></svg>
+          Change photo
+        </span>
+      </button>
+      <div style="flex: 1 1 320px; min-width: 0;">
+        <h2 style="margin: 0; font-size: 26px; font-weight: 600; line-height: 1.2; letter-spacing: -.01em;">Ana Reyes</h2>
+        <p style="margin: 8px 0 0; font-size: 15px; line-height: 1.55; color: var(--ink-2);">QA tester · <span class="dc-mono">ana.reyes@davao-water.gov.ph</span></p>      </div>
+    </div>
+  </section>
+
+  <nav aria-label="Account sections" style="display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--line);">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+      <button class="q-tab {{t.cls}}" type="button" aria-current="{{t.current}}" onClick="{{t.pick}}">
+        <svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="{{t.icon}}"></path></svg>{{t.label}}
+      </button>
+    </sc-for>
+  </nav>
+
+    <div style="width: 100%; display: flex; flex-direction: column; gap: 20px;">
+      <sc-if value="{{isProfile}}" hint-placeholder-val="{{true}}">
+        <section class="dc-card" aria-labelledby="pf-title" style="padding: 24px;">
+          <h2 class="dc-h2" id="pf-title" style="margin-bottom: 14px;">Profile</h2>
+          <dl class="dc-dl">
+            <div class="r"><dt>Nickname</dt><dd>Ana Reyes</dd></div>
+            <div class="r"><dt>Email</dt><dd class="dc-mono">ana.reyes@davao-water.gov.ph</dd></div>
+            <div class="r"><dt>Role</dt><dd>QA tester</dd></div>
+          </dl>
+          <div class="dc-divider" style="margin: 24px 0;"></div>
+          <h3 class="dc-h2" style="margin-bottom: 14px;">Change password</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+            <div class="dc-field"><label class="dc-label" for="cur">Current password</label><div class="dc-input"><input id="cur" type="password" autocomplete="current-password"></div></div>
+            <div class="dc-field"><div class="q-lab"><label class="dc-label" for="new">New password</label><span class="q-tip"><button class="q-info" type="button" aria-label="About New password: at least 10 characters. Changing it signs you out on your other devices."><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16v-4M12 8h.01"></path></svg></button><span class="q-tiptext" role="tooltip">At least 10 characters. Changing it signs you out on your other devices.</span></span></div><div class="dc-input"><input id="new" type="password" autocomplete="new-password"></div></div>
+            <div class="dc-field"><label class="dc-label" for="conf">Confirm new password</label><div class="dc-input"><input id="conf" type="password" autocomplete="new-password"></div></div>
+          </div>
+          <div class="dc-row" style="justify-content: flex-end; margin-top: 16px;">
+            <button class="dc-btn primary" type="button">Change password</button>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{isNotifications}}" hint-placeholder-val="{{false}}">
+        <section class="dc-card" aria-labelledby="dn-title" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+          <div>
+            <h2 class="dc-h2" id="dn-title">Notifications on this device</h2>
+            <p style="margin: 3px 0 0; font-size: 14px; color: var(--muted);">A Windows, Mac or phone notification when something happens on your tickets, even with QA Hub closed. Turn it on once on each device.</p>
+          </div>
+          <sc-if value="{{pushOn}}" hint-placeholder-val="{{true}}">
+            <div class="dc-info" role="status" style="background: var(--success-wash); border-color: var(--success-border);">On for this device. Your device's Do Not Disturb or Focus still mutes them.</div>
+            <div class="dc-row" style="justify-content: flex-end;">
+              <button class="dc-btn" type="button" onClick="{{togglePush}}">Turn off</button>
+              <button class="dc-btn" type="button">Send test</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{pushOff}}" hint-placeholder-val="{{false}}">
+            <p style="margin: 0; font-size: 14.5px; color: var(--muted);">Off for this device. Your browser will ask for permission when you turn it on.</p>
+            <button class="dc-btn primary" type="button" onClick="{{togglePush}}" style="align-self: flex-end;">Turn on</button>
+          </sc-if>
+        </section>
+        <section class="dc-card" aria-labelledby="in-title" style="padding: 24px;">
+          <h2 class="dc-h2" id="in-title">Install QA Hub</h2>
+          <p style="margin: 3px 0 0; font-size: 14px; color: var(--muted);">Opens from its own icon, without the browser's address bar. It shows the same live data as this page and keeps no tickets on this device.</p>
+          <p style="margin: 14px 0 0; font-size: 14.5px; color: var(--body-2);">If QA Hub is already installed, open it from its icon. If not, look for Install or Add to Home screen in your browser's menu.</p>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{isSound}}" hint-placeholder-val="{{false}}">
+        <section class="dc-card" aria-labelledby="snd-title" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+          <div>
+            <h2 class="dc-h2" id="snd-title">Sound and previews</h2>
+            <p style="margin: 3px 0 0; font-size: 14px; color: var(--muted);">The sound plays when a notification arrives while QA Hub is open in a tab you have clicked in. With QA Hub closed, your device's own notification sound plays instead.</p>
+          </div>
+          <div class="dc-field">
+            <label class="dc-label" for="tone">Sound</label>
+            <div class="dc-input"><select id="tone" class="q-sel"><option>Tone 1</option><option>Tone 2</option><option>Tone 3</option><option>Silent</option></select></div>
+          </div>
+          <div>
+            <label class="dc-check"><input type="checkbox" checked><span class="dc-cbx"><svg class="dc-i xs" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>Show message previews</label>
+            <p style="margin: 4px 0 0 28px; font-size: 13px; color: var(--muted);">The ticket title and the message. Turn it off if others can see your screen: you will get only "#12 · New reply from Ana".</p>
+          </div>
+          <button class="dc-btn primary" type="button" style="align-self: flex-end;">Save</button>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{isHours}}" hint-placeholder-val="{{false}}">
+        <section class="dc-card" aria-labelledby="wh-title" style="padding: 24px; display: flex; flex-direction: column; gap: 18px;">
+          <div>
+            <h2 class="dc-h2" id="wh-title">Work hours</h2>
+            <p style="margin: 3px 0 0; font-size: 14px; color: var(--muted);">Choose what your devices do outside these hours and days. Everything still shows in the bell and My inbox. Philippine time.</p>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div class="dc-field"><label class="dc-label" for="from">From</label><div class="dc-input"><select id="from" class="q-sel"><option>7:00 AM</option><option>8:00 AM</option></select></div></div>
+            <div class="dc-field"><label class="dc-label" for="to">To</label><div class="dc-input"><select id="to" class="q-sel"><option>6:00 PM</option><option>5:00 PM</option></select></div></div>
+          </div>
+          <fieldset style="margin: 0; padding: 0; border: 0;">
+            <legend class="dc-label">Days</legend>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px 20px;">
+              <label class="dc-check"><input type="checkbox"><span class="dc-cbx"><svg class="dc-i xs" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>Sun</label>
+              <label class="dc-check"><input type="checkbox" checked><span class="dc-cbx"><svg class="dc-i xs" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>Mon</label>
+              <label class="dc-check"><input type="checkbox" checked><span class="dc-cbx"><svg class="dc-i xs" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>Tue</label>
+              <label class="dc-check"><input type="checkbox" checked><span class="dc-cbx"><svg class="dc-i xs" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>Wed</label>
+              <label class="dc-check"><input type="checkbox" checked><span class="dc-cbx"><svg class="dc-i xs" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>Thu</label>
+              <label class="dc-check"><input type="checkbox" checked><span class="dc-cbx"><svg class="dc-i xs" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>Fri</label>
+              <label class="dc-check"><input type="checkbox"><span class="dc-cbx"><svg class="dc-i xs" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>Sat</label>
+            </div>
+          </fieldset>
+          <fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px;">
+            <legend class="dc-label">Outside my work hours and days</legend>
+            <label class="dc-opt"><input type="radio" name="off" checked><span class="dc-radio"></span><span><span class="t" style="display: block;">Notify me with sound</span><span class="d" style="display: block;">The same as during work hours.</span></span></label>
+            <label class="dc-opt"><input type="radio" name="off"><span class="dc-radio"></span><span><span class="t" style="display: block;">Don't notify me</span><span class="d" style="display: block;">Nothing on your devices. You will see it in the bell and My inbox.</span></span></label>
+          </fieldset>
+          <button class="dc-btn primary" type="button" style="align-self: flex-end;">Save work hours</button>
+        </section>
+      </sc-if>
+    </div>
+</main>
+
+<footer class="dc-foot">
+  <svg class="wave w1" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 70Q400 20 800 70T1600 70T2400 70T3200 70T4000 70T4800 70T5600 70T6400 70V150H0Z"></path></svg>
+  <svg class="wave w2" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 92Q400 52 800 92T1600 92T2400 92T3200 92T4000 92T4800 92T5600 92T6400 92V150H0Z"></path></svg>
+  <svg class="wave w3" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 116Q400 88 800 116T1600 116T2400 116T3200 116T4000 116T4800 116T5600 116T6400 116V150H0Z"></path></svg>
+  <div class="copy">Davao City Water District · QA Hub for the in-house ERP</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"tempPassword":{"editor":"boolean","default":false},"$preview":{"width":2560,"height":1440}}'>
+const TABS = [
+  ['profile', 'Profile', 'Your name, email and role', 'M18 21a6 6 0 0 0-12 0M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10z'],
+  ['notifications', 'Notifications', 'Alerts on this device', 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0'],
+  ['sound', 'Sound', 'Tone and message previews', 'M11 5 6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14'],
+  ['hours', 'Work hours', 'When notifications may ring', 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2']
+];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { tab: null, pushOn: true }; }
+  renderVals() {
+    const temp = !!this.props.tempPassword;
+    const tab = this.state.tab ?? 'profile';
+    const { pushOn } = this.state;
+    return {
+      theme: this.props.theme ?? 'light',
+      tempPassword: temp,
+      isProfile: tab === 'profile', isNotifications: tab === 'notifications', isSound: tab === 'sound', isHours: tab === 'hours',
+      pushOn, pushOff: !pushOn,
+      togglePush: () => this.setState({ pushOn: !pushOn }),
+      tabs: TABS.map(([id, label, hint, icon]) => ({ label, hint, icon, cls: tab === id ? 'sel' : '', current: tab === id ? 'true' : 'false', pick: () => this.setState({ tab: id }) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>QA Hub team and modules</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/base-dcwd/tokens.css">
+<link rel="stylesheet" href="ds/base-dcwd/components/bundle.css">
+<script src="ds/base-dcwd/shell.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:var(--primary-text)}a:hover{color:var(--primary-hover)}
+.q-sel{flex:1 1 0;min-width:0;height:100%;border:0;outline:0;background:transparent;font:inherit;color:inherit}
+.q-mod{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:8px 12px;border:0;border-radius:var(--radius-button);background:transparent;color:var(--ink-2);font:500 14.5px var(--font-sans);text-align:left;cursor:pointer}
+.q-mod:hover{background:var(--row-hover)}
+.q-mod.sel,.q-mod.sel:hover{background:var(--primary-wash);color:var(--primary-text);box-shadow:inset 0 0 0 1px var(--primary-border)}
+.q-tr:hover{background:var(--row-hover)}
+.q-none{color:var(--muted);padding:0}
+</style>
+</helmet>
+<div data-theme="{{theme}}" class="dc-shell" style="height: auto; min-height: 1440px; font-family: var(--font-sans);">
+
+<aside class="dc-sb">
+  <div class="dc-brand">
+    <img src="/_blob/742e667a5119e671388fc806e6c51c40" alt="Davao City Water District seal">
+    <div class="txt">
+      <div class="wm">QA Hub</div>
+      <div class="tag">DCWD ERP ticket hub</div>
+    </div>
+  </div>
+  <button class="dc-iconbtn expand" type="button" aria-label="Expand sidebar" title="Expand sidebar"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 3v18M14 9l3 3-3 3"></path></svg></button>
+  <div class="dc-sb-search">
+    <svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"></path></svg>
+    <input type="search" placeholder="Search menu" aria-label="Search menu">
+  </div>
+  <p class="dc-sb-label">Menu</p>
+  <nav class="dc-navlist" aria-label="Main">
+    <a class="dc-nav" href="Main.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM15 3h5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM15 12h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1zM4 16h5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z"></path></svg><span>Dashboard</span></a>
+    <a class="dc-nav" href="Tickets.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2ZM13 5v2M13 17v2M13 11v2"></path></svg><span>Tickets</span></a>
+    <a class="dc-nav" href="Inbox.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg><span class="dc-grow">My inbox</span><span class="dc-pill blue">3</span></a>
+    <a class="dc-nav on" href="Team.dc.html" aria-current="page"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 21a8 8 0 0 0-16 0M10 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"></path></svg><span>Team &amp; modules</span></a>
+    <a class="dc-nav" href="Dar.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7ZM14 2v4a2 2 0 0 0 2 2h4M8 13h2M14 13h2M8 17h2M14 17h2"></path></svg><span>My DAR</span></a>
+  </nav>
+  <div class="q-sb-user">
+    <button class="dc-prof" type="button" aria-label="Open profile menu" aria-haspopup="menu" aria-expanded="false">
+      <span class="dc-avatar">{{me.initials}}</span>
+      <span class="txt"><span class="n">{{me.name}}</span><span class="r">{{me.role}}</span></span>
+      <svg class="dc-i sm q-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"></path></svg>
+    </button>
+  </div>
+</aside>
+
+<header class="dc-topbar">
+  <div class="dc-row" style="gap: 16px;">
+    <button class="dc-iconbtn collapse" type="button" aria-label="Minimize sidebar"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 3v18"></path></svg></button>
+    <ol class="dc-crumbs">
+      <li><a class="home" href="Main.dc.html" aria-label="Home"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"></path></svg></a></li>
+      <li class="sep" aria-hidden="true">/</li>
+      <li class="cur">Team &amp; modules</li>
+    </ol>
+  </div>
+  <div class="dc-tb-right">
+    <button class="dc-iconbtn" type="button" aria-label="Notifications, new items waiting"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg><span class="dot" style="background: var(--danger);"></span></button>
+  </div>
+</header>
+
+<main class="dc-main" style="display: flex; flex-direction: column; gap: 20px;">
+  <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px;">
+    <div>
+      <h1 class="dc-h1">Team &amp; modules</h1>
+      <p class="dc-sub">Who owns which part of the ERP. Find the right developer before filing a ticket.</p>
+    </div>
+    <sc-if value="{{admin}}" hint-placeholder-val="{{false}}">
+      <button class="dc-btn primary" type="button"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"></path></svg>Add module</button>
+    </sc-if>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px;">
+    <section class="dc-card" aria-label="Modules" style="flex: 1 1 280px; min-width: 0; padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+      <label class="dc-input" style="height: 40px;">
+        <svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--muted);"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"></path></svg>
+        <input type="search" placeholder="Search module or code" aria-label="Search modules" value="{{q}}" onChange="{{onSearch}}">
+      </label>
+      <div class="dc-field">
+        <label class="dc-label" for="person" style="font-size: 13.5px; margin-bottom: 6px;">Show modules for</label>
+        <div class="dc-input" style="height: 40px;">
+          <select id="person" class="q-sel" onChange="{{onPerson}}">
+            <option value="">Everyone</option>
+            <option>Ana Reyes</option><option>Ben Cruz</option><option>Carla Go</option><option>Dan Sy</option><option>Grace Yu</option><option>Jenny Uy</option><option>Liza Ramos</option><option>Marco Tan</option><option>Paolo Lim</option>
+          </select>
+        </div>
+      </div>
+      <div class="dc-divider"></div>
+      <nav aria-label="Module list" style="display: flex; flex-direction: column; gap: 2px;">
+        <sc-for list="{{modules}}" as="m" hint-placeholder-count="8">
+          <button class="q-mod {{m.cls}}" type="button" aria-current="{{m.current}}" onClick="{{m.pick}}">
+            <span class="dc-mono" style="width: 44px; font-size: 12.5px; color: var(--muted);">{{m.code}}</span>
+            <span class="dc-grow">{{m.name}}</span>
+          </button>
+        </sc-for>
+        <sc-if value="{{noModules}}" hint-placeholder-val="{{false}}">
+          <p style="margin: 0; padding: 20px 8px; text-align: center; font-size: 14px; color: var(--muted);">No module matches. Clear the search or choose Everyone.</p>
+        </sc-if>
+      </nav>
+    </section>
+
+    <section class="dc-card" aria-labelledby="mod-title" style="flex: 999 1 560px; min-width: 0;">
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 20px;">
+        <div>
+          <h2 class="dc-h2" id="mod-title">{{cur.name}} <span class="dc-mono" style="margin-left: 4px; font-size: 14px; font-weight: 500; color: var(--muted);">{{cur.code}}</span></h2>
+          <p style="margin: 3px 0 0; font-size: 14px; color: var(--muted);">{{subCount}}</p>
+        </div>
+        <sc-if value="{{admin}}" hint-placeholder-val="{{false}}">
+          <div class="dc-row" style="gap: 8px;">
+            <button class="dc-btn sm" type="button">Add sub-module</button>
+            <button class="dc-btn sm" type="button">Edit module</button>
+          </div>
+        </sc-if>
+      </div>
+      <div style="overflow-x: auto; padding: 0 16px 16px;">
+        <div role="table" aria-label="Owners of each area" style="min-width: 680px; font-size: 14px;">
+          <div role="row" style="display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr) 72px; align-items: center; height: var(--size-table-head); background: var(--table-head); border: 1px solid var(--table-head-border); border-radius: var(--radius-button); color: var(--navy); font-size: 12.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;">
+            <span role="columnheader" style="padding: 0 14px;">Area</span>
+            <span role="columnheader" style="padding: 0 14px;">Lead</span>
+            <span role="columnheader" style="padding: 0 14px;">Developers</span>
+            <span role="columnheader" style="padding: 0 14px;">QA</span>
+            <span role="columnheader" style="padding: 0 14px; color: transparent;">Edit</span>
+          </div>
+          <sc-for list="{{rows}}" as="r" hint-placeholder-count="5">
+            <div role="row" class="q-tr" style="display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr) 72px; align-items: center; min-height: 58px; border-bottom: 1px solid var(--line-2);">
+              <div role="cell" style="padding: 10px 14px; min-width: 0;">
+                <span style="font-weight: {{r.weight}}; color: {{r.color}};">{{r.area}}</span>
+                <span class="dc-mono" style="display: block; font-size: 12.5px; color: var(--muted);">{{r.code}}</span>
+              </div>
+              <sc-for list="{{r.cols}}" as="col" hint-placeholder-count="3">
+                <div role="cell" style="display: flex; flex-wrap: wrap; gap: 5px; padding: 10px 14px; min-width: 0;">
+                  <sc-for list="{{col}}" as="n" hint-placeholder-count="1">
+                    <span class="dc-pill {{n.cls}}">{{n.name}}</span>
+                  </sc-for>
+                </div>
+              </sc-for>
+              <div role="cell" style="padding: 0 10px; text-align: right;">
+                <sc-if value="{{admin}}" hint-placeholder-val="{{false}}">
+                  <button class="dc-btn link" type="button" style="height: 34px; padding: 0 4px; font-size: 14px;">Edit</button>
+                </sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="dc-foot">
+  <svg class="wave w1" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 70Q400 20 800 70T1600 70T2400 70T3200 70T4000 70T4800 70T5600 70T6400 70V150H0Z"></path></svg>
+  <svg class="wave w2" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 92Q400 52 800 92T1600 92T2400 92T3200 92T4000 92T4800 92T5600 92T6400 92V150H0Z"></path></svg>
+  <svg class="wave w3" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 116Q400 88 800 116T1600 116T2400 116T3200 116T4000 116T4800 116T5600 116T6400 116V150H0Z"></path></svg>
+  <div class="copy">Davao City Water District · QA Hub for the in-house ERP</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"adminView":{"editor":"boolean","default":false},"$preview":{"width":2560,"height":1440}}'>
+const a = (area, code, lead, devs, qa) => ({ area, code, lead, devs, qa });
+const MODULES = [
+  { code: 'BCS', name: 'Billing and Collection', areas: [
+    a('Whole module', '', ['Marco Tan'], ['Grace Yu'], ['Ana Reyes']),
+    a('BAM', 'BCS-BAM', ['Marco Tan'], ['Paolo Lim'], ['Ana Reyes']),
+    a('Bill run', 'BCS-RUN', ['Paolo Lim'], ['Grace Yu'], ['Ben Cruz']),
+    a('Collection', 'BCS-COL', ['Marco Tan'], ['Grace Yu'], ['Ana Reyes', 'Carla Go']),
+    a('DM / CM', 'BCS-MEM', [], ['Paolo Lim'], ['Carla Go']),
+    a('Posting', 'BCS-POS', ['Marco Tan'], [], ['Ben Cruz']) ] },
+  { code: 'FMS', name: 'Financial Management', areas: [ a('Whole module', '', ['Grace Yu'], ['Marco Tan'], ['Carla Go']), a('Order of Payment', 'FMS-OP', ['Grace Yu'], [], ['Carla Go']) ] },
+  { code: 'HRIS', name: 'Human Resource', areas: [ a('Whole module', '', ['Paolo Lim'], [], ['Dan Sy']), a('HR201', 'HR-201', ['Paolo Lim'], ['Jenny Uy'], ['Dan Sy']) ] },
+  { code: 'JMS', name: 'Job Management', areas: [ a('Whole module', '', ['Jenny Uy'], [], ['Ben Cruz']), a('Maintenance orders', 'JMS-MO', ['Jenny Uy'], ['Paolo Lim'], ['Ana Reyes']) ] },
+  { code: 'MTR', name: 'Meter Reading', areas: [ a('Whole module', '', ['Jenny Uy'], [], ['Ana Reyes']), a('Books', 'MTR-BK', ['Jenny Uy'], ['Grace Yu'], ['Ana Reyes']), a('Review', 'MTR-RV', [], ['Jenny Uy'], ['Liza Ramos']) ] },
+  { code: 'MCR', name: 'Customer Records', areas: [ a('Whole module', '', ['Paolo Lim'], [], ['Liza Ramos']), a('MCR', 'CR-MCR', ['Paolo Lim'], ['Marco Tan'], ['Ana Reyes']) ] },
+  { code: 'DTS', name: 'Document Tracking', areas: [ a('Whole module', '', [], ['Grace Yu'], ['Dan Sy']) ] },
+  { code: 'PMS', name: 'Project Monitoring', areas: [ a('Whole module', '', [], ['Jenny Uy'], ['Liza Ramos']) ] }
+];
+const PEOPLE = ['Ana Reyes', 'Ben Cruz', 'Carla Go', 'Dan Sy', 'Grace Yu', 'Jenny Uy', 'Liza Ramos', 'Marco Tan', 'Paolo Lim'];
+const hasPerson = (m, p) => m.areas.some((x) => [...x.lead, ...x.devs, ...x.qa].includes(p));
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { sel: 'BCS', q: '', person: '' }; }
+  renderVals() {
+    const { sel, q, person } = this.state;
+    const admin = !!this.props.adminView;
+    const query = q.trim().toLowerCase();
+    const list = MODULES.filter((m) => (!person || hasPerson(m, person)) && (!query || m.name.toLowerCase().includes(query) || m.code.toLowerCase().includes(query)));
+    const cur = list.find((m) => m.code === sel) ?? list[0] ?? MODULES[0];
+    const chips = (names) => names.length
+      ? names.map((name) => ({ name, cls: name === person ? 'blue' : 'gray' }))
+      : [{ name: 'None', cls: 'q-none' }];
+    const subs = cur.areas.length - 1;
+    return {
+      theme: this.props.theme ?? 'light',
+      admin, q, cur,
+      me: admin ? { name: 'Rosa Santos', initials: 'RS', role: 'Admin' } : { name: 'Ana Reyes', initials: 'AR', role: 'QA tester' },
+      people: PEOPLE,
+      noModules: list.length === 0,
+      subCount: subs + (subs === 1 ? ' sub-module' : ' sub-modules'),
+      onSearch: (e) => this.setState({ q: e.target.value }),
+      onPerson: (e) => this.setState({ person: e.target.value }),
+      modules: list.map((m) => ({
+        ...m,
+        cls: m.code === cur.code ? 'sel' : '',
+        current: m.code === cur.code ? 'true' : 'false',
+        pick: () => this.setState({ sel: m.code })
+      })),
+      rows: cur.areas.map((x, i) => ({
+        area: x.area, code: x.code,
+        weight: i === 0 ? 400 : 500,
+        color: i === 0 ? 'var(--muted)' : 'var(--ink)',
+        cols: [chips(x.lead), chips(x.devs), chips(x.qa)]
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

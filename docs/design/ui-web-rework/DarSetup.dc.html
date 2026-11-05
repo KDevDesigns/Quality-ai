@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>QA Hub DAR set-up</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/base-dcwd/tokens.css">
+<link rel="stylesheet" href="ds/base-dcwd/components/bundle.css">
+<script src="ds/base-dcwd/shell.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:var(--primary-text)}a:hover{color:var(--primary-hover)}
+.q-sel{flex:1 1 0;min-width:0;height:100%;border:0;outline:0;background:transparent;font:inherit;color:inherit}
+.q-icon{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border:0;border-radius:var(--radius-button);background:transparent;color:var(--ink-2);cursor:pointer}
+.q-icon:hover{background:var(--surface-sunken)}
+.q-icon:disabled{color:var(--disabled-text);background:transparent;cursor:default}
+</style>
+</helmet>
+<div data-theme="{{theme}}" class="dc-shell" style="height: auto; min-height: 1440px; font-family: var(--font-sans);">
+
+<aside class="dc-sb">
+  <div class="dc-brand">
+    <img src="/_blob/742e667a5119e671388fc806e6c51c40" alt="Davao City Water District seal">
+    <div class="txt">
+      <div class="wm">QA Hub</div>
+      <div class="tag">DCWD ERP ticket hub</div>
+    </div>
+  </div>
+  <button class="dc-iconbtn expand" type="button" aria-label="Expand sidebar" title="Expand sidebar"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 3v18M14 9l3 3-3 3"></path></svg></button>
+  <div class="dc-sb-search">
+    <svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"></path></svg>
+    <input type="search" placeholder="Search menu" aria-label="Search menu">
+  </div>
+  <p class="dc-sb-label">Menu</p>
+  <nav class="dc-navlist" aria-label="Main">
+    <a class="dc-nav" href="Main.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM15 3h5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM15 12h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1zM4 16h5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z"></path></svg><span>Dashboard</span></a>
+    <a class="dc-nav" href="Tickets.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2ZM13 5v2M13 17v2M13 11v2"></path></svg><span>Tickets</span></a>
+    <a class="dc-nav" href="Inbox.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg><span class="dc-grow">My inbox</span><span class="dc-pill blue">3</span></a>
+    <a class="dc-nav" href="Team.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 21a8 8 0 0 0-16 0M10 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"></path></svg><span>Team &amp; modules</span></a>
+    <a class="dc-nav on" href="Dar.dc.html" aria-current="page"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7ZM14 2v4a2 2 0 0 0 2 2h4M8 13h2M14 13h2M8 17h2M14 17h2"></path></svg><span>My DAR</span></a>
+  </nav>
+  <div class="q-sb-user">
+    <button class="dc-prof" type="button" aria-label="Open profile menu" aria-haspopup="menu" aria-expanded="false">
+      <span class="dc-avatar">AR</span>
+      <span class="txt"><span class="n">Ana Reyes</span><span class="r">QA tester</span></span>
+      <svg class="dc-i sm q-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"></path></svg>
+    </button>
+  </div>
+</aside>
+
+<header class="dc-topbar">
+  <div class="dc-row" style="gap: 16px;">
+    <button class="dc-iconbtn collapse" type="button" aria-label="Minimize sidebar"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 3v18"></path></svg></button>
+    <ol class="dc-crumbs">
+      <li><a class="home" href="Main.dc.html" aria-label="Home"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"></path></svg></a></li>
+      <li class="sep" aria-hidden="true">/</li>
+      <li><a href="Dar.dc.html">My DAR</a></li>
+      <li class="sep" aria-hidden="true">/</li>
+      <li class="cur">Set-up</li>
+    </ol>
+  </div>
+  <div class="dc-tb-right">
+    <button class="dc-iconbtn" type="button" aria-label="Notifications, new items waiting"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg><span class="dot" style="background: var(--danger);"></span></button>
+  </div>
+</header>
+
+<main class="dc-main" style="display: flex; flex-direction: column; gap: 20px;">
+  <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px;">
+    <div style="flex: 1 1 480px; min-width: 0;">
+      <h1 class="dc-h1">My DAR set-up</h1>
+      <p class="dc-sub">The fixed text on your Daily Accomplishment Report: your name, office, signatories, and the duties and MFOs. Saved once and used for every period.</p>
+    </div>
+    <a class="dc-btn" href="Dar.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7ZM14 2v4a2 2 0 0 0 2 2h4M8 13h2M14 13h2M8 17h2M14 17h2"></path></svg>My DAR</a>
+  </div>
+
+  <form onSubmit="{{save}}" style="display: flex; flex-direction: column; gap: 20px;">
+    <section class="dc-card" aria-labelledby="first-title" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+      <h2 class="dc-h2" id="first-title">First period</h2>
+      <div class="dc-field" style="max-width: 440px;">
+        <div class="q-lab"><label class="dc-label" for="month">Month of your first DAR</label><span class="q-tip"><button class="q-info" type="button" aria-label="About Month of your first DAR: your list of periods starts here. QA Hub adds each next 15 days by itself."><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16v-4M12 8h.01"></path></svg></button><span class="q-tiptext" role="tooltip">Your list of periods starts here. QA Hub adds each next 15 days by itself.</span></span></div>
+        <div class="dc-input"><select id="month" class="q-sel"><option>November 2026</option><option>October 2026</option><option>September 2026</option></select></div>      </div>
+      <fieldset style="margin: 0; padding: 0; border: 0;">
+        <legend class="dc-label">Which period comes first?</legend>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; max-width: 640px;">
+          <label class="dc-opt"><input type="radio" name="half" checked><span class="dc-radio"></span><span><span class="t" style="display: block;">1st half</span><span class="d" style="display: block;">Nov 1 to 15, 2026</span></span></label>
+          <label class="dc-opt"><input type="radio" name="half"><span class="dc-radio"></span><span><span class="t" style="display: block;">2nd half</span><span class="d" style="display: block;">Nov 16 to 30, 2026</span></span></label>
+        </div>
+      </fieldset>
+    </section>
+
+    <section class="dc-card" aria-labelledby="head-title" style="padding: 24px;">
+      <h2 class="dc-h2" id="head-title" style="margin-bottom: 16px;">Header</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+        <div class="dc-field"><div class="q-lab"><label class="dc-label" for="full">Full name</label><span class="q-tip"><button class="q-info" type="button" aria-label="About Full name: as on official forms. Your QA Hub nickname is used until you add it."><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16v-4M12 8h.01"></path></svg></button><span class="q-tiptext" role="tooltip">As on official forms. Your QA Hub nickname is used until you add it.</span></span></div><div class="dc-input"><input id="full" type="text" placeholder="e.g. Juan D. Dela Cruz"></div></div>
+        <div class="dc-field"><label class="dc-label" for="pos">Position title</label><div class="dc-input"><input id="pos" type="text" placeholder="e.g. System Analyst"></div></div>
+        <div class="dc-field"><label class="dc-label" for="dept">Department</label><div class="dc-input"><input id="dept" type="text" placeholder="e.g. Information and Communication Technology Department"></div></div>
+        <div class="dc-field"><label class="dc-label" for="unit">Unit</label><div class="dc-input"><input id="unit" type="text" placeholder="e.g. Data Management Unit"></div></div>
+      </div>
+    </section>
+
+    <section class="dc-card" aria-labelledby="sign-title" style="padding: 24px;">
+      <h2 class="dc-h2" id="sign-title" style="margin-bottom: 16px;">Signatories</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+        <div class="dc-field"><label class="dc-label" for="cn">Immediate supervisor (Confirmed by)</label><div class="dc-input"><input id="cn" type="text"></div></div>
+        <div class="dc-field"><label class="dc-label" for="ct">Supervisor's title</label><div class="dc-input"><input id="ct" type="text"></div></div>
+        <div class="dc-field"><label class="dc-label" for="nn">Noted by</label><div class="dc-input"><input id="nn" type="text"></div></div>
+        <div class="dc-field"><label class="dc-label" for="nt">Noted by title</label><div class="dc-input"><input id="nt" type="text"></div></div>
+      </div>
+    </section>
+
+    <section class="dc-card" aria-labelledby="duty-title" style="padding: 24px; display: flex; flex-direction: column; gap: 24px;">
+      <h2 class="dc-h2" id="duty-title">Duties and MFOs</h2>
+      <sc-for list="{{sections}}" as="s" hint-placeholder-count="2">
+        <fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 12px;">
+          <legend class="dc-overline">{{s.label}} <span class="count">{{s.rows.length}}</span></legend>
+          <sc-for list="{{s.rows}}" as="r" hint-placeholder-count="2">
+            <div style="padding-top: 12px; border-top: 1px solid var(--line-2);">
+              <div class="dc-row" style="justify-content: space-between;">
+                <span style="font-size: 13.5px; font-weight: 600; color: var(--muted);">Row {{r.n}}</span>
+                <div class="dc-row" style="gap: 2px;">
+                  <button class="q-icon" type="button" aria-label="Move row {{r.n}} up" disabled="{{r.first}}" onClick="{{r.up}}"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 7-7 7 7M12 19V5"></path></svg></button>
+                  <button class="q-icon" type="button" aria-label="Remove row {{r.n}}" onClick="{{r.remove}}"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-top: 8px;">
+                <div class="dc-field"><label class="dc-label" for="{{r.dutyId}}">Duty</label><div class="dc-input ta"><textarea id="{{r.dutyId}}" rows="3" value="{{r.duty}}" onChange="{{r.onDuty}}"></textarea></div></div>
+                <div class="dc-field"><label class="dc-label" for="{{r.mfoId}}">Major final output (MFO)</label><div class="dc-input ta"><textarea id="{{r.mfoId}}" rows="3" placeholder="One per line, e.g. • Performs documentation and test reports" value="{{r.mfo}}" onChange="{{r.onMfo}}"></textarea></div></div>
+              </div>
+              <label class="dc-check" style="margin-top: 10px; font-size: 14px;"><input type="checkbox" checked="{{r.autofill}}" onChange="{{r.onAuto}}"><span class="dc-cbx"><svg class="dc-i xs" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span>Fill this row's days from my ticket work</label>
+            </div>
+          </sc-for>
+          <button class="dc-btn sm" type="button" onClick="{{s.add}}" style="align-self: flex-start;"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"></path></svg>Add row</button>
+        </fieldset>
+      </sc-for>
+    </section>
+
+    <div class="dc-row" style="justify-content: flex-end; gap: 12px;">
+      <span role="status" style="font-size: 13.5px; color: var(--muted);">{{saved}}</span>
+      <button class="dc-btn primary" type="submit">Save set-up</button>
+    </div>
+  </form>
+</main>
+
+<footer class="dc-foot">
+  <svg class="wave w1" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 70Q400 20 800 70T1600 70T2400 70T3200 70T4000 70T4800 70T5600 70T6400 70V150H0Z"></path></svg>
+  <svg class="wave w2" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 92Q400 52 800 92T1600 92T2400 92T3200 92T4000 92T4800 92T5600 92T6400 92V150H0Z"></path></svg>
+  <svg class="wave w3" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 116Q400 88 800 116T1600 116T2400 116T3200 116T4000 116T4800 116T5600 116T6400 116V150H0Z"></path></svg>
+  <div class="copy">Davao City Water District · QA Hub for the in-house ERP</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":2560,"height":1440}}'>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = {
+      saved: '',
+      core: [{ duty: 'Test ERP modules and file tickets', mfo: '• Test reports', autofill: true }, { duty: 'Retest fixed tickets', mfo: '• Verified fixes', autofill: true }],
+      support: [{ duty: 'Attend coordination meetings', mfo: '', autofill: false }]
+    };
+  }
+  renderVals() {
+    const { saved } = this.state;
+    const section = (key, label) => {
+      const rows = this.state[key];
+      const set = (next) => this.setState({ [key]: next, saved: '' });
+      const patch = (i, p) => set(rows.map((r, j) => (j === i ? { ...r, ...p } : r)));
+      return {
+        label,
+        add: () => set([...rows, { duty: '', mfo: '', autofill: false }]),
+        rows: rows.map((r, i) => ({
+          ...r,
+          n: i + 1,
+          first: i === 0,
+          dutyId: key + '-duty-' + i,
+          mfoId: key + '-mfo-' + i,
+          up: () => set([...rows.slice(0, i - 1), r, rows[i - 1], ...rows.slice(i + 1)]),
+          remove: () => set(rows.filter((_, j) => j !== i)),
+          onDuty: (e) => patch(i, { duty: e.target.value }),
+          onMfo: (e) => patch(i, { mfo: e.target.value }),
+          onAuto: (e) => patch(i, { autofill: e.target.checked })
+        }))
+      };
+    };
+    return {
+      theme: this.props.theme ?? 'light',
+      saved,
+      save: (e) => { e.preventDefault(); this.setState({ saved: 'Saved.' }); },
+      sections: [section('core', 'A.) Core functions'), section('support', 'B.) Support functions')]
+    };
+  }
+}
+</script>
+</body>
+</html>

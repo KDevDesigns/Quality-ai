@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>QA Hub ticket detail</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/base-dcwd/tokens.css">
+<link rel="stylesheet" href="ds/base-dcwd/components/bundle.css">
+<script src="ds/base-dcwd/shell.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:var(--primary-text)}a:hover{color:var(--primary-hover)}
+.q-sel{flex:1 1 0;min-width:0;height:100%;border:0;outline:0;background:transparent;font:inherit;color:inherit}
+.q-file{cursor:pointer;font:inherit;color:inherit;text-align:left}
+.q-file:hover{background:var(--row-hover)}
+.q-tab{display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 16px;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:transparent;color:var(--muted);font:500 15px var(--font-sans);white-space:nowrap;cursor:pointer}
+.q-tab .dc-pill:empty{display:none}
+.q-tab:hover{color:var(--ink);background:var(--row-hover)}
+.q-tab.sel,.q-tab.sel:hover{color:var(--primary-text);border-bottom-color:var(--primary);background:transparent}
+</style>
+</helmet>
+<div data-theme="{{theme}}" class="dc-shell" style="height: auto; min-height: 1440px; font-family: var(--font-sans);">
+
+<aside class="dc-sb">
+  <div class="dc-brand">
+    <img src="/_blob/742e667a5119e671388fc806e6c51c40" alt="Davao City Water District seal">
+    <div class="txt">
+      <div class="wm">QA Hub</div>
+      <div class="tag">DCWD ERP ticket hub</div>
+    </div>
+  </div>
+  <button class="dc-iconbtn expand" type="button" aria-label="Expand sidebar" title="Expand sidebar"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 3v18M14 9l3 3-3 3"></path></svg></button>
+  <div class="dc-sb-search">
+    <svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"></path></svg>
+    <input type="search" placeholder="Search menu" aria-label="Search menu">
+  </div>
+  <p class="dc-sb-label">Menu</p>
+  <nav class="dc-navlist" aria-label="Main">
+    <a class="dc-nav" href="Main.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM15 3h5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM15 12h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1zM4 16h5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z"></path></svg><span>Dashboard</span></a>
+    <a class="dc-nav on" href="Tickets.dc.html" aria-current="page"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2ZM13 5v2M13 17v2M13 11v2"></path></svg><span>Tickets</span></a>
+    <a class="dc-nav" href="Inbox.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg><span class="dc-grow">My inbox</span><span class="dc-pill blue">3</span></a>
+    <a class="dc-nav" href="Team.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 21a8 8 0 0 0-16 0M10 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"></path></svg><span>Team &amp; modules</span></a>
+    <a class="dc-nav" href="Dar.dc.html"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7ZM14 2v4a2 2 0 0 0 2 2h4M8 13h2M14 13h2M8 17h2M14 17h2"></path></svg><span>My DAR</span></a>
+  </nav>
+  <div class="q-sb-user">
+    <button class="dc-prof" type="button" aria-label="Open profile menu" aria-haspopup="menu" aria-expanded="false">
+      <span class="dc-avatar">AR</span>
+      <span class="txt"><span class="n">Ana Reyes</span><span class="r">QA tester</span></span>
+      <svg class="dc-i sm q-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"></path></svg>
+    </button>
+  </div>
+</aside>
+
+<header class="dc-topbar">
+  <div class="dc-row" style="gap: 16px;">
+    <button class="dc-iconbtn collapse" type="button" aria-label="Minimize sidebar"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 3v18"></path></svg></button>
+    <ol class="dc-crumbs">
+      <li><a class="home" href="Main.dc.html" aria-label="Home"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"></path></svg></a></li>
+      <li class="sep" aria-hidden="true">/</li>
+      <li><a href="Tickets.dc.html">Tickets</a></li>
+      <li class="sep" aria-hidden="true">/</li>
+      <li class="cur dc-mono">#1039</li>
+    </ol>
+  </div>
+  <div class="dc-tb-right">
+    <button class="dc-iconbtn" type="button" aria-label="Notifications, new items waiting"><svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg><span class="dot" style="background: var(--danger);"></span></button>
+  </div>
+</header>
+
+<main class="dc-main" style="display: flex; flex-direction: column; gap: 20px;">
+  <div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px;">
+    <div style="flex: 1 1 520px; min-width: 0;">
+      <h1 class="dc-h1"><span class="dc-mono" style="margin-right: 8px; font-weight: 500; color: var(--muted);">#1039</span>OR number skips one value after a voided payment</h1>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 10px; font-size: 14px; color: var(--muted);">
+        <span class="dc-pill {{tone}}">{{status}}</span>
+        <span class="dc-row" style="gap: 5px; color: var(--danger-text);"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2l1.88 1.88M14.12 3.88 16 2M9 7.13v-1a3 3 0 1 1 6 0v1M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6zM12 20v-9M6.53 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M20.97 5c0 2.1-1.6 3.8-3.5 4M22 13h-4M17.2 17c2.1.1 3.8 1.9 3.8 4"></path></svg>Bug</span>
+        <span>S1 Critical</span>
+        <span>Filed by Ana Reyes, Oct 28, 2026</span>
+      </div>
+    </div>
+    <div class="dc-row" style="gap: 8px;">
+      <button class="dc-btn sm" type="button">Edit</button>
+      <button class="dc-btn sm ghost-red" type="button">Delete</button>
+    </div>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <div class="dc-stepper" role="list" aria-label="Ticket progress" style="min-width: 760px;">
+      <sc-for list="{{steps}}" as="s" hint-placeholder-count="5">
+        <div class="dc-st {{s.cls}}" role="listitem">
+          <span class="dc-st-n">
+            <sc-if value="{{s.isDone}}" hint-placeholder-val="{{false}}"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if>
+            <sc-if value="{{s.notDone}}" hint-placeholder-val="{{true}}">{{s.n}}</sc-if>
+          </span>
+          <span>
+            <span class="dc-st-t" style="display: block;">{{s.label}}</span>
+            <span class="dc-st-s">{{s.at}}</span>
+          </span>
+        </div>
+        <sc-if value="{{s.more}}" hint-placeholder-val="{{true}}"><span class="dc-st-l {{s.lineCls}}"></span></sc-if>
+      </sc-for>
+    </div>
+  </div>
+
+  <section class="dc-info" aria-label="Next step" style="align-items: center; flex-wrap: wrap;">
+    <svg class="dc-i" viewBox="0 0 24 24" aria-hidden="true" style="margin-top: 0;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5"></path></svg>
+    <div class="dc-grow" style="flex-basis: 320px;">
+      <strong style="font-weight: 600; color: var(--ink);">{{nextTitle}}</strong>
+      <div>{{nextText}}</div>
+    </div>
+    <sc-if value="{{canMove}}" hint-placeholder-val="{{true}}">
+      <div class="dc-row" style="gap: 8px;">
+        <button class="dc-btn ghost-red" type="button" onClick="{{reopen}}">Reopen</button>
+        <button class="dc-btn primary" type="button" onClick="{{verify}}">Mark as verified</button>
+      </div>
+    </sc-if>
+  </section>
+
+  <nav aria-label="Ticket sections" style="display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--line);">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="2">
+      <button class="q-tab {{t.cls}}" type="button" aria-current="{{t.current}}" onClick="{{t.pick}}">{{t.label}} <sc-if value="{{t.count}}" hint-placeholder-val="{{true}}"><span class="dc-pill {{t.tone}}">{{t.count}}</span></sc-if></button>
+    </sc-for>
+  </nav>
+
+  <sc-if value="{{showDetails}}" hint-placeholder-val="{{true}}">
+  <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px;">
+    <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 24px;">
+      <section class="dc-card" aria-labelledby="report-title" style="padding: 20px;">
+        <h2 class="dc-h2" id="report-title">Report</h2>
+        <p style="max-width: 72ch; margin: 10px 0 0; font-size: 15px; line-height: 1.6; color: var(--ink-2);">When a teller voids a payment and records the next one, the new Official Receipt number skips one value. OR numbers must stay gap-free per collector and series.</p>
+        <ol style="max-width: 72ch; margin: 12px 0 0; padding-left: 20px; font-size: 15px; line-height: 1.6; color: var(--ink-2);">
+          <li>Record a payment. The system issues OR 0048213.</li>
+          <li>Void that payment.</li>
+          <li>Record the next payment. The system issues OR 0048215 instead of 0048214.</li>
+        </ol>
+        <p class="dc-overline" style="margin: 20px 0 10px;">Evidence <span class="count">3</span></p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px;">
+          <button class="q-file" type="button" style="padding: 0; border: 1px solid var(--line); border-radius: var(--radius-option); background: var(--surface); overflow: hidden;">
+            <span style="display: flex; align-items: center; justify-content: center; height: 112px; background: var(--surface-subtle); border-bottom: 1px dashed var(--line); color: var(--muted);"><svg class="dc-i lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM21 15l-3.1-3.1a2 2 0 0 0-2.8 0L6 21M9 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"></path></svg></span>
+            <span style="display: block; padding: 9px 12px; font-size: 13.5px; font-weight: 500;">[Marked-up screenshot]</span>
+          </button>
+          <button class="q-file" type="button" style="padding: 0; border: 1px solid var(--line); border-radius: var(--radius-option); background: var(--surface); overflow: hidden;">
+            <span style="display: flex; align-items: center; justify-content: center; height: 112px; background: var(--surface-subtle); border-bottom: 1px dashed var(--line); color: var(--muted);"><svg class="dc-i lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM21 15l-3.1-3.1a2 2 0 0 0-2.8 0L6 21M9 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"></path></svg></span>
+            <span style="display: block; padding: 9px 12px; font-size: 13.5px; font-weight: 500;">[Marked-up screenshot]</span>
+          </button>
+          <button class="q-file" type="button" style="padding: 0; border: 1px solid var(--line); border-radius: var(--radius-option); background: var(--surface); overflow: hidden;">
+            <span style="display: flex; align-items: center; justify-content: center; height: 112px; background: var(--surface-subtle); border-bottom: 1px dashed var(--line); color: var(--muted);"><svg class="dc-i lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3l14 9-14 9z"></path></svg></span>
+            <span style="display: block; padding: 9px 12px; font-size: 13.5px; font-weight: 500;">[Screen recording]</span>
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 24px;">
+      <section class="dc-card" aria-labelledby="details-title" style="padding: 20px;">
+        <h2 class="dc-h2" id="details-title" style="margin-bottom: 12px;">Details</h2>
+        <dl class="dc-dl">
+          <div class="r"><dt>Status</dt><dd><span class="dc-pill {{tone}}">{{status}}</span></dd></div>
+          <div class="r"><dt>Developer</dt><dd>Marco Tan</dd></div>
+          <div class="r">
+            <dt style="display: flex; align-items: center; gap: 6px;">Category<button class="q-info" type="button" title="Chosen when the ticket is filed. The developer can correct it once they identify the bug. Module progress on the Dashboard counts by category." aria-label="About Category: chosen when the ticket is filed. The developer can correct it once they identify the bug. Module progress on the Dashboard counts by category."><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16v-4M12 8h.01"></path></svg></button></dt>
+            <dd>
+              <sc-if value="{{canTag}}" hint-placeholder-val="{{false}}">
+                <div class="dc-input" style="width: 156px; height: 36px; text-align: left;">
+                  <select class="q-sel" aria-label="Category" value="{{category}}" onChange="{{onCategory}}">
+                    <option>Front-end</option>
+                    <option>Back-end</option>
+                    <option>UI/UX</option>
+                  </select>
+                </div>
+              </sc-if>
+              <sc-if value="{{readOnlyCategory}}" hint-placeholder-val="{{true}}">{{categoryText}}</sc-if>
+            </dd>
+          </div>
+          <div class="r"><dt>Module</dt><dd>Billing and Collection › Collection</dd></div>
+          <div class="r"><dt>Severity</dt><dd>S1 Critical</dd></div>
+          <div class="r"><dt>Priority</dt><dd>P1 Urgent</dd></div>
+          <div class="r"><dt>Found in</dt><dd>Teller payment page</dd></div>
+          <div class="r"><dt>Device type</dt><dd>Computer</dd></div>
+          <div class="r"><dt>Reported by</dt><dd>Ana Reyes</dd></div>
+          <div class="r"><dt>Filed</dt><dd>Oct 28, 2026, 9:14 AM</dd></div>
+        </dl>
+      </section>
+      <section class="dc-card" aria-labelledby="log-title">
+        <h2 class="dc-h2" id="log-title" style="padding: 20px 20px 12px;">Activity log</h2>
+        <ol aria-label="Activity log, newest first" style="list-style: none; margin: 0; padding: 0 0 8px;">
+          <sc-for list="{{log}}" as="l" hint-placeholder-count="5">
+            <li style="padding: 10px 20px; border-top: 1px solid var(--line-2); font-size: 13.5px; line-height: 1.4;">
+              <strong style="font-weight: 600;">{{l.who}}</strong> <span style="color: var(--body-2);">{{l.text}}</span>
+              <span class="dc-mono" style="display: block; margin-top: 2px; font-size: 12.5px; color: var(--muted);">{{l.at}}</span>
+            </li>
+          </sc-for>
+        </ol>
+      </section>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{showTalk}}" hint-placeholder-val="{{false}}">
+    <section class="dc-card" aria-labelledby="talk-title">
+      <div style="padding: 20px 20px 4px;">
+        <h2 class="dc-h2" id="talk-title">Conversation</h2>
+      </div>
+      <div aria-label="Messages and history" style="display: flex; flex-direction: column; gap: 14px; padding: 16px 20px 20px;">
+        <sc-for list="{{thread}}" as="m" hint-placeholder-count="5">
+          <sc-if value="{{m.isEvent}}" hint-placeholder-val="{{false}}">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; color: var(--muted); text-align: center;">
+              <svg class="dc-i xs" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"></path></svg>
+              <span>{{m.text}} · {{m.at}}</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{m.isMine}}" hint-placeholder-val="{{false}}">
+            <div style="align-self: flex-end; max-width: 78%;">
+              <div style="margin-bottom: 4px; text-align: right; font-size: 12.5px; color: var(--muted);">You · {{m.at}}</div>
+              <div style="padding: 11px 14px; background: var(--primary-wash); border: 1px solid var(--primary-border); border-radius: var(--radius-list); font-size: 14.5px; line-height: 1.5; color: var(--ink);">{{m.text}}</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{m.isOther}}" hint-placeholder-val="{{true}}">
+            <div style="display: flex; align-items: flex-start; gap: 10px; max-width: 78%;">
+              <span class="dc-avatar" style="width: 34px; height: 34px; font-size: 12.5px;">{{m.initials}}</span>
+              <div style="min-width: 0;">
+                <div style="margin-bottom: 4px; font-size: 12.5px; color: var(--muted);"><strong style="font-weight: 600; color: var(--ink);">{{m.who}}</strong> · {{m.at}}</div>
+                <div style="padding: 11px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-list); font-size: 14.5px; line-height: 1.5; color: var(--ink);">{{m.text}}</div>
+              </div>
+            </div>
+          </sc-if>
+        </sc-for>
+      </div>
+      <form onSubmit="{{send}}" style="display: flex; flex-direction: column; gap: 10px; padding: 16px 20px 20px; border-top: 1px solid var(--line-2);">
+        <label class="dc-label" for="reply" style="margin: 0;">Reply</label>
+        <div class="dc-input ta" style="min-height: 92px;">
+          <textarea id="reply" placeholder="Write a reply to Marco Tan" value="{{draft}}" onChange="{{onDraft}}"></textarea>
+        </div>
+        <div class="dc-row" style="justify-content: space-between; flex-wrap: wrap;">
+          <button class="dc-btn sm" type="button"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>Attach a file</button>
+          <button class="dc-btn soft sm" type="submit"><svg class="dc-i sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4zM22 2 11 13"></path></svg>Send reply</button>
+        </div>
+      </form>
+    </section>
+  </sc-if>
+</main>
+
+<footer class="dc-foot">
+  <svg class="wave w1" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 70Q400 20 800 70T1600 70T2400 70T3200 70T4000 70T4800 70T5600 70T6400 70V150H0Z"></path></svg>
+  <svg class="wave w2" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 92Q400 52 800 92T1600 92T2400 92T3200 92T4000 92T4800 92T5600 92T6400 92V150H0Z"></path></svg>
+  <svg class="wave w3" viewBox="0 0 6400 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 116Q400 88 800 116T1600 116T2400 116T3200 116T4000 116T4800 116T5600 116T6400 116V150H0Z"></path></svg>
+  <div class="copy">Davao City Water District · QA Hub for the in-house ERP</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"role":{"editor":"enum","options":["QA tester","Developer"],"default":"QA tester"},"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":2560,"height":1440}}'>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = {
+      status: 'Fixed',
+      tab: 'Details',
+      category: 'Back-end',
+      tagged: '',
+      draft: '',
+      thread: [
+        { kind: 'event', text: 'Ana Reyes filed this ticket', at: 'Oct 28, 9:14 AM' },
+        { kind: 'other', who: 'Marco Tan', initials: 'MT', text: 'I can see the skipped value in the series. Does this happen for every collector, or only one?', at: 'Oct 28, 2:40 PM' },
+        { kind: 'mine', text: 'Every collector I tried. The recording shows two of them.', at: 'Oct 28, 3:02 PM' },
+        { kind: 'event', text: 'Marco Tan moved this to In progress', at: 'Oct 29, 8:30 AM' },
+        { kind: 'other', who: 'Marco Tan', initials: 'MT', text: 'Fixed. The void step no longer takes the next number from the series. Please retest with a new payment.', at: 'Today, 10:05 AM' },
+        { kind: 'event', text: 'Marco Tan moved this to Fixed', at: 'Today, 10:06 AM' }
+      ]
+    };
+  }
+  move(status, text) {
+    this.setState({ status, thread: [...this.state.thread, { kind: 'event', text, at: 'Just now' }] });
+  }
+  renderVals() {
+    const { status, tab, draft, thread } = this.state;
+    const replies = thread.filter((m) => m.kind !== 'event').length;
+    const tabs = [['Details', '', 'gray'], ['Conversation', replies, 'blue']].map(([label, count, tone]) => ({
+      label, count, tone, cls: tab === label ? 'sel' : '', current: tab === label ? 'page' : 'false', pick: () => this.setState({ tab: label })
+    }));
+    const tone = { Fixed: 'green', Verified: 'green', Reopened: 'red' }[status];
+    const current = { Reopened: 1, Fixed: 2, Verified: 3 }[status];
+    const labels = ['Filed', status === 'Reopened' ? 'Reopened' : 'In progress', 'Fixed', 'Verified', 'Closed'];
+    const dates = ['Oct 28, 2026', status === 'Reopened' ? 'Just now' : 'Oct 29, 2026', 'Nov 4, 2026', status === 'Verified' ? 'Just now' : '', ''];
+    const steps = labels.map((label, i) => ({
+      label, n: i + 1, at: i === current && status === 'Fixed' ? 'Nov 4, 2026' : dates[i] && i <= current ? dates[i] : 'Not yet',
+      cls: i < current ? 'done' : i === current ? 'act' : '',
+      isDone: i < current, notDone: i >= current, more: i < 4,
+      lineCls: i < current - 0 && i < current ? 'done' : ''
+    }));
+    const next = {
+      Fixed: ['Your move: retest this fix', 'Marco Tan marked this as fixed. Check it in the ERP, then verify it or reopen it.'],
+      Verified: ['Verified, ready to close', 'The retest passed. This ticket can now be closed.'],
+      Reopened: ['Marco Tan’s move', 'You reopened this ticket. It returns to the developer.']
+    }[status];
+    return {
+      theme: this.props.theme ?? 'light',
+      status, tone, steps, draft, tabs,
+      category: this.state.category, categoryText: this.state.category || 'Not tagged yet',
+      canTag: this.props.role === 'Developer', readOnlyCategory: this.props.role !== 'Developer',
+      onCategory: (e) => this.setState({ category: e.target.value, tagged: e.target.value }),
+      showDetails: tab === 'Details', showTalk: tab === 'Conversation',
+      nextTitle: next[0], nextText: next[1], canMove: status === 'Fixed',
+      verify: () => this.move('Verified', 'You marked this as verified'),
+      reopen: () => this.move('Reopened', 'You reopened this ticket'),
+      onDraft: (e) => this.setState({ draft: e.target.value }),
+      send: (e) => {
+        e.preventDefault();
+        const text = draft.trim();
+        if (!text) return;
+        this.setState({ draft: '', thread: [...thread, { kind: 'mine', text, at: 'Just now' }] });
+      },
+      thread: thread.map((m) => ({ ...m, isEvent: m.kind === 'event', isMine: m.kind === 'mine', isOther: m.kind === 'other' })),
+      log: [
+        ...(this.state.tagged ? [{ who: 'Marco Tan', text: 'changed the category to ' + this.state.tagged, at: 'Just now' }] : []),
+        { who: 'Marco Tan', text: 'moved this to Fixed', at: 'Nov 4, 2026, 10:06 AM' },
+        { who: 'Marco Tan', text: 'replied', at: 'Nov 4, 2026, 10:05 AM' },
+        { who: 'Marco Tan', text: 'changed the category from Front-end to Back-end', at: 'Oct 29, 2026, 8:31 AM' },
+        { who: 'Marco Tan', text: 'moved this to In progress', at: 'Oct 29, 2026, 8:30 AM' },
+        { who: 'Ana Reyes', text: 'added a screen recording', at: 'Oct 28, 2026, 3:02 PM' },
+        { who: 'Ana Reyes', text: 'assigned this to Marco Tan', at: 'Oct 28, 2026, 9:15 AM' },
+        { who: 'Ana Reyes', text: 'filed this ticket', at: 'Oct 28, 2026, 9:14 AM' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
