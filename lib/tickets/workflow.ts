@@ -70,6 +70,10 @@ export const PRIORITY_LABELS = { P1: "P1 Urgent", P2: "P2 High", P3: "P3 Normal"
 
 /** Statuses that end a ticket. `closedAt` is set when a ticket enters one and cleared when it is reopened. */
 export const DONE_STATUSES: readonly TicketStatus[] = ["CLOSED", "REJECTED", "DUPLICATE", "WONT_FIX"];
+
+/** The status filter value for tickets nobody has started: new or reopened. */
+export const TO_START = "TO_START";
+export const TO_START_STATUSES: readonly TicketStatus[] = ["NEW", "REOPENED"];
 export const OPEN_STATUSES: readonly TicketStatus[] = TICKET_STATUSES.filter((s) => !DONE_STATUSES.includes(s));
 export const isDone = (s: TicketStatus) => DONE_STATUSES.includes(s);
 

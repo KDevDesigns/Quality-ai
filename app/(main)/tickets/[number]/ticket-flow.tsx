@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatDate, formatDateTime, timeAgo } from "@/lib/format";
 import type { Flow, FlowStep, FlowTone } from "@/lib/tickets/flow";
 import { cn } from "@/lib/utils";
+import { StepTip } from "./step-tip";
 
 // The progress tracker at the top of a ticket, so QA and the developer see the same picture: which step it's on, when each
 // step happened, and whose move it is. Laptops: one row, with the text beside each circle. Phones: five columns.
@@ -47,8 +48,16 @@ function RowCircle({ step, n }: { step: FlowStep; n: number }) {
   return <span className={cn(base, "bg-surface3 text-muted-foreground")}>{n}</span>;
 }
 
-/** Laptops. It scrolls sideways rather than squeezing the steps in a narrow window. */
-function StepRow({ steps }: { steps: FlowStep[] }) {
+/** What hovering a step says: whose move it is on the current one, when the others happened. */
+function stepTip(s: FlowStep, next: { title: string; text: string }): string {
+  if (s.state === "current") return `${next.title}. ${next.text}`;
+  if (s.state === "done") return s.at ? `${s.label} on ${formatDateTime(s.at)}.` : `${s.label}.`;
+  if (s.state === "skipped") return "Skipped: the ticket ended before this step.";
+  return "Not reached yet.";
+}
+
+/** Laptops. It scrolls sideways rather than squeezing the steps in a narrow window. Hover or focus a step for its message. */
+function StepRow({ steps, next }: { steps: FlowStep[]; next: { title: string; text: string } }) {
   return (
     <div data-no-swipe className="overflow-x-auto max-md:hidden">
       <ol aria-label="Ticket progress" className="flex h-[4.25rem] min-w-[47.5rem] items-center gap-3.5 rounded-[0.875rem] border border-line bg-card px-[1.375rem] shadow-(--shadow-card)">
@@ -57,7 +66,8 @@ function StepRow({ steps }: { steps: FlowStep[] }) {
           const after = steps[i + 1];
           return (
             <Fragment key={s.key}>
-              <li className="flex shrink-0 items-center gap-2.5" aria-current={s.state === "current" ? "step" : undefined}>
+              <li className="flex shrink-0 items-center" aria-current={s.state === "current" ? "step" : undefined}>
+                <StepTip text={stepTip(s, next)}>
                 <RowCircle step={s} n={i + 1} />
                 <span>
                   <span className={cn("block text-[0.9063rem] leading-[1.2] font-medium", s.state === "current" || s.state === "done" ? "text-foreground" : "text-body2", s.state === "skipped" && "line-through decoration-line")}>
@@ -72,6 +82,7 @@ function StepRow({ steps }: { steps: FlowStep[] }) {
                     <span className="block text-xs text-muted-foreground">{sub}</span>
                   )}
                 </span>
+                </StepTip>
               </li>
               {after ? <li aria-hidden className={cn("h-0.5 min-w-4 flex-1 rounded-sm", s.state === "done" && after.state !== "skipped" && after.state !== "upcoming" ? "bg-ok-step" : "bg-line")} /> : null}
             </Fragment>
@@ -128,25 +139,27 @@ function StepColumns({ steps, now }: { steps: FlowStep[]; now: Date }) {
   );
 }
 
-export function TicketFlow({ flow, now }: { flow: Flow; now: Date }) {
+/** Laptops show whose move it is when a step is hovered; phones can't hover, so they get the line under the steps. */
+export function TicketFlow({ flow, next, now }: { flow: Flow; next: { title: string; text: string }; now: Date }) {
   return (
     <>
-      <StepRow steps={flow.steps} />
+      <StepRow steps={flow.steps} next={next} />
       <StepColumns steps={flow.steps} now={now} />
+      <div className="md:hidden">
+        <NextStepLine {...next} />
+      </div>
     </>
   );
 }
 
-/** Whose move it is, with the moves this person can make right there. */
-export function NextStep({ title, text, children }: { title: string; text: string; children: React.ReactNode }) {
+/** Whose move it is, as one line. Phones only; laptops have it on the steps (D21). */
+function NextStepLine({ title, text }: { title: string; text: string }) {
   return (
-    <section aria-label="Next step" className="flex flex-wrap items-center gap-3 rounded-[0.625rem] border border-acc-b bg-acc-t2 px-4 py-3.5 text-sm text-ink2">
-      <RotateCcwIcon className="size-5 shrink-0 text-primary-text" aria-hidden />
-      <div className="min-w-0 flex-[1_1_20rem]">
-        <strong className="font-semibold text-foreground">{title}</strong>
-        <div>{text}</div>
-      </div>
-      {children}
-    </section>
+    <p className="flex items-start gap-2 px-1 text-sm text-ink2">
+      <RotateCcwIcon className="mt-0.5 size-4 shrink-0 text-primary-text" aria-hidden />
+      <span className="min-w-0">
+        <strong className="font-semibold text-foreground">{title}.</strong> {text}
+      </span>
+    </p>
   );
 }

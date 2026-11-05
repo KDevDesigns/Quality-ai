@@ -1,7 +1,8 @@
 "use client";
 
 import { startTransition, useActionState, useState } from "react";
-import { ArrowRightLeftIcon, SendIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
+import { Menu } from "@base-ui/react/menu";
+import { ArrowRightLeftIcon, EllipsisIcon, PencilIcon, SendIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
 import { Field, FormMessage } from "@/components/form-field";
 import { FormDialog } from "@/components/form-dialog";
 import { SelectField } from "@/components/select-field";
@@ -11,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useTouchScreen } from "@/hooks/use-touch-screen";
 import { initialFormState, type FormState } from "@/lib/form";
+import { cn } from "@/lib/utils";
 import { CATEGORY_LABELS, NO_CATEGORY, STATUS_LABELS, TICKET_CATEGORIES, type TicketCategoryValue, type TicketStatus, type Transition } from "@/lib/tickets/workflow";
 import { addComment, assignTicket, categorizeTicket, deleteTicket, moveTicket } from "../actions";
 import { AttachMenu } from "../attach-menu";
@@ -125,12 +127,12 @@ export function CategoryControl({ ticket, category }: { ticket: Ref; category: T
   const [state, action, pending] = useActionState(categorizeTicket, initialFormState);
   const options = TICKET_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABELS[c] }));
   return (
-    <div className="grid justify-items-end gap-1.5">
+    <div className="grid justify-items-start gap-1.5">
       <SelectField
         key={category ?? "none"}
         aria-label="Category"
         size="sm"
-        className="w-[9.75rem]"
+        className="w-full max-w-[12rem]"
         disabled={pending}
         defaultValue={category ?? ""}
         options={category ? options : [{ value: "", label: NO_CATEGORY }, ...options]}
@@ -274,8 +276,24 @@ export function CommentForm({ ticket, replyTo }: { ticket: Ref; replyTo?: string
  * Permanent delete, the way GitHub deletes a repository: a red danger box spelling out what goes, and the button
  * stays disabled until the exact ticket title is typed.
  */
-export function DeleteTicketDialog({ ticket, replies, files }: { ticket: { id: string; number: number; title: string }; replies: number; files: number }) {
-  const [open, setOpen] = useState(false);
+export function DeleteTicketDialog({
+  ticket,
+  replies,
+  files,
+  open: openProp,
+  onOpenChange,
+}: {
+  ticket: { id: string; number: number; title: string };
+  replies: number;
+  files: number;
+  /** Opened from the ⋯ More menu instead of its own button. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
+  const [openState, setOpenState] = useState(false);
+  const controlled = openProp !== undefined;
+  const open = openProp ?? openState;
+  const setOpen = (next: boolean) => (onOpenChange ? onOpenChange(next) : setOpenState(next));
   const [typed, setTyped] = useState("");
   const [state, action, pending] = useActionState(deleteTicket, initialFormState);
   const matches = typed.trim() === ticket.title;
@@ -289,13 +307,15 @@ export function DeleteTicketDialog({ ticket, replies, files }: { ticket: { id: s
         if (!next) setTyped("");
       }}
     >
-      <DialogTrigger
-        render={
-          <Button variant="ghost-red" size="sm">
-            Delete
-          </Button>
-        }
-      />
+      {controlled ? null : (
+        <DialogTrigger
+          render={
+            <Button variant="ghost-red" size="sm">
+              Delete
+            </Button>
+          }
+        />
+      )}
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-bad">
@@ -334,18 +354,80 @@ export function DeleteTicketDialog({ ticket, replies, files }: { ticket: { id: s
   );
 }
 
-export function EditTicketDialog({ ticket, areas, people }: { ticket: TicketValues; areas: AreaOption[]; people: AssigneeOption[] }) {
+export function EditTicketDialog({
+  ticket,
+  areas,
+  people,
+  open,
+  onOpenChange,
+}: {
+  ticket: TicketValues;
+  areas: AreaOption[];
+  people: AssigneeOption[];
+  /** Opened from the ⋯ More menu instead of its own button. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   return (
     <FormDialog
       wide
       title={`Edit #${ticket.number}`}
+      open={open}
+      onOpenChange={onOpenChange}
       trigger={
-        <Button variant="outline" size="sm">
-          Edit
-        </Button>
+        open === undefined ? (
+          <Button variant="outline" size="sm">
+            Edit
+          </Button>
+        ) : undefined
       }
     >
       {(close) => <TicketForm areas={areas} people={people} canAssign={false} ticket={ticket} onDone={close} />}
     </FormDialog>
+  );
+}
+
+/**
+ * The ticket's ⋯ More menu: Edit and Delete, kept out of the way so the title row holds only the status moves. Each item
+ * opens its usual dialog; Delete still asks for the exact title.
+ */
+export function TicketMoreMenu({
+  edit,
+  del,
+}: {
+  edit: { ticket: TicketValues; areas: AreaOption[]; people: AssigneeOption[] } | null;
+  del: { ticket: { id: string; number: number; title: string }; replies: number; files: number } | null;
+}) {
+  const [dialog, setDialog] = useState<"edit" | "delete" | null>(null);
+  if (!edit && !del) return null;
+  const item = "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm outline-none data-highlighted:bg-row-hover [&_svg]:size-4";
+  return (
+    <>
+      <Menu.Root>
+        <Menu.Trigger
+          render={<Button type="button" variant="outline" size="icon" aria-label="More actions" title="More actions" className="data-popup-open:bg-acc-t2" />}
+        >
+          <EllipsisIcon aria-hidden />
+        </Menu.Trigger>
+        <Menu.Portal>
+          <Menu.Positioner side="bottom" align="end" sideOffset={6} className="isolate z-50">
+            <Menu.Popup className="w-48 origin-(--transform-origin) rounded-xl bg-popover p-1.5 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-150 ease-(--ease-out) data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
+              {edit ? (
+                <Menu.Item className={item} onClick={() => setDialog("edit")}>
+                  <PencilIcon aria-hidden /> Edit ticket
+                </Menu.Item>
+              ) : null}
+              {del ? (
+                <Menu.Item className={cn(item, "text-destructive-text data-highlighted:bg-bad-w")} onClick={() => setDialog("delete")}>
+                  <Trash2Icon aria-hidden /> Delete ticket
+                </Menu.Item>
+              ) : null}
+            </Menu.Popup>
+          </Menu.Positioner>
+        </Menu.Portal>
+      </Menu.Root>
+      {edit ? <EditTicketDialog {...edit} open={dialog === "edit"} onOpenChange={(o) => setDialog(o ? "edit" : null)} /> : null}
+      {del ? <DeleteTicketDialog {...del} open={dialog === "delete"} onOpenChange={(o) => setDialog(o ? "delete" : null)} /> : null}
+    </>
   );
 }

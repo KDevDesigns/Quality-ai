@@ -4,9 +4,25 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* How visible a scrollbar is, 0 to 1, animated for its dissolve ("Scrollbars" in the base layer). Inherited so the
+   scrollbar's own pseudo-elements follow their element. */
+@property --scroll-fade {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
 /* A phone held sideways, when height is scarce (the markup editor puts its tools beside the screenshot). */
 @custom-variant short {
   @media (max-height: 30rem) {
+    @slot;
+  }
+}
+
+/* A big laptop or PC screen (1920×1080 up to 2560×1440), where ticket pages fit the window: the page doesn't scroll,
+   only the cards inside it (HANDOFF D21). Smaller laptops, tablets and phones scroll as a normal page. */
+@custom-variant desk {
+  @media (min-width: 1600px) and (min-height: 760px) {
     @slot;
   }
 }
@@ -415,7 +431,8 @@
   --destructive: #f2867c;
 }
 
-/* The app's footer: three drifting waves behind the content, stuck to the bottom of the window. They take no space and no clicks. */
+/* The app's background waves: three drifting waves behind the content, stuck to the bottom of the window. They take no
+   space and no clicks. The footer bar with the name sits in front of them (components/wave-footer.tsx). */
 .qa-waves {
   position: sticky;
   bottom: 0;
@@ -446,13 +463,30 @@
   * {
     @apply border-border outline-ring/50;
   }
-  /* Thin, quiet scrollbars everywhere (Firefox and Chromium read scrollbar-*; Safari needs the pseudo-elements). */
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--mu) 38%, transparent) transparent;
+  /* Scrollbars: slim and invisible until something scrolls. components/scrollbar-activity.tsx marks the page or card being
+     scrolled with [data-scrolling] and clears it about a second after it stops, so the thumb shows only while moving.
+     The thumb is a soft mix of the theme colour and grey, so it follows the person's accent in light and dark. The
+     track keeps its thin width, so nothing shifts when it appears. Firefox and Chromium read scrollbar-*; Safari needs
+     the pseudo-elements. */
+  :root {
+    --scroll-thumb: color-mix(in srgb, color-mix(in srgb, var(--acc) 40%, var(--mu)) 55%, transparent);
   }
-  *:hover {
-    scrollbar-color: color-mix(in srgb, var(--mu) 60%, transparent) transparent;
+  /* The dissolve: --scroll-fade goes 0 → 1 quickly when scrolling starts and back to 0 slowly after it stops, and the
+     thumb's colour is mixed by it. It is registered (@property, below) so the browser can animate it. */
+  * {
+    --scroll-fade: 0;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--scroll-thumb) calc(var(--scroll-fade) * 100%), transparent) transparent;
+    transition: --scroll-fade 0.6s ease-out;
+  }
+  [data-scrolling] {
+    --scroll-fade: 1;
+    transition-duration: 0.15s;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none;
+    }
   }
   ::-webkit-scrollbar {
     width: 8px;
@@ -465,10 +499,10 @@
   ::-webkit-scrollbar-thumb {
     border: 2px solid transparent;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--mu) 38%, transparent) padding-box;
+    background: transparent padding-box;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    background-color: color-mix(in srgb, var(--mu) 62%, transparent);
+  ::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--scroll-thumb) calc(var(--scroll-fade) * 100%), transparent);
   }
   /* Checkboxes and radios in QA Hub's style instead of the browser's. */
   input[type="checkbox"]:not([role]),

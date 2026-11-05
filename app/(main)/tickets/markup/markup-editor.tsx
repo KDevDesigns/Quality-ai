@@ -1,5 +1,6 @@
 "use client";
 
+import { XIcon } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -79,8 +80,22 @@ const hasText = (s: Shape | undefined): s is Extract<Shape, { kind: "text" | "st
 /** How close a click must be to a line or a handle, in screen pixels. */
 const GRAB_PX = 8;
 
-export function MarkupEditor({ file, position, onDone }: { file: File | null; position: { index: number; total: number } | null; onDone: (r: MarkupResult) => void }) {
+export function MarkupEditor({
+  file,
+  position,
+  isEdit = false,
+  onDone,
+}: {
+  file: File | null;
+  position: { index: number; total: number } | null;
+  /** Re-opening an image already added: leaving keeps it as it was. A new image is left out instead. */
+  isEdit?: boolean;
+  onDone: (r: MarkupResult) => void;
+}) {
   const mobile = useIsMobile();
+  /** The image the "Leave?" question was asked for; a new image in the run starts without it. */
+  const [leavingFor, setLeavingFor] = useState<File | null>(null);
+  const leaving = !!file && leavingFor === file;
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [tool, setTool] = useState<Tool>("box");
   const [color, setColor] = useState<string>(DEFAULT_MARK_COLOR);
@@ -570,6 +585,11 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
 
   const open = file !== null;
   const busy = !!draft || !!edit || !!live;
+
+  /** Leaving never uploads an unmarked copy: an edited image stays as it was, a new one isn't added. */
+  const leave = () => onDone(isEdit ? { action: "original" } : { action: "remove" });
+  /** The corner X asks first when something would be lost: a new image, or marks drawn on this one. */
+  const askLeave = () => (!isEdit || present.length || busy ? setLeavingFor(file) : leave());
   const sel = selected !== null ? present[selected] : undefined;
   const textFor = edit ? edit.fontPx : hasText(sel) ? fontOf(sel, W) : null;
   const sizeShown = textFor === null ? textSize : (TEXT_SIZES.find((s) => textFontSize(W, s.id) === textFor)?.id ?? null);
@@ -597,13 +617,23 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
       }}
     >
       {open ? (
-        // No corner X: it would drop the image like Remove does, with no warning. Remove is in the footer.
+        // Our own corner X (not the dialog's), so leaving asks first instead of silently dropping the image.
         <DialogContent
           className="sm:max-w-6xl max-md:inset-0 max-md:flex max-md:h-dvh max-md:max-h-none max-md:max-w-none max-md:flex-col max-md:gap-2 max-md:overflow-hidden max-md:rounded-none max-md:px-3 max-md:pt-[calc(0.75rem+env(safe-area-inset-top))] max-md:pb-[calc(0.75rem+env(safe-area-inset-bottom))] max-md:short:grid max-md:short:grid-cols-[minmax(0,1fr)_17rem] max-md:short:grid-rows-[auto_minmax(0,1fr)_auto_auto]"
           showGrabber={false}
           showCloseButton={false}
           onKeyDown={onKeyDown} onKeyUp={(e) => e.key === " " && setSpaceHeld(false)}>
-          <DialogHeader className="max-md:shrink-0 max-md:pr-0 max-md:short:col-start-2">
+          <button
+            type="button"
+            onClick={askLeave}
+            disabled={saving}
+            aria-label="Leave without saving"
+            title="Leave without saving"
+            className="absolute top-3 right-3 z-10 flex size-9 cursor-pointer items-center justify-center rounded-lg text-muted-foreground hover:bg-surface3 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 max-md:top-[calc(0.5rem+env(safe-area-inset-top))] max-md:right-2"
+          >
+            <XIcon className="size-5" aria-hidden />
+          </button>
+          <DialogHeader className="pr-10 max-md:shrink-0 max-md:short:col-start-2">
             <DialogTitle className="truncate max-md:text-[1.0625rem]" title={file.name}>
               {file.name}
             </DialogTitle>
@@ -679,6 +709,22 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
             <p role="alert" className="text-[0.7813rem] font-medium text-destructive-text max-md:order-3 max-md:shrink-0 max-md:short:col-start-2 max-md:short:row-start-3">
               {error}
             </p>
+          ) : null}
+
+          {leaving ? (
+            <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warn-b bg-warn-t px-3.5 py-2.5 text-sm text-foreground max-md:order-3 max-md:shrink-0 max-md:short:col-start-2 max-md:short:row-start-3">
+              <span className="min-w-0 flex-1">
+                {isEdit ? "Leave? Your new marks won't be saved, and the image stays as it was." : "Leave? This screenshot won't be added."}
+              </span>
+              <span className="flex gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setLeavingFor(null)} autoFocus>
+                  Keep editing
+                </Button>
+                <Button type="button" variant="destructive" size="sm" onClick={leave}>
+                  Leave
+                </Button>
+              </span>
+            </div>
           ) : null}
 
           <DialogFooter className="sm:justify-between max-md:order-4 max-md:mx-0 max-md:mb-0 max-md:shrink-0 max-md:flex-row max-md:flex-wrap max-md:items-center max-md:justify-between max-md:border-t-0 max-md:p-0 max-md:pt-1 max-md:short:col-start-2 max-md:short:row-start-4">

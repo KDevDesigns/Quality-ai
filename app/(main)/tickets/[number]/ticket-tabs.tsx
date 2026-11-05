@@ -26,7 +26,8 @@ export function TicketPane({ tab, children }: { tab: TicketTab; children: React.
 
 /** The ticket's title, steps and next move: Details only on a phone, always on a laptop. */
 function TicketHeader({ active, children }: { active: TicketTab; children: React.ReactNode }) {
-  return <div className={cn("contents", active !== "details" && "max-md:hidden")}>{children}</div>;
+  // Big screens (D21): one block of natural height, so the tab panel below gets the rest of the window.
+  return <div className={cn("contents desk:flex desk:shrink-0 desk:flex-col desk:gap-5", active !== "details" && "max-md:hidden")}>{children}</div>;
 }
 
 /** A swipe starting on these means something else: a dialog (its clicks reach here through React), or a control. */
@@ -88,7 +89,8 @@ export function TicketTabs({ replies, header, children }: { replies: number; hea
 
   return (
     <ActiveTab.Provider value={active}>
-      <div className="grid min-w-0 grid-cols-1 gap-5 max-md:flex max-md:flex-col" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} onTouchCancel={() => (start.current = null)}>
+      {/* Big screens (D21): the ticket fits the window, the same height budget as New ticket; only the cards scroll. */}
+      <div className="grid min-w-0 grid-cols-1 gap-5 max-md:flex max-md:flex-col desk:flex desk:h-[calc(100dvh-12.5rem)] desk:min-h-112 desk:flex-col" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} onTouchCancel={() => (start.current = null)}>
         <div role="group" aria-label="Ticket sections" className="sticky top-[calc(3.25rem+env(safe-area-inset-top))] z-5 -mx-5 grid grid-cols-2 gap-2 bg-grouped/95 px-5 py-2 backdrop-blur md:hidden">
           {TABS.map((tab) => (
             <button
@@ -106,7 +108,7 @@ export function TicketTabs({ replies, header, children }: { replies: number; hea
           ))}
         </div>
         <TicketHeader active={active}>{header}</TicketHeader>
-        <div ref={list} role="tablist" aria-label="Ticket sections" onKeyDown={onKeyDown} className="flex gap-1 overflow-x-auto overflow-y-hidden border-b border-line max-md:hidden">
+        <div ref={list} role="tablist" aria-label="Ticket sections" onKeyDown={onKeyDown} className="flex shrink-0 gap-1 overflow-x-auto overflow-y-hidden border-b border-line max-md:hidden">
           {TABS.map((tab) => {
             const on = active === tab;
             return (
@@ -135,7 +137,7 @@ export function TicketTabs({ replies, header, children }: { replies: number; hea
             );
           })}
         </div>
-        <div role="tabpanel" id="ticket-panel" aria-labelledby={tabId(active)} className="min-w-0">
+        <div role="tabpanel" id="ticket-panel" aria-labelledby={tabId(active)} className="min-w-0 desk:min-h-0 desk:flex-1">
           {children}
         </div>
       </div>

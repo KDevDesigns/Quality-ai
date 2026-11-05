@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TICKET_VIEWS, type TicketView } from "@/lib/tickets/board";
-import { DEVICE_TYPES, PRIORITIES, SEVERITIES, TICKET_CATEGORIES, TICKET_STATUSES, TICKET_TYPES, type TicketCategoryValue } from "@/lib/tickets/workflow";
+import { DEVICE_TYPES, PRIORITIES, SEVERITIES, TICKET_CATEGORIES, TICKET_STATUSES, TICKET_TYPES, TO_START, type TicketCategoryValue } from "@/lib/tickets/workflow";
 import { optionalText } from "./common";
 
 const emptyToNull = z
@@ -67,7 +67,8 @@ const param = z
 /** The ticket list's URL filters. Unknown or bad values fall back to the default instead of failing. */
 export const ticketFilters = z.object({
   group: param.transform((v) => ((TICKET_GROUPS as readonly string[]).includes(v) ? (v as TicketGroup) : "open")),
-  status: param.transform((v) => ((TICKET_STATUSES as readonly string[]).includes(v) ? (v as (typeof TICKET_STATUSES)[number]) : null)),
+  /** One status, or "TO_START" for tickets not started yet (new or reopened). */
+  status: param.transform((v) => (v === TO_START || (TICKET_STATUSES as readonly string[]).includes(v) ? (v as (typeof TICKET_STATUSES)[number] | typeof TO_START) : null)),
   type: param.transform((v) => ((TICKET_TYPES as readonly string[]).includes(v) ? (v as (typeof TICKET_TYPES)[number]) : null)),
   area: param.transform((v) => v || null),
   /** A category, or "none" for tickets not tagged yet. */

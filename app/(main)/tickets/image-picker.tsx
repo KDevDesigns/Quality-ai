@@ -416,7 +416,7 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
           {state.error}
         </p>
       ) : null}
-      <MarkupEditor file={state.editing?.file ?? null} position={state.position} onDone={state.resolve} />
+      <MarkupEditor file={state.editing?.file ?? null} position={state.position} isEdit={state.editing?.replaceKey !== undefined} onDone={state.resolve} />
     </div>
   );
 }

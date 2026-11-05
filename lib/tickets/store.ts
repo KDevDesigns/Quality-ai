@@ -4,6 +4,7 @@ import { can } from "@/lib/auth/permissions";
 import type { TicketCreate, TicketEdit, TicketFilters, TransitionInput } from "@/lib/schemas/ticket";
 import { MAX_IMAGES_PER_POST, MAX_PENDING_PER_USER, MAX_VIDEOS_PER_POST, type UploadKind } from "@/lib/uploads/limits";
 import { BOARD_COLUMN_LIMIT, BOARD_COLUMNS } from "./board";
+import { memberModules, moduleProgress as buildModuleProgress } from "./progress";
 import {
   canAssign,
   canCategorize,
@@ -13,6 +14,8 @@ import {
   canDeleteTicket,
   canEditTicket,
   DONE_STATUSES,
+  TO_START,
+  TO_START_STATUSES,
   isDone,
   OPEN_STATUSES,
   PRIORITY_LABELS,
@@ -133,7 +136,8 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
   /** The list (and board) filters, within what `actor` may see. */
   async function filterWhere(f: TicketFilters, actor: Actor): Promise<Prisma.TicketWhereInput> {
     const filters: Prisma.TicketWhereInput = {};
-    if (f.status) filters.status = f.status;
+    if (f.status === TO_START) filters.status = { in: [...TO_START_STATUSES] };
+    else if (f.status) filters.status = f.status;
     else if (f.group !== "all") filters.status = { in: [...(f.group === "open" ? OPEN_STATUSES : DONE_STATUSES)] as TicketStatus[] };
     if (f.type) filters.type = f.type;
     if (f.category) filters.category = f.category === "none" ? null : f.category;
@@ -398,7 +402,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
       const [open_, needInfo, toStart, fixed, done] = await Promise.all([
         db.ticket.count({ where: { ...mine, status: open } }),
         db.ticket.count({ where: { ...mine, status: "NEED_INFO" } }),
-        db.ticket.count({ where: { ...mine, status: { in: ["NEW", "REOPENED"] } } }),
+        db.ticket.count({ where: { ...mine, status: { in: [...TO_START_STATUSES] } } }),
         db.ticket.count({ where: { ...mine, status: "FIXED" } }),
         db.ticket.count({ where: { ...mine, status: { in: [...DONE_STATUSES] as TicketStatus[] } } }),
       ]);
@@ -410,11 +414,37 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
       return db.ticket.count({ where: scopeWhere(actor) });
     },
 
-    /** The most recently active tickets `actor` may see. */
-    async recent(actor: Actor, take = 6) {
+    /**
+     * Module progress for every active top-level module, counted from all tickets whoever is looking: only numbers
+     * leave here. `forUserId` keeps the modules that person belongs to, directly or through a sub-module.
+     */
+    async moduleProgress(forUserId?: string) {
+      const [areas, rows, members] = await Promise.all([
+        db.erpArea.findMany({ select: { id: true, name: true, parentId: true, active: true } }),
+        db.ticket.findMany({
+          where: { areaId: { not: null }, status: { notIn: ["REJECTED", "DUPLICATE", "WONT_FIX"] } },
+          select: {
+            areaId: true,
+            category: true,
+            status: true,
+            events: { where: { kind: "STATUS", to: "CLOSED" }, orderBy: { createdAt: "desc" }, take: 1, select: { from: true } },
+          },
+        }),
+        forUserId ? db.areaMember.findMany({ where: { userId: forUserId }, select: { areaId: true } }) : null,
+      ]);
+      const tickets = rows.map((t) => ({ areaId: t.areaId, category: t.category, status: t.status, closedFrom: t.status === "CLOSED" ? (t.events[0]?.from ?? null) : null }));
+      const cards = buildModuleProgress(areas, tickets);
+      const total = cards.length;
+      if (!members) return { cards, total };
+      const mine = memberModules(areas, members.map((m) => m.areaId));
+      return { cards: cards.filter((c) => mine.has(c.id)), total };
+    },
+
+    /** The most recently active tickets `actor` may see, or the newest filed with `newest`. */
+    async recent(actor: Actor, take = 6, newest = false) {
       return db.ticket.findMany({
         where: scopeWhere(actor),
-        orderBy: [{ lastActivityAt: "desc" }, { number: "desc" }],
+        orderBy: newest ? [{ createdAt: "desc" }, { number: "desc" }] : [{ lastActivityAt: "desc" }, { number: "desc" }],
         take,
         select: {
           id: true,
@@ -422,6 +452,9 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
           title: true,
           status: true,
           type: true,
+          severity: true,
+          priority: true,
+          createdAt: true,
           lastActivityAt: true,
           area: { select: { name: true, parent: { select: { name: true } } } },
           assignee: { select: { name: true } },

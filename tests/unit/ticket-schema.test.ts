@@ -71,5 +71,6 @@ describe("ticket schemas", () => {
     expect(ticketFilters.parse({ category: "design" }).category).toBeNull();
     expect(ticketFilters.parse({ view: "board" }).view).toBe("board");
     expect(ticketFilters.parse({ view: "gantt" }).view).toBeNull();
+    expect(ticketFilters.parse({ status: "TO_START" }).status).toBe("TO_START");
   });
 });

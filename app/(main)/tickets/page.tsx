@@ -21,6 +21,7 @@ import { requireAction } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { formatDateTime, timeAgo } from "@/lib/format";
 import { ticketFilters, type TicketFilters } from "@/lib/schemas/ticket";
+import { TO_START } from "@/lib/tickets/workflow";
 import { columnInView, TICKETS_VIEW_COOKIE, type BoardColumnKey, type TicketView } from "@/lib/tickets/board";
 import { notificationStore } from "@/lib/tickets/notifications";
 import { PAGE_SIZE, ticketStore, type TicketListRow } from "@/lib/tickets/store";
@@ -273,7 +274,7 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
             Clear
           </Button>
         ) : null}
-        {f.status ? <span className="text-[0.8125rem] text-muted-foreground">Status: {STATUS_LABELS[f.status]}</span> : null}
+        {f.status ? <span className="text-[0.8125rem] text-muted-foreground">Status: {f.status === TO_START ? "Not started (new or reopened)" : STATUS_LABELS[f.status]}</span> : null}
       </form>
 
       {total === 0 || (list && rows.length === 0) ? (

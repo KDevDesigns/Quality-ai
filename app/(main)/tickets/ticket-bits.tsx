@@ -74,7 +74,7 @@ const levelIndex = (value: string) => Number(value[1]) - 1;
 /** The dot's colour class for a severity or priority, as whole class names so Tailwind sees them. */
 export const levelDot = (value: string) => LEVEL_DOTS[levelIndex(value)];
 
-const levelName = (value: SeverityValue | PriorityValue) => (value[0] === "S" ? SEVERITY_LABELS[value as SeverityValue] : PRIORITY_LABELS[value as PriorityValue]);
+export const levelName = (value: SeverityValue | PriorityValue) => (value[0] === "S" ? SEVERITY_LABELS[value as SeverityValue] : PRIORITY_LABELS[value as PriorityValue]);
 
 /** A short tag for lists and cards, such as "S1" or "P3", with its full name on hover. The colour is never alone. */
 export function LevelTag({ value, className }: { value: SeverityValue | PriorityValue; className?: string }) {

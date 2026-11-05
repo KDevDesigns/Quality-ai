@@ -38,6 +38,9 @@ All decided on 2026-11-05. D12 follows the approved board; the owner accepted th
 | All | Severity and priority in red, orange, blue, grey | D15 |
 | New ticket | Fills the window on laptops; Details card wider, in two columns, in a new field order | D16 |
 | New ticket | Found in is a select, not text | D17 |
+| Dashboard | Each module card has a score dot and percentage; rows use five colours and show 0% instead of "No tickets yet" | D19 |
+| Ticket | Details sits above Report in the main column, as grouped columns (label over value); the side column holds only the Activity log | D20 |
+| Ticket | No Next step box: the moves sit in the title row, whose move is one line under the title, Edit and Delete are in ⋯ More. On big screens the page fits the window | D21 |
 
 | # | Question | Why it matters | Decision |
 |---|---|---|---|
@@ -59,6 +62,9 @@ All decided on 2026-11-05. D12 follows the approved board; the owner accepted th
 | D16 | How does New ticket fit the screen on a laptop? | Changing type moved the layout, because Bug has two more fields. | From 1280 px wide the cards fill the window, so the page doesn't scroll and a full card scrolls inside. The Details card is 440 px with two columns. Severity and Device type come last, so nothing above them moves. |
 | D17 | Is Found in free text? | The owner wants a fixed choice. | A select: Dev, Staging, Production, or not set. Optional. Older tickets keep their free text, offered as an extra choice when edited. |
 | D18 | Module dropdown | Sub-modules were hard to tell apart. | A tree: modules in bold, sub-modules indented under them. Once chosen, a sub-module shows as "Module › Sub-module". |
+| D19 | How is a module's progress shown at a glance? | The owner wanted one indicator per module, and a module with 1 closed ticket shouldn't look 100% done (2026-11-05). | A dot and percentage per module: **score = closed ÷ the larger of (tagged tickets, 5)**, rounded down (`MIN_TICKETS` in `lib/tickets/progress.ts`). So 1 of 1 is 20%, 5 of 5 is 100%. Untagged, rejected, duplicate, won't fix and withdrawn tickets don't count. Colours for the dot and the category rows: 0 grey, 1–29 red, 30–59 yellow, 60–89 blue, 90–100 green. Category rows keep plain closed ÷ total, and 0 of 0 shows 0%. Cards sort by lowest score. |
+| D20 | Where does Details go on a ticket? | The owner wanted Report and Details together, at the same width, with the log beside them (2026-11-05). | Main column: Details first, as a spec sheet with no boxes inside: three groups in columns (Assignment: Developer, Module · Classification: Category, Severity, Priority · Environment: Found in, Device type), label on top and value under it, then "Reported by · Filed · Closed" as one line along the bottom. Status isn't repeated; it is in the title row. Columns: three on a laptop, two on a tablet, one on a phone. Report under it. Side column: the Activity log alone, which stays in view from 1280 px wide. |
+| D21 | Should ticket pages scroll on a big screen? | The owner wants the page itself never to scroll on their 1920×1080 to 2560×1440 screens; only cards scroll (2026-11-05). | A `desk:` variant in `globals.css` (at least 1600 px wide **and** 760 px tall). There the ticket is `100dvh − 12.5rem` tall, like New ticket: the header, steps and tabs keep their height; Report, the Activity log and the Conversation fill the rest and scroll inside. The Next step box is gone: its moves sit at the right of the title row, and Edit and Delete are in a ⋯ More menu. Its sentence ("Developer's move. Waiting on … to start work.") is the tooltip of the current step in the steps row, and each other step's tooltip says when it happened, or "Not reached yet"; phones, which can't hover, show it as a line under their step columns. Details and Report are one card (Details, the filed line, then Report), which on big screens fills the column and scrolls as one. Smaller laptops, tablets and phones scroll as a page. Later ticket pages (Tickets, Inbox in Step C) follow the same rule. |
 
 ---
 
@@ -276,7 +282,7 @@ Shows each person what needs them now and how each module is doing.
 | Ticket list | Rows 52 px: number + unread dot (72), severity dot, title (clipped), person (128), status (104), age (36). Unread title 600, others 500 |
 | Second card | QA and Developer: My modules, with a Lead pill. Admin: Not in any module (who needs one). Linked to Team |
 | Module progress | Filter, "{n} of {m} modules", grid `auto-fill, minmax(340px, 1fr)`. Rules are in the README |
-| Progress row | Label 68, bar 6 px, percentage 40, "{done} of {total}" 64. Colour: ≥80 success, ≥50 warning, below danger |
+| Progress row | Label 68, bar 6 px, percentage 40, "{done} of {total}" 64. Colours and the module score: D19 |
 
 Stat cards by role:
 
