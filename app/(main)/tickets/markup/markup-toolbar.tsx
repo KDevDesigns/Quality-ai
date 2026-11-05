@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyboardIcon, Redo2Icon, ScanIcon, Trash2Icon, Undo2Icon, ZoomInIcon, ZoomOutIcon } from "lucide-react";
+import { Redo2Icon, Trash2Icon, Undo2Icon, ZoomInIcon, ZoomOutIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MARK_COLORS } from "@/lib/markup/colors";
 import { TEXT_SIZES, type TextSize, type Tool } from "@/lib/markup/shapes";
@@ -52,10 +52,10 @@ export function MarkupToolbar(p: {
             aria-pressed={p.tool === tool}
             title={`${hint} (${key})`}
             onClick={() => p.onTool(tool)}
-            className="gap-1.5 px-2.5 max-md:h-11 max-md:shrink-0"
+            className="gap-1.5 px-2.5 text-sm max-md:h-11 max-md:shrink-0"
           >
             <Icon /> {label}
-            <kbd className="hidden rounded border border-line2 px-1 font-mono text-[0.6563rem] leading-4 text-muted-foreground lg:inline">{key}</kbd>
+            <kbd className="hidden rounded border border-line2 px-1 font-mono text-[0.6875rem] leading-4 font-medium text-muted-foreground lg:inline">{key}</kbd>
           </Button>
         ))}
       </div>
@@ -118,22 +118,22 @@ export function MarkupToolbar(p: {
           <Button type="button" variant="ghost" size="icon-sm" aria-label="Zoom in (Ctrl+=)" title="Zoom in (Ctrl+= or Ctrl+wheel)" disabled={!p.canZoomIn} focusableWhenDisabled onClick={p.onZoomIn} className={TOUCH}>
             <ZoomInIcon />
           </Button>
-          <Button type="button" variant="ghost" size="sm" title="Fit the screenshot (Ctrl+0)" onClick={p.onFit} className="px-2 max-md:h-11">
-            <ScanIcon /> Fit
+          {/* Text buttons, as on the board. */}
+          <Button type="button" variant="ghost" size="sm" title="Fit the screenshot (Ctrl+0)" onClick={p.onFit} className="px-2.5 text-sm max-md:h-11">
+            Fit
           </Button>
         </div>
-        <Button type="button" variant={p.help ? "soft" : "ghost"} size="sm" aria-pressed={p.help} title="Keyboard shortcuts (?)" onClick={p.onHelp} className="ml-auto px-2 max-md:hidden">
-          <KeyboardIcon /> Shortcuts
+        <Button type="button" variant={p.help ? "soft" : "ghost"} size="sm" aria-pressed={p.help} title="Keyboard shortcuts (?)" onClick={p.onHelp} className="ml-auto px-2.5 text-sm max-md:hidden">
+          Shortcuts
         </Button>
       </div>
+      {/* Every shortcut (SHORTCUT_HELP), in the board's panel: light background, thin border, keys in mono. */}
       {p.help ? (
-        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 rounded-lg border border-line2 bg-surface2 px-3 py-2.5 text-[0.7813rem] sm:grid-cols-[auto_1fr_auto_1fr]">
+        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 rounded-lg border border-line2 bg-surface2 px-3 py-2.5 text-[0.8125rem] sm:grid-cols-[auto_1fr_auto_1fr]">
           {SHORTCUT_HELP.map((s) => (
             <div key={s.keys} className="contents">
-              <dt>
-                <kbd className="rounded border border-line2 bg-card px-1.5 font-mono text-[0.7188rem]">{s.keys}</kbd>
-              </dt>
-              <dd className="text-ink2">{s.does}</dd>
+              <dt className="font-mono font-medium text-foreground">{s.keys}</dt>
+              <dd className="text-body2">{s.does}</dd>
             </div>
           ))}
         </dl>

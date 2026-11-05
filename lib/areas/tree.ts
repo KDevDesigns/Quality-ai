@@ -31,6 +31,20 @@ export function nextSortOrder(areas: AreaNode[], parentId: string | null, exclud
   return siblings.length ? Math.min(999, Math.max(...siblings.map((a) => a.sortOrder)) + 10) : 0;
 }
 
+/**
+ * A dropdown's choices as a tree: each module in bold with `wholeNote` beside it, its sub-modules joined under it. Once chosen, a
+ * sub-module shows with its module ("Billing › Posting"), so it's clear where it came from even when two share a name.
+ */
+export function moduleOptions(areas: { id: string; name: string; children: { id: string; name: string }[] }[], wholeNote: string) {
+  return areas.map((m) => ({
+    rule: true,
+    options: [
+      { value: m.id, label: `${m.name} (${wholeNote})`, tree: { name: m.name, level: 0 as const, note: wholeNote } },
+      ...m.children.map((c) => ({ value: c.id, label: areaPath({ name: c.name, parent: m }), tree: { name: c.name, level: 1 as const } })),
+    ],
+  }));
+}
+
 /** "Billing & Collection › Meter Reading", or just the module name. */
 export function areaPath(area: { name: string; parent?: { name: string } | null }): string {
   return area.parent ? `${area.parent.name} › ${area.name}` : area.name;

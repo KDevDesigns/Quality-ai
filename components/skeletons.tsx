@@ -28,20 +28,23 @@ export function HeaderSkeleton() {
   );
 }
 
-/** Tickets list: quick views, filters and rows (cards on phones). */
+/** Tickets list: the view tabs, the filter card and rows (chips and cards on phones). */
 export function TicketListSkeleton({ rows = 8, header = false }: { rows?: number; header?: boolean }) {
   return (
     <Loading>
       {header ? <HeaderSkeleton /> : null}
-      <div className="flex flex-wrap gap-2">
-        {["5rem", "6rem", "7rem", "5rem", "6rem"].map((w, i) => (
-          <Bone key={i} className="h-8 rounded-full" width={w} />
+      <div className="flex flex-wrap gap-2 md:gap-6 md:border-b md:border-line md:pb-3">
+        {["7rem", "6rem", "9rem", "4rem", "3.5rem"].map((w, i) => (
+          <Bone key={i} className="h-8 rounded-full md:h-5 md:rounded-md" width={w} />
         ))}
       </div>
-      <div className="flex flex-wrap gap-2">
-        <Bone className="h-9 w-64" />
-        <Bone className="h-9 w-40" />
-        <Bone className="h-9 w-56" />
+      <div className={cn(card, "flex flex-wrap items-end gap-2.5 p-4 max-md:hidden")}>
+        {["flex-[2_1_17.5rem]", "flex-[1_1_9.5rem]", "flex-[1_1_12rem]", "flex-[1_1_10rem]"].map((c, i) => (
+          <div key={i} className={cn("grid min-w-0 gap-2", c)}>
+            <Bone className="h-3.5 w-16" />
+            <Bone className="h-11 w-full rounded-[0.5625rem]" />
+          </div>
+        ))}
       </div>
       <ListRows rows={rows} />
     </Loading>
@@ -114,36 +117,63 @@ export function TicketPageSkeleton() {
   );
 }
 
-/** Dashboard: stat tiles, then two lists. */
+/** Dashboard: greeting, stat tiles, the ticket list beside the modules card, then Module progress. */
 export function DashboardSkeleton() {
   return (
-    <Loading>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => (
+    <Loading className="gap-6">
+      <HeaderSkeleton />
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(13.75rem,1fr))] gap-4">
+        {[0, 1, 2].map((i) => (
           <div key={i} className={cn(card, "grid gap-3 p-5")}>
             <Bone className="h-3.5 w-24" />
             <Bone className="h-8 w-16" />
           </div>
         ))}
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ListRows rows={5} />
-        <ListRows rows={5} />
+      <div className="flex flex-wrap items-start gap-6">
+        <div className="min-w-0 flex-[999_1_35rem]"><ListRows rows={5} /></div>
+        <div className="min-w-0 flex-[1_1_20rem]"><ListRows rows={3} /></div>
+      </div>
+      <div className={cn(card, "grid gap-3 p-5")}>
+        <Bone className="h-5 w-40" />
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(21.25rem,100%),1fr))] gap-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="grid gap-2.5 rounded-[0.625rem] border border-line p-3.5">
+              <Bone className="h-4 w-32" />
+              <Bone className="h-3 w-full" />
+              <Bone className="h-3 w-full" />
+              <Bone className="h-3 w-full" />
+            </div>
+          ))}
+        </div>
       </div>
     </Loading>
   );
 }
 
-/** My inbox: tabs and rows. */
+/** My inbox: the conversation list beside an empty conversation pane (the list alone on phones). */
 export function InboxSkeleton() {
   return (
-    <Loading>
-      <div className="flex gap-2">
-        <Bone className="h-8 w-28 rounded-full" />
-        <Bone className="h-8 w-24 rounded-full" />
-        <Bone className="h-8 w-32 rounded-full" />
+    <Loading className="desk:min-h-0 desk:flex-1">
+      <div className={cn(card, "grid overflow-hidden lg:h-[calc(100dvh-17.5rem)] lg:min-h-130 lg:grid-cols-[minmax(18.75rem,23.75rem)_minmax(0,1fr)] desk:h-full!")}>
+        <div className="flex flex-col border-line lg:border-r">
+          <div className="grid gap-2.5 border-b border-line2 px-4 py-3.5">
+            <Bone className="h-10 w-full" />
+            <Bone className="h-9 w-full rounded-[0.625rem]" />
+          </div>
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="grid gap-1.5 border-b border-line2 px-4 py-3">
+              <div className="flex justify-between">
+                <Bone className="h-3 w-12" />
+                <Bone className="h-3 w-8" />
+              </div>
+              <Bone className={cn("h-4", i % 2 ? "w-4/5" : "w-3/5")} />
+              <Bone className="h-3 w-full" />
+            </div>
+          ))}
+        </div>
+        <div className="hidden bg-surface2 lg:block" />
       </div>
-      <ListRows rows={6} />
     </Loading>
   );
 }
@@ -153,25 +183,28 @@ export function TeamSkeleton() {
   return (
     <Loading>
       <HeaderSkeleton />
-      <div className="flex gap-2">
-        <Bone className="h-9 w-64" />
-        <Bone className="h-9 w-16" />
-      </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className={cn(card, "grid gap-3 p-5")}>
-            <div className="flex items-center justify-between">
-              <Bone className="h-5 w-40" />
-              <Bone className="h-5 w-12 rounded-full" />
-            </div>
-            <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-start gap-6 desk:h-[calc(100dvh-18rem)] desk:flex-nowrap desk:items-stretch">
+        <div className={cn(card, "grid min-w-0 flex-[1_1_17.5rem] content-start gap-3.5 p-4 desk:max-w-[22rem]")}>
+          <Bone className="h-10 w-full" />
+          <Bone className="h-3.5 w-28" />
+          <Bone className="h-11 w-full" />
+          {[0, 1, 2, 3, 4].map((i) => (
+            <Bone key={i} className="h-9 w-full" />
+          ))}
+        </div>
+        <div className={cn(card, "grid min-w-0 flex-[999_1_35rem] content-start gap-3 p-5")}>
+          <Bone className="h-6 w-48" />
+          <Bone className="h-4 w-28" />
+          <Bone className="h-12 w-full rounded-lg" />
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="flex gap-3">
+              <Bone className="h-5 w-1/4" />
               {[0, 1, 2].map((j) => (
-                <Bone key={j} className="h-7 w-24 rounded-full" />
+                <Bone key={j} className="h-6 w-20 rounded-full" />
               ))}
             </div>
-            <Bone className="h-4 w-3/4" />
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </Loading>
   );
@@ -233,13 +266,47 @@ export function FormSkeleton({ sections = 2 }: { sections?: number }) {
 /** Account settings: the side tabs and one panel. */
 export function AccountSkeleton() {
   return (
-    <Loading className="gap-6 md:grid-cols-[13.75rem_minmax(0,1fr)]">
-      <div className="flex gap-2 md:grid md:content-start">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <Bone key={i} className="h-10 w-28 rounded-[0.5625rem] md:w-full" />
+    <Loading className="gap-5">
+      {/* The banner: photo, name and email. */}
+      <div className="flex items-center gap-7 rounded-2xl border border-line p-[1.875rem] max-md:gap-3.5 max-md:p-5">
+        <Bone className="size-[8.25rem] shrink-0 rounded-full max-md:size-20" />
+        <div className="grid flex-1 gap-2.5">
+          <Bone className="h-7 w-48" />
+          <Bone className="h-4 w-64 max-w-full" />
+        </div>
+      </div>
+      {/* The tabs along the top (laptops). */}
+      <div className="hidden gap-6 border-b border-line pb-3 md:flex">
+        {["4rem", "6.5rem", "3.5rem", "6rem"].map((w, i) => (
+          <Bone key={i} className="h-5 rounded-md" width={w} />
         ))}
       </div>
       <FormSkeleton sections={1} />
+    </Loading>
+  );
+}
+
+/** Settings (phones): the photo card, then grouped rows, like a phone's own Settings app. */
+export function SettingsSkeleton() {
+  return (
+    <Loading className="gap-5">
+      <div className={cn(card, "flex items-center gap-3.5 p-4")}>
+        <Bone className="size-14 shrink-0 rounded-full" />
+        <div className="grid flex-1 gap-2">
+          <Bone className="h-5 w-32" />
+          <Bone className="h-3.5 w-48" />
+        </div>
+      </div>
+      {[2, 4].map((rows, g) => (
+        <div key={g} className={cn(card, "divide-y divide-line overflow-hidden")}>
+          {Array.from({ length: rows }, (_, i) => (
+            <div key={i} className="flex items-center gap-3 px-4 py-3.5">
+              <Bone className="size-7 shrink-0 rounded-lg" />
+              <Bone className="h-4 w-32" />
+            </div>
+          ))}
+        </div>
+      ))}
     </Loading>
   );
 }

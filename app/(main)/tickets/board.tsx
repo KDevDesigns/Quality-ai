@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type RefObject } from "react";
 import { Menu } from "@base-ui/react/menu";
-import { ArrowDownToLineIcon, ArrowLeftIcon, EllipsisIcon, FlagIcon, MessageSquareIcon, SquareArrowOutUpRightIcon, UserRoundIcon, UserRoundPlusIcon } from "lucide-react";
+import { ArrowDownToLineIcon, ArrowLeftIcon, EllipsisIcon, MessageSquareIcon, SquareArrowOutUpRightIcon, UserRoundIcon, UserRoundPlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { StatusPill } from "@/components/status-pill";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -14,7 +14,7 @@ import { PRIORITY_LABELS, STATUS_LABELS, TYPE_LABELS, type SeverityValue, type T
 import { cn } from "@/lib/utils";
 import { AssignForm, MoveForm } from "./[number]/ticket-controls";
 import { moveTicket } from "./actions";
-import { SeverityTag, TicketStatusPill, TYPE_ICON, typeStyle, UnreadDot } from "./ticket-bits";
+import { LevelTag, SeverityTag, TicketStatusPill, TYPE_ICON, typeStyle, UnreadDot } from "./ticket-bits";
 import type { AreaOption, AssigneeOption } from "./ticket-form";
 
 // The Board view of the tickets page, like ClickUp's or Planner's: a column per stage (lib/tickets/board.ts) and a
@@ -142,11 +142,12 @@ export function TicketBoard({ columns: fromServer, assign }: { columns: BoardCol
   };
 
   return (
-    <div data-full-width className="grid gap-3">
+    // Big screens (D21): the board takes the rest of the window and each column scrolls inside itself.
+    <div data-full-width className="grid gap-3 desk:flex desk:min-h-0 desk:flex-1 desk:flex-col">
       <ColumnTabs columns={columns} board={scroller} />
       <div
         ref={scroller}
-        className="relative -mx-5 flex snap-x snap-mandatory scroll-px-5 items-start gap-3 overflow-x-auto px-5 pb-2 md:mx-0 md:items-stretch md:snap-none md:px-0 md:pb-3"
+        className="relative -mx-5 flex snap-x snap-mandatory scroll-px-5 items-start gap-3 overflow-x-auto px-5 pb-2 md:mx-0 md:items-stretch md:snap-none md:px-0 md:pb-3 desk:min-h-0 desk:flex-1"
         aria-label="Ticket board"
         role="region"
       >
@@ -182,7 +183,7 @@ export function TicketBoard({ columns: fromServer, assign }: { columns: BoardCol
               }}
               className={cn(
                 "relative flex w-[min(20rem,85vw)] shrink-0 snap-start flex-col rounded-[0.875rem] bg-surface2 outline-2 -outline-offset-2 outline-transparent transition-[opacity,background-color,outline-color] duration-150 outline-dashed",
-                "md:h-[max(24rem,calc(100dvh-20rem))] md:w-auto md:min-w-[14rem] md:flex-1 md:basis-0",
+                "md:h-[max(24rem,calc(100dvh-21.25rem))] md:w-auto md:min-w-[14rem] md:flex-1 md:basis-0 desk:h-auto!",
                 drag && !source && !droppable && "opacity-45",
                 droppable && "outline-acc-b",
                 droppable && over === col.key && "bg-acc-t outline-acc",
@@ -377,7 +378,8 @@ function Card({
       }}
       onDragEnd={onDragEnd}
       className={cn(
-        "group/card relative grid shrink-0 grid-cols-[minmax(0,1fr)] gap-2 rounded-[0.625rem] border border-line bg-card py-2.5 pr-2.5 pl-3.5 shadow-[0_0.0625rem_0.125rem_rgba(20,22,40,0.05)] transition-[border-color,box-shadow,opacity] duration-150 hover:border-acc-b hover:shadow-[0_0.25rem_0.75rem_rgba(20,22,40,0.08)]",
+        // The design system's board card: theme shadow, and on hover it lifts 1 px with a deeper shadow.
+        "group/card relative grid shrink-0 grid-cols-[minmax(0,1fr)] gap-2 rounded-[0.625rem] border border-line bg-card py-3 pr-2.5 pl-3.5 shadow-(--shadow-card) transition-[border-color,box-shadow,opacity,transform] duration-150 ease-(--ease-out) hover:-translate-y-px hover:border-acc-b hover:shadow-(--shadow-hover)",
         draggable && "cursor-grab active:cursor-grabbing",
         dragged && "opacity-40",
       )}
@@ -393,7 +395,7 @@ function Card({
         href={`/tickets/${card.number}`}
         draggable={false}
         className={cn(
-          "line-clamp-3 text-[0.875rem] leading-snug wrap-break-word outline-none after:absolute after:inset-0 after:rounded-[0.625rem] hover:text-acc focus-visible:after:ring-3 focus-visible:after:ring-acc/30",
+          "line-clamp-3 text-[0.875rem] leading-snug wrap-break-word outline-none after:absolute after:inset-0 after:rounded-[0.625rem] hover:text-primary-text focus-visible:after:ring-3 focus-visible:after:ring-acc/30",
           card.unread ? "font-semibold" : "font-medium",
         )}
       >
@@ -406,7 +408,7 @@ function Card({
         </span>
         {sideState ? <TicketStatusPill status={card.status} className="h-5 px-2 text-[0.6875rem]" /> : null}
         <SeverityTag severity={card.severity} />
-        <PriorityFlag priority={card.priority} />
+        <LevelTag value={card.priority as keyof typeof PRIORITY_LABELS} />
         <span className="ml-auto flex items-center gap-2">
           {card.comments ? (
             <span className="inline-flex items-center gap-0.5" title={`${card.comments} repl${card.comments === 1 ? "y" : "ies"}`}>
@@ -421,19 +423,6 @@ function Card({
         </span>
       </div>
     </li>
-  );
-}
-
-const PRIORITY_TONE: Record<string, string> = { P1: "text-bad", P2: "text-warn-ink" };
-
-/** Only urgent and high priority show; normal and low would be noise on every card. */
-function PriorityFlag({ priority }: { priority: string }) {
-  if (!(priority in PRIORITY_TONE)) return null;
-  return (
-    <span title={PRIORITY_LABELS[priority as keyof typeof PRIORITY_LABELS]} className={cn("inline-flex items-center gap-0.5 font-mono text-[0.7188rem] font-semibold", PRIORITY_TONE[priority])}>
-      <FlagIcon className="size-3" aria-hidden />
-      {priority}
-    </span>
   );
 }
 
@@ -454,7 +443,7 @@ function Person({ person }: { person: BoardCard["person"] }) {
 }
 
 const item =
-  "flex h-9 cursor-default items-center gap-2.5 rounded-md px-3 text-[0.875rem] outline-hidden select-none data-highlighted:bg-acc-t2 data-highlighted:text-acc-ink [&_svg]:size-4 [&_svg]:text-ink2 data-highlighted:[&_svg]:text-acc";
+  "flex h-9 cursor-default items-center gap-2.5 rounded-md px-3 text-[0.875rem] outline-hidden select-none data-highlighted:bg-acc-t2 data-highlighted:text-acc-ink [&_svg]:size-4 [&_svg]:text-ink2 data-highlighted:[&_svg]:text-primary-text";
 
 /** Open, the status moves, and assigning. Shown on hover with a mouse; always there on touch screens. */
 function CardMenu({ card, onMove, onAssign }: { card: BoardCard; onMove: (m: Transition) => void; onAssign: () => void }) {
@@ -561,7 +550,7 @@ function TaskDialog({
       {!open ? null : move ? (
         <div className="grid max-h-[70vh] gap-3 overflow-y-auto pr-1">
           {moves.length > 1 ? (
-            <button type="button" onClick={() => onPick(null)} className="inline-flex w-fit items-center gap-1.5 text-[0.8125rem] text-muted-foreground hover:text-acc">
+            <button type="button" onClick={() => onPick(null)} className="inline-flex w-fit items-center gap-1.5 text-[0.8125rem] text-muted-foreground hover:text-primary-text">
               <ArrowLeftIcon className="size-3.5" aria-hidden /> Other choices
             </button>
           ) : null}

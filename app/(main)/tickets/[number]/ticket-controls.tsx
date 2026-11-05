@@ -1,17 +1,20 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { ArrowRightLeftIcon, PencilIcon, SendIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
+import { startTransition, useActionState, useState } from "react";
+import { Menu } from "@base-ui/react/menu";
+import { ArrowRightLeftIcon, EllipsisIcon, PencilIcon, SendIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
 import { Field, FormMessage } from "@/components/form-field";
 import { FormDialog } from "@/components/form-dialog";
+import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useTouchScreen } from "@/hooks/use-touch-screen";
 import { initialFormState, type FormState } from "@/lib/form";
-import { STATUS_LABELS, type TicketStatus, type Transition } from "@/lib/tickets/workflow";
-import { addComment, assignTicket, deleteTicket, moveTicket } from "../actions";
+import { cn } from "@/lib/utils";
+import { CATEGORY_LABELS, NO_CATEGORY, STATUS_LABELS, TICKET_CATEGORIES, type TicketCategoryValue, type TicketStatus, type Transition } from "@/lib/tickets/workflow";
+import { addComment, assignTicket, categorizeTicket, deleteTicket, moveTicket } from "../actions";
 import { AttachMenu } from "../attach-menu";
 import { ImagePicker, useImageAttachments } from "../image-picker";
 import { useVideoUpload, VideoPicker } from "../video-picker";
@@ -23,22 +26,22 @@ type Ref = { id: string; number: number };
 const FORWARD: readonly TicketStatus[] = ["IN_PROGRESS", "FIXED", "VERIFIED"];
 const isMain = (m: Transition) => !m.back && (FORWARD.includes(m.to) || (m.to === "CLOSED" && m.label === "Close"));
 
-/** The status buttons. Each opens a short dialog for the note. */
+/** Moves that send a ticket back or end it against the reporter's wish, so they read as a warning. */
+const RED: readonly TicketStatus[] = ["REOPENED", "REJECTED"];
+
+/** The status buttons, the main one last. Each opens a short dialog for the note. */
 export function StatusMoves({ ticket, status, moves }: { ticket: Ref; status: TicketStatus; moves: Transition[] }) {
   if (!moves.length) return null;
   const main = moves.find(isMain);
+  const ordered = main ? [...moves.filter((m) => m !== main), main] : moves;
   return (
     <div className="flex flex-wrap gap-2">
-      {moves.map((m) => (
+      {ordered.map((m) => (
         <FormDialog
           key={m.to}
           title={m.label}
           description={`${STATUS_LABELS[status]} → ${STATUS_LABELS[m.to]}`}
-          trigger={
-            <Button variant={m === main ? "default" : "outline"} size="sm">
-              {m.label}
-            </Button>
-          }
+          trigger={<Button variant={m === main ? "default" : RED.includes(m.to) ? "ghost-red" : "outline"}>{m.label}</Button>}
         >
           {(close) => <MoveForm ticket={ticket} move={m} onDone={close} />}
         </FormDialog>
@@ -119,6 +122,34 @@ export function AssignControl({
   return <AssignForm ticket={ticket} areas={areas} people={people} areaId={areaId} assigneeId={assigneeId} onDone={close} onCancel={assigneeId ? close : undefined} />;
 }
 
+/** The Category row for those allowed to change it (canCategorize). A choice saves straight away, with a line in the activity log. */
+export function CategoryControl({ ticket, category }: { ticket: Ref; category: TicketCategoryValue | null }) {
+  const [state, action, pending] = useActionState(categorizeTicket, initialFormState);
+  const options = TICKET_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABELS[c] }));
+  return (
+    <div className="grid justify-items-start gap-1.5">
+      <SelectField
+        key={category ?? "none"}
+        aria-label="Category"
+        size="sm"
+        className="w-full max-w-[12rem]"
+        disabled={pending}
+        defaultValue={category ?? ""}
+        options={category ? options : [{ value: "", label: NO_CATEGORY }, ...options]}
+        onValueChange={(next) => {
+          if (!next) return;
+          const fd = new FormData();
+          fd.set("id", ticket.id);
+          fd.set("number", String(ticket.number));
+          fd.set("category", next);
+          startTransition(() => action(fd));
+        }}
+      />
+      <FormMessage state={state} />
+    </div>
+  );
+}
+
 /** The developer picker, with an optional reason when reassigning. Also the board's Assign dialog. */
 export function AssignForm({
   ticket,
@@ -168,7 +199,10 @@ export function AssignForm({
   );
 }
 
-export function CommentForm({ ticket }: { ticket: Ref }) {
+/** `replyTo`: on the ticket page, the other person's name (or "" if there is none yet), for a visible label and the fuller buttons. */
+export function CommentForm({ ticket, replyTo }: { ticket: Ref; replyTo?: string }) {
+  const full = replyTo !== undefined;
+  const asking = replyTo ? `Write a reply to ${replyTo}` : "Write a reply";
   const images = useImageAttachments();
   const video = useVideoUpload();
   const touch = useTouchScreen();
@@ -206,7 +240,7 @@ export function CommentForm({ ticket }: { ticket: Ref }) {
     >
       <input type="hidden" name="id" value={ticket.id} />
       <input type="hidden" name="number" value={ticket.number} />
-      <label htmlFor="body" className="sr-only">Your message</label>
+      <label htmlFor="body" className={full ? "text-[0.9063rem] font-medium" : "sr-only"}>{full ? "Reply" : "Your message"}</label>
       <Textarea
         id="body"
         name="body"
@@ -223,15 +257,15 @@ export function CommentForm({ ticket }: { ticket: Ref }) {
           e.preventDefault();
           if (canSend) e.currentTarget.form?.requestSubmit();
         }}
-        placeholder={touch ? "Write a reply…" : "Write a reply… (Enter to send, Shift+Enter for a new line, Ctrl+V to paste a screenshot)"}
+        placeholder={touch ? `${asking}…` : `${asking}… (Enter to send, Shift+Enter for a new line, Ctrl+V to paste a screenshot)`}
       />
       <ImagePicker state={images} id="comment-images" compact />
       <VideoPicker state={video} id="comment-video" compact />
       <FormMessage state={state} />
-      <div className="flex items-center justify-between gap-2">
-        <AttachMenu images={images} video={video} imagesId="comment-images" videoId="comment-video" />
-        <Button type="submit" disabled={!canSend}>
-          <SendIcon /> {video.busy ? "Uploading video…" : images.busy ? "Uploading…" : images.failed || video.blocked ? "Finish the files above" : pending ? "Sending…" : "Send"}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <AttachMenu images={images} video={video} imagesId="comment-images" videoId="comment-video" long={full} />
+        <Button type="submit" disabled={!canSend} variant={full ? "soft" : "default"} size={full ? "sm" : "default"}>
+          <SendIcon /> {video.busy ? "Uploading video…" : images.busy ? "Uploading…" : images.failed || video.blocked ? "Finish the files above" : pending ? "Sending…" : full ? "Send reply" : "Send"}
         </Button>
       </div>
     </form>
@@ -242,8 +276,24 @@ export function CommentForm({ ticket }: { ticket: Ref }) {
  * Permanent delete, the way GitHub deletes a repository: a red danger box spelling out what goes, and the button
  * stays disabled until the exact ticket title is typed.
  */
-export function DeleteTicketDialog({ ticket, replies, files }: { ticket: { id: string; number: number; title: string }; replies: number; files: number }) {
-  const [open, setOpen] = useState(false);
+export function DeleteTicketDialog({
+  ticket,
+  replies,
+  files,
+  open: openProp,
+  onOpenChange,
+}: {
+  ticket: { id: string; number: number; title: string };
+  replies: number;
+  files: number;
+  /** Opened from the ⋯ More menu instead of its own button. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
+  const [openState, setOpenState] = useState(false);
+  const controlled = openProp !== undefined;
+  const open = openProp ?? openState;
+  const setOpen = (next: boolean) => (onOpenChange ? onOpenChange(next) : setOpenState(next));
   const [typed, setTyped] = useState("");
   const [state, action, pending] = useActionState(deleteTicket, initialFormState);
   const matches = typed.trim() === ticket.title;
@@ -257,13 +307,15 @@ export function DeleteTicketDialog({ ticket, replies, files }: { ticket: { id: s
         if (!next) setTyped("");
       }}
     >
-      <DialogTrigger
-        render={
-          <Button variant="outline" size="sm" className="border-bad-b text-bad hover:border-bad hover:bg-bad-t hover:text-bad">
-            <Trash2Icon /> Delete
-          </Button>
-        }
-      />
+      {controlled ? null : (
+        <DialogTrigger
+          render={
+            <Button variant="ghost-red" size="sm">
+              Delete
+            </Button>
+          }
+        />
+      )}
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-bad">
@@ -302,18 +354,80 @@ export function DeleteTicketDialog({ ticket, replies, files }: { ticket: { id: s
   );
 }
 
-export function EditTicketDialog({ ticket, areas, people }: { ticket: TicketValues; areas: AreaOption[]; people: AssigneeOption[] }) {
+export function EditTicketDialog({
+  ticket,
+  areas,
+  people,
+  open,
+  onOpenChange,
+}: {
+  ticket: TicketValues;
+  areas: AreaOption[];
+  people: AssigneeOption[];
+  /** Opened from the ⋯ More menu instead of its own button. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   return (
     <FormDialog
       wide
       title={`Edit #${ticket.number}`}
+      open={open}
+      onOpenChange={onOpenChange}
       trigger={
-        <Button variant="outline" size="sm">
-          <PencilIcon /> Edit
-        </Button>
+        open === undefined ? (
+          <Button variant="outline" size="sm">
+            Edit
+          </Button>
+        ) : undefined
       }
     >
       {(close) => <TicketForm areas={areas} people={people} canAssign={false} ticket={ticket} onDone={close} />}
     </FormDialog>
+  );
+}
+
+/**
+ * The ticket's ⋯ More menu: Edit and Delete, kept out of the way so the title row holds only the status moves. Each item
+ * opens its usual dialog; Delete still asks for the exact title.
+ */
+export function TicketMoreMenu({
+  edit,
+  del,
+}: {
+  edit: { ticket: TicketValues; areas: AreaOption[]; people: AssigneeOption[] } | null;
+  del: { ticket: { id: string; number: number; title: string }; replies: number; files: number } | null;
+}) {
+  const [dialog, setDialog] = useState<"edit" | "delete" | null>(null);
+  if (!edit && !del) return null;
+  const item = "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm outline-none data-highlighted:bg-row-hover [&_svg]:size-4";
+  return (
+    <>
+      <Menu.Root>
+        <Menu.Trigger
+          render={<Button type="button" variant="outline" size="icon" aria-label="More actions" title="More actions" className="data-popup-open:bg-acc-t2" />}
+        >
+          <EllipsisIcon aria-hidden />
+        </Menu.Trigger>
+        <Menu.Portal>
+          <Menu.Positioner side="bottom" align="end" sideOffset={6} className="isolate z-50">
+            <Menu.Popup className="w-48 origin-(--transform-origin) rounded-xl bg-popover p-1.5 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-150 ease-(--ease-out) data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
+              {edit ? (
+                <Menu.Item className={item} onClick={() => setDialog("edit")}>
+                  <PencilIcon aria-hidden /> Edit ticket
+                </Menu.Item>
+              ) : null}
+              {del ? (
+                <Menu.Item className={cn(item, "text-destructive-text data-highlighted:bg-bad-w")} onClick={() => setDialog("delete")}>
+                  <Trash2Icon aria-hidden /> Delete ticket
+                </Menu.Item>
+              ) : null}
+            </Menu.Popup>
+          </Menu.Positioner>
+        </Menu.Portal>
+      </Menu.Root>
+      {edit ? <EditTicketDialog {...edit} open={dialog === "edit"} onOpenChange={(o) => setDialog(o ? "edit" : null)} /> : null}
+      {del ? <DeleteTicketDialog {...del} open={dialog === "delete"} onOpenChange={(o) => setDialog(o ? "delete" : null)} /> : null}
+    </>
   );
 }

@@ -21,7 +21,7 @@ export function ViewSwitch({ view, hrefs }: { view: TicketView; hrefs: Record<Ti
     <div
       role="group"
       aria-label="Show tickets as"
-      className="flex shrink-0 gap-0.5 rounded-[0.625rem] border border-line bg-card p-0.5 max-md:h-11 max-md:rounded-full max-md:border-transparent max-md:p-1 max-md:shadow-[0_0.0625rem_0.125rem_rgba(20,22,40,0.06),0_0.125rem_0.5rem_rgba(20,22,40,0.04)]"
+      className="flex shrink-0 gap-0.5 rounded-[0.625rem] bg-surface3 p-[0.1875rem] max-md:h-11 max-md:bg-card max-md:rounded-full max-md:border-transparent max-md:p-1 max-md:shadow-[0_0.0625rem_0.125rem_rgba(20,22,40,0.06),0_0.125rem_0.5rem_rgba(20,22,40,0.04)]"
     >
       {VIEWS.map(({ value, label, icon: Icon }) => (
         <Link
@@ -31,8 +31,9 @@ export function ViewSwitch({ view, hrefs }: { view: TicketView; hrefs: Record<Ti
           aria-current={view === value ? "page" : undefined}
           title={`Show as a ${label.toLowerCase()}`}
           className={cn(
-            "flex h-8 items-center gap-1.5 rounded-lg px-3 text-[0.8438rem] font-medium outline-none transition-colors focus-visible:ring-3 focus-visible:ring-acc/30 max-md:size-9 max-md:justify-center max-md:rounded-full max-md:px-0",
-            view === value ? "bg-acc-t text-acc-ink" : "text-ink2 hover:bg-surface2 hover:text-foreground",
+            // Laptops: the design system's segmented control, the chosen one raised on a sunken track.
+            "flex h-[1.875rem] items-center gap-1.5 rounded-[0.4375rem] px-3 text-[0.8438rem] font-medium outline-none transition-[background-color,color,box-shadow] focus-visible:ring-3 focus-visible:ring-acc/30 max-md:size-9 max-md:justify-center max-md:rounded-full max-md:px-0",
+            view === value ? "bg-card text-foreground shadow-(--shadow-card) max-md:bg-acc-t max-md:text-acc-ink max-md:shadow-none" : "text-muted-foreground hover:text-foreground",
           )}
         >
           <Icon className="size-4" aria-hidden />

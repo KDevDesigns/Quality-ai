@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { BellRingIcon, ClockIcon, KeyRoundIcon, UserRoundIcon, Volume2Icon } from "lucide-react";
+import { KeyRoundIcon } from "lucide-react";
 import { AvatarUpload } from "@/components/avatar-upload";
-import { InlineAlert } from "@/components/inline-alert";
+import { InfoTip } from "@/components/info-tip";
 import { PageHeader } from "@/components/page-header";
 import { AccountSkeleton } from "@/components/skeletons";
 import { UserAvatar } from "@/components/user-avatar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ROLE_LABELS } from "@/lib/auth/permissions";
 import { getCurrentUser } from "@/lib/auth/session";
 import { db } from "@/lib/db";
@@ -18,6 +18,12 @@ import { DeviceNotificationsCard, ToneCard, WorkHoursCard } from "./notification
 import { PasswordForm } from "./password-form";
 
 export const metadata: Metadata = { title: "My account" };
+
+const WAVES = [
+  "M0 70Q400 20 800 70T1600 70T2400 70T3200 70V150H0Z",
+  "M0 96Q400 56 800 96T1600 96T2400 96T3200 96V150H0Z",
+  "M0 120Q400 92 800 120T1600 120T2400 120T3200 120V150H0Z",
+];
 
 export default function AccountPage() {
   return (
@@ -33,79 +39,89 @@ export default function AccountPage() {
   );
 }
 
-function ProfileName({ name, detail }: { name: string; detail: string }) {
-  return (
-    <div className="grid min-w-0 gap-1">
-      <CardTitle>{name}</CardTitle>
-      <CardDescription className="wrap-anywhere">{detail}</CardDescription>
-    </div>
-  );
-}
-
 async function AccountBody() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   const push = pushStore(db);
   const [workHours, tone, previews] = await Promise.all([push.workHours(user.id), push.tone(user.id), push.previews(user.id)]);
+  const role = ROLE_LABELS[user.role];
+
+  const nameBlock = (
+    <div className="grid min-w-0 gap-1.5 md:ml-3.5">
+      <h2 className="truncate text-[1.625rem] leading-tight font-semibold max-md:text-xl" title={user.name}>{user.name}</h2>
+      <p className="text-[0.9375rem] text-ink2 wrap-anywhere">
+        {role} · <span className="font-mono">{user.email}</span>
+      </p>
+    </div>
+  );
 
   return (
     <div className="grid gap-5">
       {user.mustChangePassword ? (
-        <InlineAlert tone="warn" role="status">
+        <div role="status" className="flex items-start gap-2.5 rounded-xl border border-pending-border bg-pending-bg px-4 py-3 text-sm text-pending-text">
+          <KeyRoundIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
           You signed in with a temporary password. Choose your own password to continue.
-        </InlineAlert>
+        </div>
       ) : null}
+
+      {/* The banner: your photo, name, role and email on a tinted band with QA Hub's waves, in your theme colour. */}
+      <section aria-label="Your profile" className="relative overflow-hidden rounded-2xl border border-acc-b bg-acc-t2 p-[1.875rem] shadow-(--shadow-card) max-md:p-5">
+        <svg aria-hidden viewBox="0 0 3200 150" preserveAspectRatio="none" className="pointer-events-none absolute inset-x-0 bottom-0 h-24 w-full text-acc">
+          {WAVES.map((d, i) => (
+            <path key={d} d={d} fill="currentColor" opacity={0.05 + i * 0.04} />
+          ))}
+        </svg>
+        <div className="relative">
+          {user.mustChangePassword ? (
+            // A photo can be added once they have their own password (uploads are closed during the forced change).
+            <div className="flex items-center gap-3.5">
+              <UserAvatar person={user} className="size-[8.25rem] text-[2.75rem] ring-4 ring-card max-md:size-20 max-md:text-2xl" />
+              {nameBlock}
+            </div>
+          ) : (
+            <AvatarUpload person={user} avatarClassName="size-[8.25rem] text-[2.75rem] ring-4 ring-card max-md:size-20 max-md:text-2xl">
+              {nameBlock}
+            </AvatarUpload>
+          )}
+        </div>
+      </section>
+
       <AccountTabs
-        initial={user.mustChangePassword ? "password" : "profile"}
+        initial="profile"
         tabs={[
           {
             id: "profile",
             label: "Profile",
-            hint: "Your name, email and role",
-            icon: <UserRoundIcon />,
             content: (
-              <Card>
-                <CardHeader>
-                  {user.mustChangePassword ? (
-                    <div className="flex items-center gap-3.5">
-                      <UserAvatar person={user} className="size-14 text-xl" />
-                      <ProfileName name={user.name} detail={`${user.email} · ${ROLE_LABELS[user.role]}`} />
-                    </div>
-                  ) : (
-                    <AvatarUpload person={user} avatarClassName="size-14 text-xl">
-                      <ProfileName name={user.name} detail={`${user.email} · ${ROLE_LABELS[user.role]}`} />
-                    </AvatarUpload>
-                  )}
-                </CardHeader>
-                <CardContent className="grid gap-1 text-sm text-muted-foreground">
-                  <p>{user.mustChangePassword ? "Choose your own password first, then you can add a photo." : "Click your picture to change your photo. Everyone in QA Hub sees it."}</p>
-                  <p>An admin can change your nickname, email or role under Admin → Users.</p>
-                </CardContent>
-              </Card>
-            ),
-          },
-          {
-            id: "password",
-            label: "Password",
-            hint: "Change your password",
-            icon: <KeyRoundIcon />,
-            content: (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Change password</CardTitle>
-                  <CardDescription>At least 10 characters. Changing it signs you out on your other devices.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <PasswordForm />
-                </CardContent>
+              <Card className="p-5">
+                <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-[9rem_minmax(0,1fr)]">
+                  <dt className="text-body2">Nickname</dt>
+                  <dd className="font-medium">{user.name}</dd>
+                  <dt className="text-body2">Email</dt>
+                  <dd className="font-mono wrap-anywhere">{user.email}</dd>
+                  <dt className="text-body2">Role</dt>
+                  <dd className="font-medium">{role}</dd>
+                </dl>
+                <p className="mt-3 text-[0.8125rem] text-muted-foreground">
+                  {user.mustChangePassword ? "Choose your own password first, then you can add a photo. " : "Click your photo above to change it. Everyone in QA Hub sees it. "}
+                  An admin can change your nickname, email or role under Admin → Users.
+                </p>
+                <hr className="my-5 border-line2" />
+                <section id="change-password" aria-labelledby="change-password-title" className="scroll-mt-28">
+                  <h3 id="change-password-title" className="flex items-center gap-1.5 text-lg font-semibold">
+                    Change password
+                    <InfoTip label="Change password" text="At least 10 characters. Changing it signs you out on your other devices." />
+                  </h3>
+                  <div className="mt-3">
+                    <PasswordForm />
+                  </div>
+                </section>
               </Card>
             ),
           },
           {
             id: "notifications",
             label: "Notifications",
-            hint: "Alerts on this device",
-            icon: <BellRingIcon />,
             content: (
               <div className="grid gap-5">
                 <DeviceNotificationsCard />
@@ -113,8 +129,8 @@ async function AccountBody() {
               </div>
             ),
           },
-          { id: "sound", label: "Sound", hint: "Tone and message previews", icon: <Volume2Icon />, content: <ToneCard initial={{ ...tone, previews }} /> },
-          { id: "hours", label: "Work hours", hint: "When notifications may ring", icon: <ClockIcon />, content: <WorkHoursCard initial={workHours} /> },
+          { id: "sound", label: "Sound", content: <ToneCard initial={{ ...tone, previews }} /> },
+          { id: "hours", label: "Work hours", content: <WorkHoursCard initial={workHours} /> },
         ]}
       />
     </div>

@@ -14,7 +14,7 @@ describe("signupInput", () => {
     expect(signupInput.safeParse({ ...base, role: "" }).success).toBe(false);
   });
 
-  it("asks for no password (the admin hands over a temporary one)", () => {
+  it("asks for no password (their browser gets a temporary one after approval)", () => {
     expect(Object.keys(signupInput.parse(base)).sort()).toEqual(["email", "name", "role"]);
   });
 

@@ -17,6 +17,8 @@ const MATRIX = {
   "tickets.assign": ["ADMIN", "QA"],
   "tickets.resolve": ["ADMIN", "DEV"],
   "tickets.verify": ["ADMIN", "QA"],
+  /** Correcting a ticket's category after filing: admins, and the assigned developer (canCategorize in lib/tickets/workflow.ts). */
+  "tickets.categorize": ["ADMIN", "DEV"],
   "areas.manage": ["ADMIN"],
   "users.manage": ["ADMIN"],
   "projects.manage": ["ADMIN"],

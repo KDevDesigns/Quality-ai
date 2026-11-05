@@ -4,9 +4,11 @@ import { AppSidebar, AppSidebarShell, type SidebarUser } from "@/components/app-
 import { AppTopbar, AppTopbarShell } from "@/components/app-topbar";
 import { BottomNav } from "@/components/bottom-nav";
 import { NotificationsProvider } from "@/components/notifications";
+import { NotificationsPanel, NotificationsPanelProvider } from "@/components/notifications-panel";
 import { PwaSetup } from "@/components/pwa-setup";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
+import { WaveFooter } from "@/components/wave-footer";
 import { getCurrentUser } from "@/lib/auth/session";
 
 import { PushPrompt } from "./push-prompt";
@@ -20,21 +22,24 @@ export default function MainLayout({ children }: LayoutProps<"/">) {
     <NotificationsProvider>
       <AppSplash />
       <PwaSetup />
-      <SidebarProvider style={{ "--sidebar-width": "17.5rem", "--sidebar-width-icon": "3.5625rem" } as React.CSSProperties}>
-        <Suspense fallback={<AppSidebarShell />}>
-          <SessionSidebar />
-        </Suspense>
-        <SidebarInset className="min-w-0">
-          <Suspense fallback={<AppTopbarShell />}>
-            <SessionTopbar />
+      <SidebarProvider style={{ "--sidebar-width": "17.5rem", "--sidebar-width-icon": "5.5rem" } as React.CSSProperties}>
+        {/* The notifications panel is the third column, beside the page; its state lives here so it stays open across pages. */}
+        <NotificationsPanelProvider>
+          <Suspense fallback={<AppSidebarShell />}>
+            <SessionSidebar />
           </Suspense>
-          <main data-main className="page-enter mx-auto w-full max-w-[82.5rem] flex-1 space-y-6 px-4 py-7 max-md:overflow-x-clip max-md:px-5 max-md:py-5 md:px-10">
-            {children}
-          </main>
-          <footer className="z-10 flex [@media(min-height:40rem)]:sticky [@media(min-height:40rem)]:bottom-0 h-[3.25rem] shrink-0 items-center justify-center border-t border-line2 bg-background px-4 text-center text-[0.8125rem] tracking-[0.02em] text-muted-foreground max-md:hidden">
-            Davao City Water District · QA Hub for the in-house ERP
-          </footer>
-        </SidebarInset>
+          <SidebarInset className="min-w-0">
+            <Suspense fallback={<AppTopbarShell />}>
+              <SessionTopbar />
+            </Suspense>
+            {/* A CSS container, so a page can respond to the room it has when the notifications panel takes some. */}
+            <main data-main className="page-enter @container/main relative z-1 w-full flex-1 space-y-6 max-md:overflow-x-clip max-md:px-5 max-md:py-5 md:px-8 md:pt-8 md:pb-18">
+              {children}
+            </main>
+            <WaveFooter />
+          </SidebarInset>
+          <NotificationsPanel />
+        </NotificationsPanelProvider>
       </SidebarProvider>
       {/* Phones: the tab bar. It reads the URL, so it's inside Suspense too. */}
       <Suspense fallback={null}>
@@ -53,7 +58,7 @@ export default function MainLayout({ children }: LayoutProps<"/">) {
 
 async function sessionUser(): Promise<SidebarUser | null> {
   const u = await getCurrentUser();
-  return u ? { id: u.id, name: u.name, role: u.role, avatarColor: u.avatarColor, avatarName: u.avatarName, mustChangePassword: u.mustChangePassword } : null;
+  return u ? { id: u.id, name: u.name, role: u.role, avatarColor: u.avatarColor, avatarName: u.avatarName } : null;
 }
 
 async function SessionSidebar() {

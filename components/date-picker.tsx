@@ -105,7 +105,7 @@ export function DatePicker({
                       "flex h-9 cursor-pointer items-center justify-center rounded-lg text-[0.8438rem] tabular-nums transition-[background-color,color,transform] duration-150 active:scale-95",
                       !d.inMonth && "text-muted-foreground/60",
                       chosen ? "bg-acc font-semibold text-primary-foreground shadow-[0_0.1875rem_0.625rem_color-mix(in_srgb,var(--acc)_35%,transparent)]" : "hover:bg-acc-t",
-                      !chosen && d.date === today && "font-semibold text-acc ring-1 ring-acc-b ring-inset",
+                      !chosen && d.date === today && "font-semibold text-primary-text ring-1 ring-acc-b ring-inset",
                       !chosen && d.date === focus && "bg-acc-t2 ring-2 ring-acc/40 ring-inset",
                     )}
                   >
@@ -115,7 +115,7 @@ export function DatePicker({
               })}
             </div>
             <div className="mt-2 flex justify-between border-t border-line2 pt-2">
-              <button type="button" onClick={() => pick(today)} className="cursor-pointer rounded-lg px-2.5 py-1.5 text-[0.8125rem] font-medium text-acc transition-colors hover:bg-acc-t2">
+              <button type="button" onClick={() => pick(today)} className="cursor-pointer rounded-lg px-2.5 py-1.5 text-[0.8125rem] font-medium text-primary-text transition-colors hover:bg-acc-t2">
                 Today
               </button>
               <button type="button" onClick={() => setOpen(false)} className="cursor-pointer rounded-lg px-2.5 py-1.5 text-[0.8125rem] text-muted-foreground transition-colors hover:bg-surface2 hover:text-foreground">

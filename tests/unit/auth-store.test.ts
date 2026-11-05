@@ -50,29 +50,112 @@ describe("authStore", () => {
     expect(await db.session.count()).toBe(0);
   });
 
-  it("keeps sign-ups pending with no usable password until an admin approves them with a temporary one", async () => {
+  it("keeps a sign-up pending, then gives its own browser a temporary password after approval", async () => {
     const store = authStore(db, now);
-    expect(await store.signUp({ name: "Ana", email: " Ana@X.ph ", role: "QA" })).toBe("created");
+    const { result, secret } = await store.signUp({ name: "Ana", email: " Ana@X.ph ", role: "QA" });
+    expect(result).toBe("created");
+    expect(secret).toBeTruthy();
     const u = await db.user.findUniqueOrThrow({ where: { email: "ana@x.ph" } });
     expect(u).toMatchObject({ pending: true, active: false, mustChangePassword: true, role: "QA" });
-    expect(await store.checkCredentials("ana@x.ph", "")).toBeNull();
+    expect(u.claimHash).not.toBe(secret); // only the hash is stored
 
-    expect(await store.approveSignUp(u.id, "temp-pass-123")).toBe(true);
-    expect(await store.approveSignUp(u.id, "another-pass")).toBe(false); // already handled; password unchanged
-    expect(await db.user.findUniqueOrThrow({ where: { id: u.id } })).toMatchObject({ pending: false, active: true });
-    expect(await store.checkCredentials("ana@x.ph", "temp-pass-123")).toMatchObject({ name: "Ana", mustChangePassword: true });
-    expect(await store.checkCredentials("ana@x.ph", "another-pass")).toBeNull();
+    // Waiting: the browser sees its request is waiting, but can't get a password yet.
+    expect(await store.claimStatus(secret!)).toMatchObject({ state: "waiting", name: "Ana" });
+    expect(await store.claimTempPassword(secret!, () => "temp-pass-1")).toBeNull();
+
+    // Approval makes no password: the browser gets it.
+    let made = 0;
+    expect(await store.approveSignUp(u.id, () => `temp-${++made}`)).toEqual({ tempPassword: null });
+    expect(made).toBe(0);
+    expect(await store.approveSignUp(u.id, () => "temp-again")).toBeNull(); // already handled
+    expect(await store.claimStatus(secret!)).toMatchObject({ state: "approved", waitSeconds: 0 });
+
+    expect(await store.claimTempPassword(secret!, () => "temp-pass-1")).toEqual({ tempPassword: "temp-pass-1", email: "ana@x.ph" });
+    expect(await store.checkCredentials("ana@x.ph", "temp-pass-1")).toMatchObject({ name: "Ana", mustChangePassword: true });
     expect(await store.rejectSignUp(u.id)).toBe(false); // approved accounts can't be "rejected" (deleted)
+  });
+
+  it("makes a new temporary password at most once a minute, and the newest one replaces the last", async () => {
+    const store = authStore(db, now);
+    const { secret } = await store.signUp({ name: "Ben", email: "ben@x.ph", role: "DEV" });
+    const u = await db.user.findUniqueOrThrow({ where: { email: "ben@x.ph" } });
+    await store.approveSignUp(u.id, () => "unused");
+
+    await store.claimTempPassword(secret!, () => "first-pass-1");
+    t += 30_000;
+    expect(await store.claimTempPassword(secret!, () => "second-pass")).toEqual({ waitSeconds: 30 });
+    expect(await store.checkCredentials("ben@x.ph", "first-pass-1")).not.toBeNull();
+    t += 30_000;
+    expect(await store.claimTempPassword(secret!, () => "second-pass")).toMatchObject({ tempPassword: "second-pass" });
+    expect(await store.checkCredentials("ben@x.ph", "first-pass-1")).toBeNull();
+    expect(await store.checkCredentials("ben@x.ph", "second-pass")).not.toBeNull();
+  });
+
+  it("refuses any other browser, and ends the claim once they choose their own password", async () => {
+    const store = authStore(db, now);
+    const { secret } = await store.signUp({ name: "Cy", email: "cy@x.ph", role: "QA" });
+    const u = await db.user.findUniqueOrThrow({ where: { email: "cy@x.ph" } });
+    await store.approveSignUp(u.id, () => "unused");
+
+    // Someone else signing up with the same email gets nothing, and can't get the password.
+    expect(await store.signUp({ name: "Imposter", email: "cy@x.ph", role: "DEV" })).toEqual({ result: "exists" });
+    expect(await store.signUp({ name: "Imposter", email: "cy@x.ph", role: "DEV" }, "a-guessed-secret")).toEqual({ result: "exists" });
+    expect(await store.claimTempPassword("a-guessed-secret", () => "stolen-pass")).toBeNull();
+    expect(await store.claimStatus("")).toBeNull();
+
+    // The same browser signing up again is fine, and may change the nickname (not the role, once approved).
+    expect(await store.signUp({ name: "Cyrus", email: "CY@x.ph", role: "DEV" }, secret)).toEqual({ result: "again", secret });
+    expect(await db.user.findUniqueOrThrow({ where: { id: u.id } })).toMatchObject({ name: "Cyrus", role: "QA" });
+
+    await store.claimTempPassword(secret!, () => "temp-pass-1");
+    await store.setPassword(u.id, "their-own-pass", false);
+    expect(await store.claimStatus(secret!)).toBeNull();
+    expect(await store.claimTempPassword(secret!, () => "again-pass")).toBeNull();
+    expect(await store.signUp({ name: "Cy", email: "cy@x.ph", role: "QA" }, secret)).toEqual({ result: "exists" });
+  });
+
+  it("ends the claim at sign-in, signs out earlier sessions on a new password, and keeps one request per browser", async () => {
+    const store = authStore(db, now);
+    const { secret } = await store.signUp({ name: "Dee", email: "dee@x.ph", role: "QA" });
+    const u = await db.user.findUniqueOrThrow({ where: { email: "dee@x.ph" } });
+
+    // A second email from the same browser is refused while the first request is open.
+    expect(await store.signUp({ name: "Dee", email: "other@x.ph", role: "QA" }, secret)).toEqual({ result: "busy", busyEmail: "dee@x.ph" });
+    expect(await db.user.count({ where: { email: "other@x.ph" } })).toBe(0);
+
+    await store.approveSignUp(u.id, () => "unused");
+    await store.claimTempPassword(secret!, () => "first-pass-1");
+    const { token } = await store.createSession(u.id);
+    t += 60_000;
+    await store.claimTempPassword(secret!, () => "second-pass");
+    expect(await store.resolveSession(token)).toBeNull(); // the earlier temporary password's session is gone
+
+    // Signing in ends the claim: nobody on that browser can make another one.
+    await store.endClaim(u.id);
+    expect(await store.claimStatus(secret!)).toBeNull();
+    t += 60_000;
+    expect(await store.claimTempPassword(secret!, () => "third-pass")).toBeNull();
+    expect(await store.checkCredentials("dee@x.ph", "second-pass")).not.toBeNull();
+  });
+
+  it("still gives the admin a temporary password for a request made before browsers remembered it", async () => {
+    const store = authStore(db, now);
+    // How older requests were stored: a random password nobody knows, and no claim.
+    const older = await db.user.create({ data: { name: "Old", email: "old@x.ph", role: "DEV", passwordHash: "scrypt$unknown", active: false, pending: true, mustChangePassword: true } });
+    expect(await store.approveSignUp(older.id, () => "temp-pass-123")).toEqual({ tempPassword: "temp-pass-123" });
+    expect(await store.checkCredentials("old@x.ph", "temp-pass-123")).toMatchObject({ name: "Old", mustChangePassword: true });
+    expect(await store.approveSignUp(older.id, () => "another-pass")).toBeNull(); // already handled; password unchanged
+    expect(await store.checkCredentials("old@x.ph", "another-pass")).toBeNull();
   });
 
   it("doesn't overwrite an existing account and deletes rejected sign-ups", async () => {
     const store = authStore(db, now);
     await store.createUser({ name: "Dev", email: "dev@x.ph", role: "DEV", password: "pw-1234567" });
-    expect(await store.signUp({ name: "Imposter", email: "dev@x.ph", role: "QA" })).toBe("exists");
+    expect((await store.signUp({ name: "Imposter", email: "dev@x.ph", role: "QA" })).result).toBe("exists");
     expect(await store.checkCredentials("dev@x.ph", "pw-1234567")).toMatchObject({ name: "Dev", role: "DEV" });
 
     await store.signUp({ name: "Spam", email: "spam@x.ph", role: "DEV" });
-    expect(await store.signUp({ name: "Spam again", email: "SPAM@x.ph", role: "DEV" })).toBe("pending");
+    expect((await store.signUp({ name: "Spam again", email: "SPAM@x.ph", role: "DEV" })).result).toBe("pending");
     const spam = await db.user.findUniqueOrThrow({ where: { email: "spam@x.ph" } });
     expect(await store.rejectSignUp(spam.id)).toBe(true);
     expect(await db.user.count({ where: { email: "spam@x.ph" } })).toBe(0);

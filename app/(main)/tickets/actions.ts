@@ -9,7 +9,7 @@ import { fromZodError, text, type FormState } from "@/lib/form";
 import { notifyTicket, type TicketTrigger } from "@/lib/push/send";
 import { webPushSender } from "@/lib/push/web-push";
 import { filingMark } from "@/lib/tickets/draft";
-import { commentInput, ticketCreate, ticketEdit, transitionInput } from "@/lib/schemas/ticket";
+import { categoryInput, commentInput, ticketCreate, ticketEdit, transitionInput } from "@/lib/schemas/ticket";
 import { notificationStore } from "@/lib/tickets/notifications";
 import { TicketError, ticketStore } from "@/lib/tickets/store";
 import { removeObjects } from "@/lib/uploads/storage";
@@ -64,11 +64,11 @@ const refresh = (number?: number) => {
 
 export async function createTicket(_prev: FormState, fd: FormData): Promise<FormState> {
   const me = await requireAction("tickets.create");
-  const parsed = ticketCreate.safeParse({ ...fields(fd), assigneeId: text(fd, "assigneeId") });
+  const parsed = ticketCreate.safeParse({ ...fields(fd), assigneeId: text(fd, "assigneeId"), category: text(fd, "category"), uploadIds: uploadIds(fd) });
   if (!parsed.success) return fromZodError(parsed.error);
 
   let created = { id: "", number: 0 };
-  const files = uploadIds(fd);
+  const files = parsed.data.uploadIds;
   const r = await run(async () => {
     created = await tickets.create(me, parsed.data, files);
   });
@@ -92,6 +92,16 @@ export async function editTicket(_prev: FormState, fd: FormData): Promise<FormSt
     push(id, me.id, { kind: "edited" });
     refresh(Number(text(fd, "number")));
   }
+  return r;
+}
+
+/** Details' Category select. The store checks that this person may change it. */
+export async function categorizeTicket(_prev: FormState, fd: FormData): Promise<FormState> {
+  const me = await requireAction("tickets.categorize");
+  const parsed = categoryInput.safeParse(text(fd, "category"));
+  if (!parsed.success) return { ok: false, message: "Choose a category." };
+  const r = await run(() => tickets.categorize(me, text(fd, "id"), parsed.data));
+  if (r.ok) refresh(Number(text(fd, "number")));
   return r;
 }
 

@@ -9,6 +9,28 @@ export function formatDateTime(d: Date): string {
   return dateTime.format(d);
 }
 
+const dateOnly = new Intl.DateTimeFormat("en-PH", { timeZone: TIME_ZONE, dateStyle: "medium" });
+
+/** "Oct 29, 2026" */
+export function formatDate(d: Date): string {
+  return dateOnly.format(d);
+}
+
+const longDate = new Intl.DateTimeFormat("en-PH", { timeZone: TIME_ZONE, weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+/** "Thursday, November 5, 2026" */
+export function formatLongDate(d: Date): string {
+  return longDate.format(d);
+}
+
+const manilaHour = new Intl.DateTimeFormat("en-GB", { timeZone: TIME_ZONE, hour: "numeric", hourCycle: "h23" });
+
+/** "Good morning" before noon, "Good afternoon" until 6 PM, then "Good evening", by Philippine time. */
+export function greeting(d: Date): string {
+  const h = Number(manilaHour.format(d));
+  return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+}
+
 /** "just now", "5 min ago", "3 h ago", "2 d ago", then the date. */
 export function timeAgo(d: Date, now = new Date()): string {
   const s = Math.max(0, Math.round((now.getTime() - d.getTime()) / 1000));

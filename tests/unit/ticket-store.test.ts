@@ -431,3 +431,155 @@ describe("ticketStore", () => {
     expect(await db.pendingUpload.count()).toBe(1);
   });
 });
+
+describe("ticket category", () => {
+  it("saves the category chosen when filing, and an older ticket can have none", async () => {
+    const s = ticketStore(db, now);
+    const tagged = await s.create(qa, input({ category: "FRONT_END" }));
+    const older = await s.create(qa, input());
+    expect((await db.ticket.findUniqueOrThrow({ where: { id: tagged.id } })).category).toBe("FRONT_END");
+    expect((await db.ticket.findUniqueOrThrow({ where: { id: older.id } })).category).toBeNull();
+  });
+
+  it("lets the assigned developer correct it, with a line in the log but nothing unread", async () => {
+    const s = ticketStore(db, now);
+    const { id } = await s.create(qa, input({ assigneeId: dev.id, category: "FRONT_END" }));
+    const before = (await db.ticket.findUniqueOrThrow({ where: { id } })).lastActivityAt;
+
+    await s.categorize(dev, id, "BACK_END");
+
+    const after = await db.ticket.findUniqueOrThrow({ where: { id } });
+    expect(after.category).toBe("BACK_END");
+    expect(after.lastActivityAt).toEqual(before);
+    expect(await db.ticketEvent.findFirstOrThrow({ where: { ticketId: id, field: "category" } })).toMatchObject({ kind: "FIELD", from: "Front-end", to: "Back-end", actorId: dev.id });
+  });
+
+  it("logs tagging an older ticket, and does nothing when the category is the same", async () => {
+    const s = ticketStore(db, now);
+    const { id } = await s.create(qa, input({ assigneeId: dev.id }));
+    await s.categorize(admin, id, "UI_UX");
+    await s.categorize(admin, id, "UI_UX");
+    const events = await db.ticketEvent.findMany({ where: { ticketId: id, field: "category" } });
+    expect(events.map((e) => [e.from, e.to])).toEqual([["Not tagged yet", "UI/UX"]]);
+  });
+
+  it("refuses a QA tester and a developer who isn't assigned", async () => {
+    const s = ticketStore(db, now);
+    const { id } = await s.create(qa, input({ assigneeId: dev.id }));
+    await expect(s.categorize(qa, id, "BACK_END")).rejects.toThrow("Only the assigned developer or an admin");
+    await expect(s.categorize(dev2, id, "BACK_END")).rejects.toThrow("no longer exists");
+    expect((await db.ticket.findUniqueOrThrow({ where: { id } })).category).toBeNull();
+  });
+
+  it("filters the list by category and by not tagged yet", async () => {
+    const s = ticketStore(db, now);
+    await s.create(qa, input({ title: "Front one", category: "FRONT_END" }));
+    await s.create(qa, input({ title: "Back one", category: "BACK_END" }));
+    await s.create(qa, input({ title: "Older one" }));
+    const titles = async (category: string) => (await s.list(filters({ category }), admin)).rows.map((r) => r.title);
+    expect(await titles("FRONT_END")).toEqual(["Front one"]);
+    expect(await titles("none")).toEqual(["Older one"]);
+  });
+});
+
+describe("view counts", () => {
+  it("counts each view tab within the person's scope, with the other filters applied", async () => {
+    const s = ticketStore(db, now);
+    const one = await s.create(qa, input({ title: "Payroll tax", type: "BUG", assigneeId: dev.id }));
+    await s.create(qa, input({ title: "Meter screen", type: "IMPROVEMENT", severity: null, assigneeId: dev.id }));
+    await s.create(admin, input({ title: "Export button", type: "BUG" }));
+    await s.transition(dev, one.id, { to: "NEED_INFO", note: "Which month?", duplicateOf: null });
+
+    const views = [
+      { group: "open" as const, status: null, assignee: null, reporter: null },
+      { group: "open" as const, status: "NEED_INFO" as const, assignee: null, reporter: null },
+      { group: "all" as const, status: null, assignee: null, reporter: "me" },
+    ];
+    expect(await s.viewCounts(filters(), admin, views)).toEqual([3, 1, 1]);
+    // QA sees only their own tickets; a type filter narrows every tab.
+    expect(await s.viewCounts(filters(), qa, views)).toEqual([2, 1, 2]);
+    expect(await s.viewCounts(filters({ type: "BUG" }), admin, views)).toEqual([2, 1, 1]);
+    // A view's own people replace the page's: here every view says "anyone", so a developer filter doesn't narrow them.
+    expect(await s.viewCounts(filters({ assignee: dev2.id }), admin, views)).toEqual([3, 1, 1]);
+    // When the page passes the developer filter along in each view, the counts follow it.
+    expect(await s.viewCounts(filters(), admin, views.map((v) => ({ ...v, assignee: dev2.id })))).toEqual([0, 0, 0]);
+  });
+});
+
+describe("not started filter", () => {
+  it("lists new and reopened tickets together", async () => {
+    const s = ticketStore(db, now);
+    const one = await s.create(qa, input({ title: "New one", assigneeId: dev.id }));
+    const two = await s.create(qa, input({ title: "Reopened one", assigneeId: dev.id }));
+    await s.create(qa, input({ title: "Working one", assigneeId: dev.id }));
+    await s.transition(dev, two.id, { to: "FIXED", note: null, duplicateOf: null });
+    await s.transition(qa, two.id, { to: "REOPENED", note: "Still off", duplicateOf: null });
+    await s.transition(dev, (await db.ticket.findFirstOrThrow({ where: { title: "Working one" } })).id, { to: "IN_PROGRESS", note: null, duplicateOf: null });
+    const titles = (await s.list(filters({ status: "TO_START" }), dev)).rows.map((r) => r.title).sort();
+    expect(titles).toEqual(["New one", "Reopened one"]);
+    expect(one.number).toBe(1);
+  });
+});
+
+describe("module progress", () => {
+  const move = (s: Store, who: Actor, id: string, to: Parameters<Store["transition"]>[2]["to"], note: string | null = null) => s.transition(who, id, { to, note, duplicateOf: null });
+  const card = async (s: Store, forUserId?: string) => (await s.moduleProgress(forUserId)).cards.find((c) => c.name === "Billing")!;
+
+  it("counts every ticket, rolls sub-modules up, and leaves out withdrawn ones", async () => {
+    const s = ticketStore(db, now);
+    const a = await s.create(qa, input({ areaId: billing, category: "FRONT_END", assigneeId: dev.id }));
+    await s.create(qa, input({ areaId: meterReading, category: "FRONT_END", assigneeId: dev2.id }));
+    const w = await s.create(qa, input({ areaId: billing, category: "BACK_END" }));
+    await s.create(qa, input({ areaId: billing }));
+
+    // A new ticket starts at 0 of 2.
+    expect((await card(s)).categories.FRONT_END).toEqual({ done: 0, total: 2, pct: 0 });
+    expect((await card(s)).untagged).toBe(1);
+
+    // Closed after Verified counts as done; Verified alone doesn't.
+    await move(s, dev, a.id, "FIXED");
+    await move(s, qa, a.id, "VERIFIED");
+    expect((await card(s)).categories.FRONT_END).toEqual({ done: 0, total: 2, pct: 0 });
+    await move(s, qa, a.id, "CLOSED");
+    expect((await card(s)).categories.FRONT_END).toEqual({ done: 1, total: 2, pct: 50 });
+    // The module's fair score: 1 closed of 3 tagged, with 5 needed for full credit.
+    expect((await card(s)).score).toEqual({ done: 1, total: 3, pct: 20 });
+
+    // Withdrawn leaves both numbers, and counts again once reopened.
+    await move(s, qa, w.id, "CLOSED", "Filed by mistake");
+    expect((await card(s)).categories.BACK_END).toEqual({ done: 0, total: 0, pct: 0 });
+    await move(s, qa, w.id, "REOPENED", "It was real");
+    expect((await card(s)).categories.BACK_END).toEqual({ done: 0, total: 1, pct: 0 });
+
+    // Reopening a closed one lowers it again.
+    await move(s, qa, a.id, "REOPENED", "Back again");
+    expect((await card(s)).categories.FRONT_END).toEqual({ done: 0, total: 2, pct: 0 });
+  });
+
+  it("follows a ticket moved to another module, and leaves out rejected ones", async () => {
+    const s = ticketStore(db, now);
+    const other = (await db.erpArea.create({ data: { name: "Payroll" } })).id;
+    const t1 = await s.create(qa, input({ areaId: billing, category: "UI_UX", assigneeId: dev.id }));
+    const t2 = await s.create(qa, input({ areaId: billing, category: "UI_UX", assigneeId: dev.id }));
+    await move(s, dev, t2.id, "REJECTED", "Works as designed");
+    expect((await card(s)).categories.UI_UX).toEqual({ done: 0, total: 1, pct: 0 });
+
+    await db.ticket.update({ where: { id: t1.id }, data: { areaId: other } });
+    const { cards, total } = await s.moduleProgress();
+    expect(total).toBe(2);
+    expect(cards.find((c) => c.name === "Billing")!.categories.UI_UX).toEqual({ done: 0, total: 0, pct: 0 });
+    expect(cards.find((c) => c.name === "Payroll")!.categories.UI_UX).toEqual({ done: 0, total: 1, pct: 0 });
+    // Payroll has tickets, so it comes before Billing, which has none.
+    expect(cards.map((c) => c.name)).toEqual(["Payroll", "Billing"]);
+  });
+
+  it("keeps a person's modules, including through a sub-module", async () => {
+    const s = ticketStore(db, now);
+    await db.erpArea.create({ data: { name: "Payroll" } });
+    await db.areaMember.create({ data: { userId: qa.id, areaId: meterReading } });
+    const mine = await s.moduleProgress(qa.id);
+    expect(mine.cards.map((c) => c.name)).toEqual(["Billing"]);
+    expect(mine.total).toBe(2);
+    expect((await s.moduleProgress(dev.id)).cards).toEqual([]);
+  });
+});

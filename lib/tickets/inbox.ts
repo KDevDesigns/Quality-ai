@@ -47,6 +47,11 @@ export function inboxStore(db: PrismaClient) {
   const notifications = notificationStore(db);
 
   return {
+    /** How many conversations the Unread view holds, for the number beside it. */
+    async unreadCount(actor: Actor): Promise<number> {
+      return (await notifications.allUnreadIds(actor)).length;
+    },
+
     async threads(actor: Actor, opts: { q?: string; unreadOnly?: boolean; take?: number } = {}): Promise<{ threads: InboxThread[]; more: boolean }> {
       const take = opts.take ?? INBOX_PAGE;
       const filters: Prisma.TicketWhereInput[] = [scopeWhere(actor)];

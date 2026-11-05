@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { ArrowLeftIcon, ArrowRightIcon, MessagesSquareIcon } from "lucide-react";
+import { ArrowLeftIcon, ArrowRightIcon, MessagesSquareIcon, SearchIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { InboxSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { areaPath } from "@/lib/areas/tree";
 import { requireAction } from "@/lib/auth/session";
 import { db } from "@/lib/db";
-import { timeAgo } from "@/lib/format";
+import { shortAgo, timeAgo } from "@/lib/format";
 import { INBOX_PAGE, inboxStore, type InboxThread } from "@/lib/tickets/inbox";
 import { ticketStore } from "@/lib/tickets/store";
 import type { SeverityValue } from "@/lib/tickets/workflow";
@@ -55,12 +55,13 @@ function hrefWith(p: Params, patch: Partial<Params>): string {
 
 export default function InboxPage({ searchParams }: PageProps<"/inbox">) {
   return (
-    <>
+    // Big screens (D21): the page fits the window; the conversation list and the messages scroll inside the card.
+    <div className="grid gap-6 desk:flex desk:h-[calc(100dvh-12.5rem)] desk:min-h-112 desk:flex-col">
       <PageHeader title="My inbox" description="The conversations on your tickets, newest first. Replies you send here go to the ticket." />
       <Suspense fallback={<InboxSkeleton />}>
         <Inbox searchParams={searchParams} />
       </Suspense>
-    </>
+    </div>
   );
 }
 
@@ -70,9 +71,10 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
   const me = await requireAction("tickets.view");
   const p = parse(sp);
 
-  const [{ threads, more }, t] = await Promise.all([
+  const [{ threads, more }, t, unreadCount] = await Promise.all([
     inbox.threads(me, { q: p.q, unreadOnly: p.unread, take: p.n }),
     p.t ? tickets.get(p.t, me) : null,
+    inbox.unreadCount(me),
   ]);
   // Someone else's ticket is a 404, as on the ticket page.
   if (p.t && !t) notFound();
@@ -80,31 +82,39 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
 
   return (
     <div
-      className="grid grid-cols-1 overflow-hidden rounded-xl border border-line bg-card lg:h-[calc(100dvh-16.25rem)] lg:min-h-[32.5rem] lg:grid-cols-[minmax(18.75rem,23.75rem)_minmax(0,1fr)]"
+      className="grid grid-cols-1 overflow-hidden rounded-[0.875rem] border border-line bg-card shadow-(--shadow-card) max-md:rounded-2xl max-md:border-transparent lg:h-[calc(100dvh-17.5rem)] lg:min-h-[32.5rem] lg:grid-cols-[minmax(18.75rem,23.75rem)_minmax(0,1fr)] desk:h-auto! desk:min-h-0 desk:flex-1"
     >
       {/* Conversations */}
       <section aria-label="Conversations" className={cn("min-h-0 flex-col border-line lg:flex lg:border-r", t ? "hidden" : "flex")}>
-        <div className="grid gap-2.5 border-b border-line2 p-3">
-          <form action="/inbox" className="flex gap-2">
+        <div className="grid gap-2.5 border-b border-line2 px-4 py-3.5">
+          {/* Enter searches; there's no button, as on the board. */}
+          <form action="/inbox" role="search" className="relative">
             {p.unread ? <input type="hidden" name="unread" value="1" /> : null}
-            <Input name="q" defaultValue={p.q} placeholder="Search title or #number" aria-label="Search conversations" className="h-9 text-sm" />
-            <Button type="submit" variant="outline" size="sm">Search</Button>
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+            <Input type="search" name="q" defaultValue={p.q} enterKeyHint="search" placeholder="Search title or #number" aria-label="Search conversations" className="h-10 pl-9 text-sm" />
           </form>
-          <nav aria-label="Conversation views" className="flex gap-1.5">
+          {/* All or Unread: the design system's segmented control, still as links. */}
+          <nav aria-label="Conversation views" className="grid grid-cols-2 gap-0.5 rounded-[0.625rem] bg-surface3 p-[0.1875rem]">
             {[
-              { label: "All", on: !p.unread, href: hrefWith(p, { unread: false, t: null }) },
-              { label: "Unread", on: p.unread, href: hrefWith(p, { unread: true, t: null }) },
+              { label: "All", on: !p.unread, href: hrefWith(p, { unread: false, t: null }), count: null },
+              { label: "Unread", on: p.unread, href: hrefWith(p, { unread: true, t: null }), count: unreadCount },
             ].map((v) => (
               <Link
                 key={v.label}
                 href={v.href}
                 aria-current={v.on ? "page" : undefined}
                 className={cn(
-                  "rounded-full border px-3.5 py-1.5 text-[0.8438rem] font-medium transition-colors",
-                  v.on ? "border-acc bg-acc text-primary-foreground" : "border-line bg-card text-ink2 hover:border-acc-b hover:text-foreground",
+                  "flex h-[1.875rem] items-center justify-center gap-1.5 rounded-[0.4375rem] text-[0.8438rem] font-medium outline-none transition-[background-color,color,box-shadow] focus-visible:ring-3 focus-visible:ring-acc/30",
+                  v.on ? "bg-card text-foreground shadow-(--shadow-card)" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {v.label}
+                {v.count !== null ? (
+                  <span className="font-mono text-[0.75rem] tabular-nums">
+                    {v.count > 99 ? "99+" : v.count}
+                    <span className="sr-only"> unread</span>
+                  </span>
+                ) : null}
               </Link>
             ))}
           </nav>
@@ -116,7 +126,7 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
             ))}
             {more ? (
               <li className="border-t border-line2 p-3 text-center">
-                <Link href={hrefWith(p, { n: p.n + INBOX_PAGE })} className="text-sm font-medium text-acc hover:underline">
+                <Link href={hrefWith(p, { n: p.n + INBOX_PAGE })} className="text-sm font-medium text-primary-text hover:underline">
                   Show more
                 </Link>
               </li>
@@ -134,43 +144,50 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
         <section aria-label={`Conversation on #${t.number}`} className="flex min-h-0 flex-col">
           <MarkRead ticketId={t.id} number={t.number} lastActivityAt={t.lastActivityAt.toISOString()} />
           <ScrollToLatest targetId="inbox-messages" endId="inbox-reply" version={t.lastActivityAt.toISOString()} />
-          <header className="grid grid-cols-1 gap-y-1.5 border-b border-line2 px-4 py-3">
-            <Link href={hrefWith(p, { t: null })} className="inline-flex items-center gap-1.5 text-[0.8438rem] text-muted-foreground hover:text-acc lg:hidden">
+          {/* As on the board: the ticket on one line, module and developer under it, then its status and Open ticket. */}
+          <header className="grid grid-cols-1 gap-y-1.5 border-b border-line2 px-5 py-3.5">
+            <Link href={hrefWith(p, { t: null })} className="inline-flex items-center gap-1.5 text-[0.8438rem] text-muted-foreground hover:text-primary-text lg:hidden">
               <ArrowLeftIcon className="size-3.5" aria-hidden /> My inbox
             </Link>
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 xl:flex-nowrap">
-              <h2 className="min-w-0 truncate text-[1.0625rem] font-semibold" title={t.title}>
-                <span className="mr-1.5 font-mono text-muted-foreground">#{t.number}</span>
-                {t.title}
-              </h2>
+              <div className="min-w-0">
+                <h2 className="truncate text-base font-semibold" title={t.title}>
+                  <span className="mr-1.5 font-mono font-medium text-muted-foreground">#{t.number}</span>
+                  {t.title}
+                </h2>
+                <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[0.8125rem] text-muted-foreground">
+                  <span>{t.area ? areaPath(t.area) : "Module not set"}</span>
+                  <span aria-hidden>·</span>
+                  <span>{t.assignee ? `Developer: ${t.assignee.name}` : "Not assigned"}</span>
+                  <span aria-hidden>·</span>
+                  <span>Filed by {t.reporter.name}</span>
+                  <span aria-hidden>·</span>
+                  <TicketTypeLabel type={t.type} className="border-transparent bg-transparent px-0" />
+                  <SeverityTag severity={t.severity as SeverityValue | null} priority={t.priority} />
+                </p>
+              </div>
               <div className="flex shrink-0 items-center gap-2">
                 <TicketStatusPill status={t.status} />
-                <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`/tickets/${t.number}`} />}>
+                <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`/tickets/${t.number}?tab=conversation`} />}>
                   Open ticket <ArrowRightIcon />
                 </Button>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[0.8125rem] text-muted-foreground">
-              <TicketTypeLabel type={t.type} />
-              <SeverityTag severity={t.severity as SeverityValue | null} />
-              <span>{t.area ? areaPath(t.area) : "Module not set"}</span>
-              <span>Filed by {t.reporter.name}</span>
-              <span>{t.assignee ? `Developer: ${t.assignee.name}` : "Not assigned"}</span>
-            </div>
           </header>
           <ImageGallery images={galleryImages(t)}>
-            <div id="inbox-messages" className="grid min-h-0 flex-1 grid-cols-1 content-start gap-3 overflow-y-auto p-4">
+            <div id="inbox-messages" className="grid min-h-0 flex-1 grid-cols-1 content-start gap-3.5 overflow-y-auto overscroll-contain bg-surface2 p-5">
+              {/* The ticket's own description and files come first, as the first message. */}
               {t.description || t.attachments.length ? <Message author={t.reporter} mine={t.reporter.id === me.id} at={t.createdAt} now={now} body={t.description} files={t.attachments} /> : null}
               <Thread t={t} meId={me.id} now={now} />
             </div>
           </ImageGallery>
-          <div id="inbox-reply" className="border-t border-line2 p-4">
+          <div id="inbox-reply" className="max-h-[60%] shrink-0 overflow-y-auto border-t border-line2 px-5 py-3.5">
             <CommentForm ticket={{ id: t.id, number: t.number }} />
           </div>
         </section>
       ) : (
         <div className="hidden flex-col items-center justify-center gap-2.5 p-10 text-center lg:flex">
-          <span className="flex size-12 items-center justify-center rounded-full bg-acc-t text-acc" aria-hidden>
+          <span className="flex size-12 items-center justify-center rounded-full bg-acc-t text-primary-text" aria-hidden>
             <MessagesSquareIcon className="size-6" />
           </span>
           <p className="text-[0.9375rem] font-semibold">Pick a conversation</p>
@@ -181,28 +198,32 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
   );
 }
 
+/** A conversation in the list, in three lines as on the board: number and age, the title, then the last thing said. */
 function ThreadRow({ x, href, active, now }: { x: InboxThread; href: string; active: boolean; now: Date }) {
   return (
     <li className="border-b border-line2 last:border-b-0">
       <Link
         href={href}
         aria-current={active ? "page" : undefined}
-        className={cn("grid grid-cols-1 gap-1 px-4 py-3 transition-colors hover:bg-surface2", active && "bg-acc-t2 hover:bg-acc-t2")}
+        className={cn("grid grid-cols-1 gap-0.5 px-4 py-3 transition-colors hover:bg-row-hover", active && "bg-acc-t2 hover:bg-acc-t2")}
       >
-        <span className="flex items-center gap-2">
+        <span className="flex items-center gap-2 text-[0.8125rem]">
+          <span className={cn("font-mono", x.unread ? "text-foreground" : "text-muted-foreground")}>#{x.number}</span>
           {x.unread ? <UnreadDot /> : null}
-          <span className={cn("min-w-0 flex-1 truncate text-[0.875rem]", x.unread ? "font-semibold" : "font-medium")}>
-            <span className={cn("mr-1.5 font-mono text-[0.8125rem]", x.unread ? "text-foreground" : "text-muted-foreground")}>#{x.number}</span>
-            {x.title}
-          </span>
-          <span className={cn("shrink-0 text-[0.7813rem]", x.unread ? "font-semibold text-foreground" : "text-muted-foreground")}>{timeAgo(x.lastActivityAt, now)}</span>
+          <span className="flex-1" />
+          <time dateTime={x.lastActivityAt.toISOString()} title={timeAgo(x.lastActivityAt, now)} className={cn("shrink-0 text-[0.7813rem]", x.unread ? "font-semibold text-foreground" : "text-muted-foreground")}>
+            {shortAgo(x.lastActivityAt, now)}
+          </time>
+        </span>
+        <span className={cn("truncate text-[0.9063rem]", x.unread ? "font-semibold" : "font-medium")} title={x.title}>
+          {x.title}
         </span>
         <span className="flex items-center gap-2">
-          <span className={cn("min-w-0 flex-1 truncate text-[0.8125rem]", x.unread ? "font-semibold text-foreground" : "text-muted-foreground")}>{x.preview}</span>
+          <span className={cn("min-w-0 flex-1 truncate text-[0.8438rem]", x.unread ? "text-foreground" : "text-muted-foreground")}>{x.preview}</span>
           {x.unreadMessages ? (
-            <span className="flex h-[1.125rem] min-w-[1.125rem] shrink-0 items-center justify-center rounded-full bg-bad px-1 text-[0.6875rem] leading-none font-semibold text-primary-foreground">
-              {x.unreadMessages > 99 ? "99+" : x.unreadMessages}
-              <span className="sr-only"> unread messages</span>
+            <span className="flex h-5 shrink-0 items-center rounded-full bg-bad-t px-[0.4375rem] text-[0.75rem] leading-none font-semibold text-destructive-text">
+              {x.unreadMessages > 99 ? "99+" : x.unreadMessages} new
+              <span className="sr-only"> {x.unreadMessages === 1 ? "message" : "messages"}</span>
             </span>
           ) : null}
         </span>

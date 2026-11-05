@@ -49,12 +49,13 @@ describe("ticket board", () => {
   });
 
   it("leaves the columns outside the chosen view empty, as the list does", () => {
-    const inView = (group: "open" | "done" | "all", status: TicketStatus | null = null) =>
+    const inView = (group: "open" | "done" | "all", status: TicketStatus | "TO_START" | null = null) =>
       BOARD_COLUMNS.filter((c) => columnInView(c.key, { group, status })).map((c) => c.key);
     expect(inView("open")).toEqual(["todo", "doing", "info", "fixed", "verified"]);
     expect(inView("done")).toEqual(["done"]);
     expect(inView("all")).toHaveLength(6);
     expect(inView("open", "NEED_INFO")).toEqual(["info"]);
     expect(inView("open", "REOPENED")).toEqual(["todo"]);
+    expect(inView("open", "TO_START")).toEqual(["todo"]);
   });
 });

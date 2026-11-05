@@ -120,9 +120,10 @@ export function AvatarUpload({ person, avatarClassName, className, children }: {
     </>
   );
   return (
-    <div className={cn("grid gap-2", className)}>
+    <div className={cn("grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2", className)}>
       {upload.input}
-      <div className="flex items-center gap-3.5">
+      {/* min-w-0, so a long name beside the photo shortens with "…" instead of widening the row. */}
+      <div className="flex min-w-0 items-center gap-3.5">
         {person.avatarName ? (
           <Menu.Root>
             <Menu.Trigger disabled={upload.busy} aria-label="Change or remove your profile photo" className={avatarButton}>
@@ -149,7 +150,7 @@ export function AvatarUpload({ person, avatarClassName, className, children }: {
         {children}
       </div>
       {upload.error ? (
-        <p role="alert" className="text-[0.8125rem] font-medium text-destructive">
+        <p role="alert" className="text-[0.8125rem] font-medium text-destructive-text">
           {upload.error}
         </p>
       ) : null}

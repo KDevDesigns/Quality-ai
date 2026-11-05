@@ -10,15 +10,22 @@ export function FormDialog({
   title,
   description,
   wide,
+  open: openProp,
+  onOpenChange,
   children,
 }: {
-  trigger: React.ReactElement;
+  /** The button that opens it. Leave out when something else opens it through `open` (a menu item). */
+  trigger?: React.ReactElement;
   title: string;
   description?: string;
   wide?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   children: (close: () => void) => React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (next: boolean) => (onOpenChange ? onOpenChange(next) : setOpenState(next));
   const guard = useCloseGuardRef();
   return (
     <Dialog
@@ -28,7 +35,7 @@ export function FormDialog({
         setOpen(next);
       }}
     >
-      <DialogTrigger render={trigger} />
+      {trigger ? <DialogTrigger render={trigger} /> : null}
       <DialogContent className={wide ? "sm:max-w-2xl" : "sm:max-w-lg"}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

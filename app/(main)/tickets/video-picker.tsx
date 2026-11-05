@@ -194,7 +194,7 @@ export function VideoPicker({ state, id = "video", compact }: { state: VideoUplo
         </div>
       ) : upload.status === "failed" ? (
         <div className="grid gap-2 text-[0.8125rem]">
-          <p role="alert" className="font-medium text-destructive">
+          <p role="alert" className="font-medium text-destructive-text">
             {upload.file.name}: {upload.message}
           </p>
           <div className="flex flex-wrap gap-2">
@@ -223,7 +223,7 @@ export function VideoPicker({ state, id = "video", compact }: { state: VideoUplo
         </div>
       ) : (
         <div className="flex items-center gap-3 text-[0.8125rem]">
-          <FilmIcon className="size-4 shrink-0 text-acc" aria-hidden />
+          <FilmIcon className="size-4 shrink-0 text-primary-text" aria-hidden />
           <span className="min-w-0 flex-1 truncate" title={upload.name}>
             {upload.name}
             <span className="text-muted-foreground">
@@ -244,7 +244,7 @@ export function VideoPicker({ state, id = "video", compact }: { state: VideoUplo
       )}
 
       {state.error ? (
-        <p role="alert" className="text-[0.7813rem] font-medium text-destructive">
+        <p role="alert" className="text-[0.7813rem] font-medium text-destructive-text">
           {state.error}
         </p>
       ) : null}

@@ -37,9 +37,18 @@ const PAGES: NavItem[] = [
 
 export function navGroups(role: Role | null): NavGroup[] {
   const tickets = can(role ? { role } : null, "dar.use") ? [...TICKETS_NAV, DAR_NAV] : TICKETS_NAV;
-  const groups: NavGroup[] = [{ key: "tickets", label: "Tickets", items: tickets }];
+  const groups: NavGroup[] = [{ key: "tickets", label: "Menu", items: tickets }];
   if (role === "ADMIN") groups.push({ key: "admin", label: "Admin", items: ADMIN_NAV });
   return groups;
+}
+
+/** What "Search menu" leaves in the sidebar: items whose name contains the words typed, in groups that still have any. */
+export function filterNavGroups(groups: NavGroup[], query: string): NavGroup[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return groups;
+  return groups
+    .map((g) => ({ ...g, items: g.items.filter((i) => i.label.toLowerCase().includes(q)) }))
+    .filter((g) => g.items.length > 0);
 }
 
 export function isActive(pathname: string, href: string) {
@@ -54,6 +63,19 @@ export function currentNav(pathname: string): { item: NavItem; group: NavGroupKe
     if (item) return { item, group };
   }
   return { item: TICKETS_NAV[0], group: "tickets" };
+}
+
+/** One step of the top bar's breadcrumb. With no `href` it is plain text. `mono`: a ticket number. */
+export type Crumb = { label: string; href?: string; mono?: boolean };
+
+/** The trail after the home icon. The last step is the current page. */
+export function breadcrumbs(pathname: string): Crumb[] {
+  const ticket = pathname.match(/^\/tickets\/(\d+)$/)?.[1];
+  if (ticket) return [{ label: "Tickets", href: "/tickets" }, { label: `#${ticket}`, mono: true }];
+  if (pathname === "/tickets/new") return [{ label: "Tickets", href: "/tickets" }, { label: "New ticket" }];
+  if (pathname === "/dar/setup") return [{ label: "My DAR", href: "/dar" }, { label: "Set-up" }];
+  const { item, group } = currentNav(pathname);
+  return group === "admin" ? [{ label: "Admin" }, { label: item.label }] : [{ label: item.label }];
 }
 
 // ── Phones (below md): a bottom tab bar instead of the sidebar ──

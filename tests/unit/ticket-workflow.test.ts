@@ -15,6 +15,8 @@ import {
   type Actor,
   type TicketRef,
   type TicketStatus,
+  foundInOptions,
+  canCategorize,
 } from "@/lib/tickets/workflow";
 
 const qa: Actor = { id: "qa1", role: "QA" };
@@ -151,5 +153,26 @@ describe("ticket type colours", () => {
   it("gives each type its own colour", () => {
     expect(TICKET_TYPES.map((t) => TYPE_TONES[t])).toEqual(["bug", "sug", "imp"]);
     expect(new Set(Object.values(TYPE_TONES)).size).toBe(TICKET_TYPES.length);
+  });
+});
+
+describe("foundInOptions", () => {
+  it("offers Dev, Staging and Production", () => {
+    expect(foundInOptions("")).toEqual(["Dev", "Staging", "Production"]);
+    expect(foundInOptions("Staging")).toEqual(["Dev", "Staging", "Production"]);
+  });
+
+  it("keeps what an older ticket says, so editing it doesn't lose that", () => {
+    expect(foundInOptions("build 2026.10.2")).toEqual(["Dev", "Staging", "Production", "build 2026.10.2"]);
+  });
+});
+
+describe("canCategorize", () => {
+  it("lets the assigned developer and admins change a category, and nobody else", () => {
+    const t = ticket("IN_PROGRESS", "dev1");
+    expect(canCategorize(t, dev)).toBe(true);
+    expect(canCategorize(t, admin)).toBe(true);
+    expect(canCategorize(t, otherDev)).toBe(false);
+    expect(canCategorize(t, qa)).toBe(false);
   });
 });

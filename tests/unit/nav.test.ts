@@ -1,5 +1,41 @@
 import { describe, expect, it } from "vitest";
-import { backTarget, isTabRoot, mobileTabFor, mobileTabs, mobileTitle } from "@/components/nav";
+import { backTarget, breadcrumbs, filterNavGroups, isTabRoot, mobileTabFor, mobileTabs, mobileTitle, navGroups } from "@/components/nav";
+
+describe("Search menu", () => {
+  const labels = (query: string) => filterNavGroups(navGroups("ADMIN"), query).flatMap((g) => g.items.map((i) => i.label));
+
+  it("keeps everything when nothing is typed", () => {
+    expect(filterNavGroups(navGroups("ADMIN"), "   ")).toEqual(navGroups("ADMIN"));
+  });
+
+  it("matches any part of a name, in either case", () => {
+    expect(labels("TICK")).toEqual(["Tickets"]);
+    expect(labels(" team ")).toEqual(["Team & modules"]);
+  });
+
+  it("drops a group with no match, and leaves nothing when no item matches", () => {
+    expect(filterNavGroups(navGroups("ADMIN"), "users").map((g) => g.key)).toEqual(["admin"]);
+    expect(filterNavGroups(navGroups("ADMIN"), "zzz")).toEqual([]);
+  });
+});
+
+describe("breadcrumbs", () => {
+  it("names a sidebar page", () => {
+    expect(breadcrumbs("/")).toEqual([{ label: "Dashboard" }]);
+    expect(breadcrumbs("/tickets")).toEqual([{ label: "Tickets" }]);
+    expect(breadcrumbs("/account")).toEqual([{ label: "My account" }]);
+  });
+
+  it("links back up from an inner page, with a ticket number in mono", () => {
+    expect(breadcrumbs("/tickets/1039")).toEqual([{ label: "Tickets", href: "/tickets" }, { label: "#1039", mono: true }]);
+    expect(breadcrumbs("/tickets/new")).toEqual([{ label: "Tickets", href: "/tickets" }, { label: "New ticket" }]);
+    expect(breadcrumbs("/dar/setup")).toEqual([{ label: "My DAR", href: "/dar" }, { label: "Set-up" }]);
+  });
+
+  it("shows Admin as plain text, since it has no page of its own", () => {
+    expect(breadcrumbs("/admin/users")).toEqual([{ label: "Admin" }, { label: "Users" }]);
+  });
+});
 
 describe("phone navigation", () => {
   it("gives every role the same five tabs, Inbox in the middle as the main one", () => {

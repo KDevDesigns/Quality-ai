@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ScrollbarActivity } from "@/components/scrollbar-activity";
 import { ThemeProvider } from "@/components/theme";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SPLASH_SCRIPT } from "@/lib/splash";
@@ -29,7 +30,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f1218" },
+    { media: "(prefers-color-scheme: dark)", color: "#0e0f12" },
   ],
 };
 
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeProvider>
           <TooltipProvider>{children}</TooltipProvider>
         </ThemeProvider>
+        <ScrollbarActivity />
       </body>
     </html>
   );

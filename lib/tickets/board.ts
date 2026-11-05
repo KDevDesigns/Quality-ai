@@ -4,7 +4,7 @@
 
 import type { Tone } from "@/components/status-pill";
 import type { TicketGroup } from "@/lib/schemas/ticket";
-import { DONE_STATUSES, OPEN_STATUSES, TICKET_STATUSES, type TicketStatus, type Transition } from "./workflow";
+import { DONE_STATUSES, OPEN_STATUSES, TICKET_STATUSES, TO_START, TO_START_STATUSES, type TicketStatus, type Transition } from "./workflow";
 
 export type BoardColumnKey = "todo" | "doing" | "info" | "fixed" | "verified" | "done";
 
@@ -32,8 +32,8 @@ export function boardColumnOf(status: TicketStatus): BoardColumnKey {
  * Whether the column can hold tickets in the chosen view, the same views as the list: Open leaves Done empty, Done
  * leaves everything else empty, Needs info only fills its column. Empty columns stay, so cards can still be dropped there.
  */
-export function columnInView(key: BoardColumnKey, view: { group: TicketGroup; status: TicketStatus | null }): boolean {
-  const shown: readonly TicketStatus[] = view.status ? [view.status] : view.group === "open" ? OPEN_STATUSES : view.group === "done" ? DONE_STATUSES : TICKET_STATUSES;
+export function columnInView(key: BoardColumnKey, view: { group: TicketGroup; status: TicketStatus | typeof TO_START | null }): boolean {
+  const shown: readonly TicketStatus[] = view.status === TO_START ? TO_START_STATUSES : view.status ? [view.status] : view.group === "open" ? OPEN_STATUSES : view.group === "done" ? DONE_STATUSES : TICKET_STATUSES;
   return boardColumn(key).statuses.some((s) => shown.includes(s));
 }
 

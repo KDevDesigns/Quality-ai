@@ -65,6 +65,7 @@ describe("permissions", () => {
     "projects.manage": ["ADMIN"],
     "workspace.manage": ["ADMIN"],
     "dar.use": ["QA", "DEV", "ADMIN"],
+    "tickets.categorize": ["ADMIN", "DEV"],
     "designs.create": [],
     "designs.viewAll": ["ADMIN"],
   };

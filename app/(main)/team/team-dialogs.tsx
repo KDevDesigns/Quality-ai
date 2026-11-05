@@ -21,14 +21,25 @@ export type AreaValues = {
 };
 export type PersonOption = { id: string; name: string; role: Role };
 
-/** New module, new sub-module (when `parentId` is given) or edit (when `area` is given). */
-export function AreaDialog({ modules, area, parentId }: { modules: { id: string; name: string }[]; area?: AreaValues; parentId?: string }) {
+/**
+ * New module, new sub-module (when `parentId` is given) or edit (when `area` is given). `labelled`: a small text button
+ * ("Add sub-module", "Edit module") for the module's header, instead of the icon used on table rows.
+ */
+export function AreaDialog({ modules, area, parentId, labelled }: { modules: { id: string; name: string }[]; area?: AreaValues; parentId?: string; labelled?: boolean }) {
   const parentName = parentId ? modules.find((m) => m.id === parentId)?.name : undefined;
   return (
     <FormDialog
       title={area ? `Edit ${area.parentId ? "sub-module" : "module"}` : parentId ? `New sub-module in ${parentName}` : "New module"}
       trigger={
-        area ? (
+        labelled && area ? (
+          <Button variant="outline" size="sm">
+            <PencilIcon /> Edit module
+          </Button>
+        ) : labelled && parentId ? (
+          <Button variant="outline" size="sm">
+            <FolderPlusIcon /> Add sub-module
+          </Button>
+        ) : area ? (
           <Button variant="ghost" size="icon-sm" aria-label={`Edit ${area.name}`}>
             <PencilIcon />
           </Button>
@@ -38,7 +49,7 @@ export function AreaDialog({ modules, area, parentId }: { modules: { id: string;
           </Button>
         ) : (
           <Button>
-            <PlusIcon /> New module
+            <PlusIcon /> Add module
           </Button>
         )
       }

@@ -188,7 +188,7 @@ export function ImageGallery({ images, children }: { images: GalleryImage[]; chi
                   </Button>
                 </div>
                 <span className="text-[0.75rem] text-muted-foreground max-md:hidden">+ − zoom · 0 reset · Ctrl + wheel · drag to move</span>
-                <a href={`/files/${current.id}`} target="_blank" rel="noopener" className="text-[0.8125rem] text-muted-foreground hover:text-acc">
+                <a href={`/files/${current.id}`} target="_blank" rel="noopener" className="text-[0.8125rem] text-muted-foreground hover:text-primary-text">
                   Open full size
                 </a>
               </div>
@@ -204,18 +204,18 @@ export function ImageGallery({ images, children }: { images: GalleryImage[]; chi
 }
 
 /** A thumbnail that opens the ticket's gallery at this image. Its caption ("name · size") is its name for screen readers. */
-export function ImageThumb({ file }: { file: GalleryImage }) {
+export function ImageThumb({ file, className }: { file: GalleryImage; className?: string }) {
   const show = useContext(GalleryContext);
   return (
     <button
       type="button"
       aria-haspopup="dialog"
       onClick={() => show(file.id)}
-      className="group block w-44 cursor-pointer overflow-hidden rounded-lg border border-line bg-surface2 text-left hover:border-acc-b focus-visible:ring-3 focus-visible:ring-acc/30 focus-visible:outline-none"
+      className={cn("group block w-44 cursor-pointer overflow-hidden rounded-lg border border-line bg-surface2 text-left hover:border-acc-b focus-visible:ring-3 focus-visible:ring-acc/30 focus-visible:outline-none", className)}
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- served by the auth-checked /files route, not next/image */}
       <img src={`/files/${file.id}`} alt="" loading="lazy" className="h-28 w-full object-cover" />
-      <span className="block truncate px-2 py-1 text-[0.7188rem] text-muted-foreground group-hover:text-acc" title={file.originalName}>
+      <span className="block truncate px-2 py-1 text-[0.7188rem] text-muted-foreground group-hover:text-primary-text" title={file.originalName}>
         {file.originalName} · {formatBytes(file.size)}
       </span>
     </button>

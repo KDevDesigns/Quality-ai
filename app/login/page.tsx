@@ -5,7 +5,9 @@ import { Suspense } from "react";
 import { BugIcon, MessagesSquareIcon, PenToolIcon } from "lucide-react";
 import { LoadingBlock } from "@/components/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
+import { signupStatus } from "./actions";
 import { AuthTabs } from "./auth-tabs";
+import { ClaimCard } from "./claim-card";
 import { ForgotForm } from "./forgot-form";
 import { LoginForm } from "./login-form";
 import { SignupForm } from "./signup-form";
@@ -30,7 +32,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
     // The page itself never scrolls; only the form column does. A page scrollbar (it appears on the taller Sign up
     // form) would narrow the window, resize the brand pane and make its text jump when switching tabs.
-    <div className="flex h-dvh overflow-hidden bg-background">
+    <div className="auth-page flex h-dvh overflow-hidden bg-background text-foreground">
       <BrandPane />
       <div className="flex h-dvh min-w-0 flex-1 flex-col">
         <div className="flex min-h-0 flex-1 overflow-y-auto px-4 pt-12 pb-8">
@@ -43,7 +45,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
         </div>
         <footer className="flex min-h-[4.25rem] shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-1 border-t border-line2 px-6 py-3 text-[0.8125rem] text-muted-foreground md:px-16">
           <span>Need help? Ask a QA Hub admin.</span>
-          <span>Office network only · Davao City Water District</span>
+          <span>Davao City Water District</span>
         </footer>
       </div>
     </div>
@@ -54,10 +56,18 @@ async function LoginBody({ searchParams }: { searchParams: PageProps<"/login">["
   if (await getCurrentUser()) redirect("/");
   const { next, mode } = await searchParams;
   const signup = mode === "signup";
+  // A sign-up request this browser made: shown above the sign-in form (waiting, or approved with its temporary password).
+  const request = await signupStatus();
   return (
     <>
       <AuthTabs active={signup ? "signup" : "signin"} />
-      {signup ? <SignupForm /> : mode === "forgot" ? <ForgotForm /> : <LoginForm next={typeof next === "string" ? next : "/"} />}
+      {signup ? (
+        <SignupForm />
+      ) : mode === "forgot" ? (
+        <ForgotForm />
+      ) : (
+        <LoginForm next={typeof next === "string" ? next : "/"}>{request ? <ClaimCard status={request} /> : null}</LoginForm>
+      )}
     </>
   );
 }

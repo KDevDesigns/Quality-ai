@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { SIGNUP_COOKIE } from "@/lib/auth/signup-cookie";
 import { redirect } from "next/navigation";
 import { auth, currentToken, getCurrentUser, requireUser } from "@/lib/auth/session";
 import { db } from "@/lib/db";
@@ -31,6 +32,8 @@ export async function changePassword(_prev: FormState, fd: FormData): Promise<Fo
 
   await auth.setPassword(user.id, parsed.data.next, false);
   await auth.deleteUserSessions(user.id, await currentToken());
+  // Their own password ends the sign-up request (setPassword clears it), so this browser forgets it too.
+  (await cookies()).delete(SIGNUP_COOKIE);
   redirect("/");
 }
 

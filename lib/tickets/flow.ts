@@ -90,3 +90,23 @@ export function ticketFlow(t: FlowInput): Flow {
 
   return { steps, next };
 }
+
+/** The Next step box on a ticket: a short title and a sentence, written for the person reading it. */
+export function nextStep(t: FlowInput, viewer: { isReporter: boolean; isAssignee: boolean }): { title: string; text: string } {
+  const { next } = ticketFlow(t);
+  if (!next) return { title: "Finished", text: "Nobody needs to do anything unless it's reopened." };
+
+  const dev = t.assignee?.name ?? "The developer";
+  const mine = next.side === "qa" ? viewer.isReporter : viewer.isAssignee;
+  if (t.status === "VERIFIED") return { title: "Verified, ready to close", text: "The retest passed. This ticket can now be closed." };
+  if (t.status === "FIXED" && mine) return { title: "Your move: retest this fix", text: `${dev} marked this as fixed. Check it in the ERP, then verify it or reopen it.` };
+  if (t.status === "REOPENED" && t.assignee && !mine) {
+    return { title: `${dev}’s move`, text: viewer.isReporter ? "You reopened this ticket. It returns to the developer." : "This ticket was reopened. It returns to the developer." };
+  }
+  if (mine) return { title: "Your move", text: `${next.action[0].toUpperCase()}${next.action.slice(1)}.` };
+  const who = next.who ?? "the developer";
+  return {
+    title: next.who ? `${next.who}’s move` : "The developer’s move",
+    text: `Waiting on ${who} (${next.side === "qa" ? "QA" : "developer"}) to ${next.action}.`,
+  };
+}

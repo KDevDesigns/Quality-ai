@@ -28,7 +28,7 @@ describe("pushMessage", () => {
     expect(pushMessage(reply("Can you check the total again?"), t)).toEqual({
       title: "#12 · Bill shows the wrong total",
       body: "Ana: Can you check the total again?\nModule: Billing",
-      url: "/tickets/12",
+      url: "/tickets/12?tab=conversation",
       tag: "ticket-12",
       stack: { line: "Ana: Can you check the total again?", detail: "Module: Billing" },
     });
@@ -86,12 +86,12 @@ describe("inWorkHours and delivery", () => {
     expect(delivery(always, manila("2026-11-01T23:00:00"))).toBe("sound");
   });
 
-  it("outside work hours goes silent or stays off, as each person chose", () => {
+  it("outside work hours stays off when asked, and an old Silent choice counts as off (D7)", () => {
     const night = manila("2026-11-02T22:00:00"); // Monday 22:00
     const sunday = manila("2026-11-01T10:00:00");
-    expect(delivery(quiet, night)).toBe("silent");
-    expect(delivery(quiet, sunday)).toBe("silent");
     expect(delivery(office, night)).toBeNull();
+    expect(delivery(quiet, night)).toBeNull();
+    expect(delivery(quiet, sunday)).toBeNull();
     expect(delivery(quiet, manila("2026-11-02T10:00:00"))).toBe("sound");
   });
 
@@ -124,9 +124,9 @@ describe("pickRecipients", () => {
     expect(got.map((r) => r.id)).toEqual(["admin"]);
   });
 
-  it("marks who gets it silently", () => {
+  it("leaves out someone off work who chose no notifications, or still holds the old Silent choice", () => {
     const got = pickRecipients(ticket, "qa", [c("dev", "DEV", quiet), c("admin", "ADMIN")], manila("2026-11-02T20:00:00"));
-    expect(got.map((r) => [r.id, r.delivery])).toEqual([["dev", "silent"], ["admin", "sound"]]);
+    expect(got.map((r) => [r.id, r.delivery])).toEqual([["admin", "sound"]]);
   });
 });
 
@@ -163,6 +163,8 @@ describe("push schemas", () => {
     expect(workHoursInput.safeParse({ offHoursPush: "NONE", workStartMin: "08:00", workEndMin: "08:00", days: [1] }).success).toBe(false);
     expect(workHoursInput.safeParse({ offHoursPush: "NONE", workStartMin: "08:00", workEndMin: "17:00", days: [] }).success).toBe(false);
     expect(workHoursInput.safeParse({ offHoursPush: "NONE", workStartMin: "25:00", workEndMin: "17:00", days: [1] }).success).toBe(false);
+    // "Notify me silently" is no longer a choice (D7).
+    expect(workHoursInput.safeParse({ offHoursPush: "SILENT", workStartMin: "07:30", workEndMin: "17:00", days: [1] }).success).toBe(false);
   });
 });
 
@@ -298,18 +300,19 @@ describe("pushStore and notifyTicket", () => {
     expect(JSON.parse(toDev!.payload).count).toBeUndefined();
   });
 
-  it("outside work hours sends silently or not at all, as each person chose", async () => {
+  it("outside work hours sends with sound or not at all, as each person chose; an old Silent counts as not at all", async () => {
     const s = pushStore(db);
     await s.subscribe(dev.id, sub("dev"), "x");
     await s.subscribe(admin.id, sub("admin"), "x");
-    await s.setWorkHours(dev.id, { offHoursPush: "SILENT", workStartMin: 420, workEndMin: 1080, workDays: 62 });
-    await s.setWorkHours(admin.id, { offHoursPush: "NONE", workStartMin: 420, workEndMin: 1080, workDays: 62 });
+    // An account that still holds the old "Notify me silently" (before the D7 migration moved it).
+    await db.user.update({ where: { id: dev.id }, data: { offHoursPush: "SILENT", workStartMin: 420, workEndMin: 1080, workDays: 62 } });
+    await s.setWorkHours(admin.id, { offHoursPush: "SOUND", workStartMin: 420, workEndMin: 1080, workDays: 62 });
     const { id } = await newTicket();
 
     const f = fakeSender();
     await notifyTicket(db, f.send, { ticketId: id, actorId: qa.id, event: { kind: "status", to: "CLOSED" } }, { now: manila("2026-11-02T22:00:00") });
 
-    expect(f.sent.map((x) => [x.endpoint.split("/").pop(), JSON.parse(x.payload).tone])).toEqual([["dev", "silent"]]);
+    expect(f.sent.map((x) => x.endpoint.split("/").pop())).toEqual(["admin"]);
   });
 
   it("notifies everyone who can see the ticket except the actor", async () => {

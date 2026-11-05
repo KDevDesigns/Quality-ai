@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { initialFormState } from "@/lib/form";
 import { login } from "./actions";
 
-export function LoginForm({ next }: { next: string }) {
+export function LoginForm({ next, children }: { next: string; children?: React.ReactNode }) {
   const [state, action, pending] = useActionState(login, initialFormState);
   const err = state.fieldErrors ?? {};
 
@@ -22,6 +22,8 @@ export function LoginForm({ next }: { next: string }) {
         <h2 className="text-[2rem] leading-tight font-semibold tracking-[-0.02em]">Sign in</h2>
         <p className="mt-2.5 text-base leading-normal text-muted-foreground">Welcome back. Sign in to file tickets and follow up with the team.</p>
       </div>
+      {/* This browser's sign-up request, when it made one: waiting, or approved with its temporary password. */}
+      {children}
       <input type="hidden" name="next" value={next} />
       <Field label="Email" htmlFor="email" error={err.email}>
         <IconField icon={MailIcon}>

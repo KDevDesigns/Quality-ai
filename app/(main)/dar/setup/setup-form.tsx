@@ -58,7 +58,7 @@ export function DarSetupForm({ header: h, hasFullName, firstPeriodStart, today }
       <FormSection>Duties and MFOs</FormSection>
       <FunctionsEditor name="coreFunctions" label="A.) Core functions" initial={h.core} />
       <FunctionsEditor name="supportFunctions" label="B.) Support functions" initial={h.support} />
-      {err.coreFunctions || err.supportFunctions ? <p className="text-[0.7813rem] font-medium text-destructive">Every row needs a duty.</p> : null}
+      {err.coreFunctions || err.supportFunctions ? <p className="text-[0.7813rem] font-medium text-destructive-text">Every row needs a duty.</p> : null}
 
       <FormMessage state={state} />
       <div className="flex items-center justify-end gap-3">

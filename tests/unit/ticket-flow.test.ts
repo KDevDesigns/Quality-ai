@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ticketFlow, type FlowInput } from "@/lib/tickets/flow";
+import { nextStep, ticketFlow, type FlowInput } from "@/lib/tickets/flow";
 import type { TicketStatus } from "@/lib/tickets/workflow";
 
 const at = (min: number) => new Date(Date.UTC(2026, 9, 29, 1, min));
@@ -16,6 +16,39 @@ const base = (status: TicketStatus, events: FlowInput["events"] = [], over: Part
 });
 
 const shape = (input: FlowInput) => ticketFlow(input).steps.map((s) => `${s.label}:${s.state}`);
+
+describe("nextStep", () => {
+  const qa = { isReporter: true, isAssignee: false };
+  const dev = { isReporter: false, isAssignee: true };
+  const other = { isReporter: false, isAssignee: false };
+
+  it("uses the board's wording for a fix to retest", () => {
+    expect(nextStep(base("FIXED"), qa)).toEqual({ title: "Your move: retest this fix", text: "Ben marked this as fixed. Check it in the ERP, then verify it or reopen it." });
+    expect(nextStep(base("FIXED"), dev)).toEqual({ title: "Ana’s move", text: "Waiting on Ana (QA) to retest the fix." });
+  });
+
+  it("says a verified ticket can be closed, to everyone", () => {
+    for (const viewer of [qa, dev, other]) expect(nextStep(base("VERIFIED"), viewer).title).toBe("Verified, ready to close");
+  });
+
+  it("says who reopened it only to the person who could have", () => {
+    expect(nextStep(base("REOPENED"), qa)).toEqual({ title: "Ben’s move", text: "You reopened this ticket. It returns to the developer." });
+    expect(nextStep(base("REOPENED"), other).text).toBe("This ticket was reopened. It returns to the developer.");
+    expect(nextStep(base("REOPENED"), dev)).toEqual({ title: "Your move", text: "Start work." });
+  });
+
+  it("covers the other open statuses, for whoever is reading", () => {
+    expect(nextStep(base("NEW"), dev)).toEqual({ title: "Your move", text: "Start work." });
+    expect(nextStep(base("NEW", [], { assignee: null }), qa)).toEqual({ title: "Your move", text: "Pick a developer." });
+    expect(nextStep(base("IN_PROGRESS"), qa)).toEqual({ title: "Ben’s move", text: "Waiting on Ben (developer) to fix it and mark it fixed." });
+    expect(nextStep(base("IN_PROGRESS", [], { assignee: null }), qa)).toEqual({ title: "The developer’s move", text: "Waiting on the developer (developer) to fix it and mark it fixed." });
+    expect(nextStep(base("NEED_INFO"), qa)).toEqual({ title: "Your move", text: "Answer the developer's question." });
+  });
+
+  it("is finished once the ticket has ended", () => {
+    for (const s of ["CLOSED", "REJECTED", "DUPLICATE", "WONT_FIX"] as const) expect(nextStep(base(s), qa).title).toBe("Finished");
+  });
+});
 
 describe("ticketFlow", () => {
   it("starts on Filed, waiting for the developer", () => {

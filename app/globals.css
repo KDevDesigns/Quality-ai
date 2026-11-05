@@ -4,9 +4,25 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* How visible a scrollbar is, 0 to 1, animated for its dissolve ("Scrollbars" in the base layer). Inherited so the
+   scrollbar's own pseudo-elements follow their element. */
+@property --scroll-fade {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
 /* A phone held sideways, when height is scarce (the markup editor puts its tools beside the screenshot). */
 @custom-variant short {
   @media (max-height: 30rem) {
+    @slot;
+  }
+}
+
+/* A big laptop or PC screen (1920×1080 up to 2560×1440), where ticket pages fit the window: the page doesn't scroll,
+   only the cards inside it (HANDOFF D21). Smaller laptops, tablets and phones scroll as a normal page. */
+@custom-variant desk {
+  @media (min-width: 1600px) and (min-height: 760px) {
     @slot;
   }
 }
@@ -56,6 +72,28 @@
   /* Phones: the grey page behind rounded white cards, like a phone's own Settings app. */
   --color-grouped: var(--grouped);
   --color-ink2: var(--tx2);
+  --color-body2: var(--body-2);
+  --color-muted2: var(--muted-2);
+  --color-navy: var(--navy);
+  --color-row-hover: var(--row-hover);
+  --color-table-head: var(--table-head);
+  --color-primary-text: var(--primary-text);
+  --color-primary-hover: var(--primary-hover);
+  --color-on-tone: var(--on-tone);
+  --color-disabled-bg: var(--disabled-bg);
+  --color-disabled-text: var(--disabled-text);
+  --color-pending-bg: var(--pending-bg);
+  --color-pending-text: var(--pending-text);
+  --color-pending-border: var(--pending-border);
+  --color-ok-step: var(--ok-step);
+  /* The markup canvas behind a screenshot, Base DCWD's --sample-black. The same in both themes, like the marks. */
+  --color-sample-black: #111111;
+  --color-level-1: var(--level-1);
+  --color-level-2: var(--level-2);
+  --color-level-3: var(--level-3);
+  --color-level-4: var(--level-4);
+  --color-bad-w: var(--bad-w);
+  --color-destructive-text: var(--destructive-text);
   --color-acc: var(--acc);
   --color-acc-t: var(--acc-t);
   --color-acc-t2: var(--acc-t2);
@@ -105,48 +143,79 @@
   --sidebar-dur: 520ms;
   --sidebar-ease: cubic-bezier(0.34, 1.3, 0.5, 1);
   --acc-base: #4f56d3;
+  /* --acc is the solid colour (buttons, active nav); --primary-text is the same colour for text and links. They differ in
+     dark mode. The values below are Base DCWD's for the default indigo; [data-accent] mixes them for the other colours. */
   --acc: var(--acc-base);
-  --brand: #2233b8;
+  --primary-text: var(--acc);
+  --primary-hover: #3f45c0;
+  --brand: #1e2a78;
   --sf: #ffffff;
-  --sf2: #fafafb;
-  --sf3: #f4f5f8;
-  --grouped: #f2f3f7;
-  --tx: #18181b;
-  --tx2: #3f3f46;
-  --mu: #6b6b74;
-  --ln: #e4e5ea;
-  --ln2: #eef0f4;
+  --sf2: #f7f8fe;
+  --sf3: #eef2fd;
+  --grouped: #f4f6fd;
+  --tx: #1e2a78;
+  --tx2: #2a3170;
+  --body-2: #3d4580;
+  --mu: #525a8c;
+  --muted-2: #8a90b8;
+  --placeholder: var(--mu);
+  --ln: #dde3f7;
+  --ln2: #e8ecfa;
+  --navy: #1e2a78;
+  --table-head: #edf1fb;
+  --row-hover: #f1f3fd;
+  /* Text on a solid green, red or amber. White here; dark in dark mode, where those colours are light. */
+  --on-tone: #ffffff;
+  --disabled-bg: #e9ecf8;
+  --disabled-text: #a3a8c6;
+  --pending-bg: #fffbeb;
+  --pending-text: #b45309;
+  --pending-border: #f7d56b;
+  --shadow-card: 0 0.125rem 0.375rem rgba(20, 28, 90, 0.06);
+  --shadow-hover: 0 0.125rem 0.5rem rgba(20, 22, 60, 0.08);
+  --shadow-dropdown: 0 1.25rem 3.125rem rgba(20, 28, 90, 0.22);
+  --shadow-nav-active: 0 0.25rem 0.875rem color-mix(in srgb, var(--acc) 32%, transparent);
+  /* #0f6e4f, not Base DCWD's #12805c: that one is 4.38:1 on the green pill, below the 4.5 AA needs. */
+  /* Severity and priority, 1 to 4: red, orange, blue, grey (app/(main)/tickets/ticket-bits.tsx). Fixed values, not the theme
+     colour, so "normal" looks the same for everyone and never like "urgent". */
+  --level-1: #d92d20;
+  --level-2: #ea7a0c;
+  --level-3: #2f6fed;
+  --level-4: #8b8f98;
   --ok: #0f6e4f;
+  --ok-step: #219a6d;
   --ok-t: #e7f5ef;
-  --ok-b: #9ccfb7;
-  --warn: #a15c07;
-  --warn-ink: #7a4505;
-  --warn-t: #fdf3e2;
+  --ok-b: #bfe3d2;
+  --warn: #b45309;
+  --warn-ink: var(--warn);
+  --warn-t: #fff4df;
   --warn-b: #f0cf95;
-  --bad: #b42318;
-  --bad-t: #fdf0ef;
-  --bad-b: #efb3ad;
+  --bad: #c42f2a;
+  --bad-t: #fdeeed;
+  --bad-w: #fff8f7;
+  --bad-b: #f6d3d1;
   --info: #2f4aa8;
   --info-t: #eef1fb;
   --risk-low: #dff2e8;
   --risk-medium: #fcefc9;
   --risk-high: #f8cf98;
   --risk-critical: #f1a29a;
-  /* Ticket types: Bug red, Suggestion amber, Improvement blue (lib/tickets/workflow.ts TYPE_TONES). */
+  /* Ticket types: Bug red, Suggestion amber, Improvement blue (lib/tickets/workflow.ts TYPE_TONES). Fixed values, not the
+     theme colour: with Rose chosen, Improvement would otherwise look like Bug. */
   --type-bug: var(--bad);
   --type-bug-t: var(--bad-t);
   --type-bug-b: var(--bad-b);
-  --type-sug: #b45309;
-  --type-sug-t: #fef5e6;
+  --type-sug: var(--warn);
+  --type-sug-t: var(--warn-t);
   --type-sug-b: #f3c98b;
-  --type-imp: #1d5fd1;
-  --type-imp-t: #edf3fe;
-  --type-imp-b: #a9c4f3;
+  --type-imp: #4f56d3;
+  --type-imp-t: #eef0fc;
+  --type-imp-b: #dfe2f8;
 
-  --acc-t: color-mix(in srgb, var(--acc) 10%, var(--sf));
-  --acc-t2: color-mix(in srgb, var(--acc) 5%, var(--sf));
-  --acc-b: color-mix(in srgb, var(--acc) 30%, var(--sf));
-  --acc-ink: color-mix(in srgb, var(--acc) 72%, var(--tx));
+  --acc-t: #eef0fc;
+  --acc-t2: #f6f6fe;
+  --acc-b: #dfe2f8;
+  --acc-ink: #3b40b8;
 
   --background: var(--sf);
   --foreground: var(--tx);
@@ -164,7 +233,11 @@
   --accent-foreground: var(--acc-ink);
   --destructive: #c42f2a;
   --border: var(--ln);
-  --input: var(--ln);
+  /* Control outlines need 3:1 against the page, which --ln doesn't reach. Cards and dividers keep --ln. */
+  --input: var(--muted-2);
+  --input-hover: var(--acc);
+  /* Errors as text. --destructive is the solid button colour, too dark to read on the dark surface. */
+  --destructive-text: var(--bad);
   --ring: var(--acc);
   --chart-1: var(--acc);
   --chart-2: #0e8a8c;
@@ -173,12 +246,12 @@
   --chart-5: #1f8a55;
   --radius: 0.5rem;
   --sidebar: var(--sf);
-  --sidebar-foreground: #27272a;
+  --sidebar-foreground: var(--tx2);
   --sidebar-primary: var(--acc);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: var(--acc-t2);
-  --sidebar-accent-foreground: var(--tx);
-  --sidebar-border: var(--ln2);
+  --sidebar-accent: var(--row-hover);
+  --sidebar-accent-foreground: var(--tx2);
+  --sidebar-border: var(--ln);
   --sidebar-ring: var(--acc);
 }
 
@@ -188,9 +261,150 @@
 [data-accent="green"] { --acc-base: #18794e; }
 [data-accent="violet"] { --acc-base: #7445c9; }
 [data-accent="rose"] { --acc-base: #c0365a; }
+/* Only the five other colours have data-accent (lib/theme.ts), so the default indigo keeps Base DCWD's exact values. */
+[data-accent] {
+  --primary-hover: color-mix(in srgb, var(--acc) 84%, black);
+  --acc-t: color-mix(in srgb, var(--acc) 10%, var(--sf));
+  --acc-t2: color-mix(in srgb, var(--acc) 5%, var(--sf));
+  --acc-b: color-mix(in srgb, var(--acc) 18%, var(--sf));
+  --acc-ink: color-mix(in srgb, var(--acc) 72%, var(--tx));
+}
 
 .dark {
-  /* A lighter accent reads better on dark surfaces; the dark button text (--primary-foreground) keeps contrast. */
+  /* Buttons keep white text in dark mode too, so the solid colour stays dark and text gets its own lighter colour. */
+  --acc: #5b62e0;
+  --primary-text: #a9b0f5;
+  --primary-hover: #6b72ea;
+  --acc-t: color-mix(in srgb, var(--acc) 22%, var(--sf));
+  --acc-t2: color-mix(in srgb, var(--acc) 9%, var(--sf));
+  --acc-b: color-mix(in srgb, var(--acc) 42%, var(--sf));
+  --acc-ink: #c3c8fa;
+  --brand: #eceef2;
+  /* A neutral charcoal rather than Base DCWD's navy (the owner's choice), with the theme colour in the borders. */
+  --sf: #17181c;
+  --sf2: #131417;
+  --sf3: #212227;
+  --grouped: #0e0f12;
+  --tx: #eceef2;
+  --tx2: #d3d5db;
+  --body-2: #bfc2ca;
+  --mu: #a3a6af;
+  /* For the S4 dot, which always has text beside it. Never for text. */
+  --muted-2: #62656e;
+  --placeholder: #83868f;
+  --ln: color-mix(in srgb, var(--acc) 30%, var(--sf));
+  --ln2: color-mix(in srgb, var(--acc) 18%, var(--sf));
+  /* Control outlines need 3:1 against the surface, so these mix from the lighter text colour. */
+  --input: color-mix(in srgb, var(--primary-text) 50%, var(--sf));
+  --navy: #c9cbd2;
+  --table-head: #212227;
+  --row-hover: #1f2025;
+  --on-tone: #0e0f12;
+  --disabled-bg: #26272d;
+  --disabled-text: #62656e;
+  --pending-bg: #2e2510;
+  --pending-text: #f4c24f;
+  --pending-border: #6b5418;
+  --shadow-card: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.25);
+  --shadow-hover: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.35);
+  --shadow-dropdown: 0 1.25rem 3.125rem rgba(0, 0, 0, 0.5);
+  --level-1: #f2726a;
+  --level-2: #f59e42;
+  --level-3: #6ea1f7;
+  --level-4: #8f939c;
+  --ok: #4cc79a;
+  --ok-step: #2fae7f;
+  --ok-t: #16332a;
+  --ok-b: #24503f;
+  --warn: #f0a24b;
+  --warn-t: #3a2a12;
+  --warn-b: rgba(240, 162, 75, 0.35);
+  --bad: #f07a74;
+  --bad-t: #3a1e1f;
+  --bad-w: #2a1819;
+  --bad-b: #5a2a2a;
+  --info: #9db0f2;
+  --info-t: rgba(157, 176, 242, 0.12);
+  --risk-low: #1f3d31;
+  --risk-medium: #4a4020;
+  --risk-high: #5c3a17;
+  --risk-critical: #6b2620;
+  --type-sug-b: rgba(240, 162, 75, 0.35);
+  --type-imp: #a9b0f5;
+  --type-imp-t: rgba(169, 176, 245, 0.14);
+  --type-imp-b: rgba(169, 176, 245, 0.35);
+  --destructive: #d2433d;
+  color-scheme: dark;
+}
+/* The other theme colours in dark mode. Each base colour keeps white text readable (lib/theme.ts), so the solid stays as it is. */
+.dark[data-accent] {
+  --acc: var(--acc-base);
+  --primary-text: color-mix(in srgb, var(--acc-base) 50%, white);
+  --primary-hover: color-mix(in srgb, var(--acc-base) 88%, white);
+  --acc-t: color-mix(in srgb, var(--acc) 22%, var(--sf));
+  --acc-t2: color-mix(in srgb, var(--acc) 9%, var(--sf));
+  --acc-b: color-mix(in srgb, var(--acc) 42%, var(--sf));
+  --acc-ink: color-mix(in srgb, var(--acc-base) 30%, white);
+}
+
+/* The sign-in page keeps its own colours (Login board: "exactly as the app has it"). Tokens resolve where they are declared,
+   so the ones built from others (--background, --acc-t...) are declared again here, or they would keep the app's values. */
+.auth-page {
+  --acc: var(--acc-base);
+  --primary-text: var(--acc);
+  --primary-hover: color-mix(in srgb, var(--acc) 84%, black);
+  --brand: #2233b8;
+  --sf: #ffffff;
+  --sf2: #fafafb;
+  --sf3: #f4f5f8;
+  --grouped: #f2f3f7;
+  --tx: #18181b;
+  --tx2: #3f3f46;
+  --mu: #6b6b74;
+  --placeholder: var(--mu);
+  --ln: #e4e5ea;
+  --ln2: #eef0f4;
+  --ok: #0f6e4f;
+  --ok-t: #e7f5ef;
+  --ok-b: #9ccfb7;
+  --warn: #a15c07;
+  --warn-ink: #7a4505;
+  --warn-t: #fdf3e2;
+  --warn-b: #f0cf95;
+  --bad: #b42318;
+  --bad-t: #fdf0ef;
+  --bad-b: #efb3ad;
+  --info: #2f4aa8;
+  --info-t: #eef1fb;
+  --acc-t: color-mix(in srgb, var(--acc) 10%, var(--sf));
+  --acc-t2: color-mix(in srgb, var(--acc) 5%, var(--sf));
+  --acc-b: color-mix(in srgb, var(--acc) 30%, var(--sf));
+  --acc-ink: color-mix(in srgb, var(--acc) 72%, var(--tx));
+  --background: var(--sf);
+  --foreground: var(--tx);
+  --card: var(--sf);
+  --card-foreground: var(--tx);
+  --popover: var(--sf);
+  --popover-foreground: var(--tx);
+  --primary: var(--acc);
+  --primary-foreground: #ffffff;
+  --secondary: var(--sf3);
+  --secondary-foreground: var(--tx2);
+  --muted: var(--sf3);
+  --muted-foreground: var(--mu);
+  --accent: var(--acc-t2);
+  --accent-foreground: var(--acc-ink);
+  --destructive: #c42f2a;
+  --border: var(--ln);
+  --input: var(--ln);
+  --input-hover: var(--acc-b);
+  --destructive-text: var(--destructive);
+  --ring: var(--acc);
+  /* Buttons here used to fade when disabled, so keep that instead of the app's grey. */
+  --disabled-bg: color-mix(in srgb, var(--acc) 50%, var(--sf));
+  --disabled-text: color-mix(in srgb, var(--primary-foreground) 75%, var(--sf));
+}
+.dark .auth-page {
   --acc: color-mix(in srgb, var(--acc-base) 70%, white);
   --brand: color-mix(in srgb, var(--acc-base) 60%, white);
   --sf: #171a22;
@@ -214,35 +428,93 @@
   --bad-b: rgba(242, 134, 124, 0.35);
   --info: #9db0f2;
   --info-t: rgba(157, 176, 242, 0.12);
-  --risk-low: #1f3d31;
-  --risk-medium: #4a4020;
-  --risk-high: #5c3a17;
-  --risk-critical: #6b2620;
-  --type-sug: #f3b45e;
-  --type-sug-t: rgba(243, 180, 94, 0.12);
-  --type-sug-b: rgba(243, 180, 94, 0.35);
-  --type-imp: #8fb4f6;
-  --type-imp-t: rgba(143, 180, 246, 0.12);
-  --type-imp-b: rgba(143, 180, 246, 0.35);
   --background: #0f1218;
   --primary-foreground: #0f1218;
   --destructive: #f2867c;
-  --sidebar-foreground: var(--tx2);
-  --sidebar-primary-foreground: #0f1218;
-  color-scheme: dark;
+}
+
+/* Unread attention. The bell gives a short shake every 6 seconds while anything is unread (and again as soon as more
+   arrives); every red unread dot gives off a soft ring now and then. Both stop for people who reduce motion. */
+@keyframes qa-ring {
+  0%, 14%, 100% { transform: rotate(0deg); }
+  2% { transform: rotate(14deg); }
+  4% { transform: rotate(-12deg); }
+  6% { transform: rotate(10deg); }
+  8% { transform: rotate(-8deg); }
+  10% { transform: rotate(5deg); }
+  12% { transform: rotate(-2deg); }
+}
+.qa-ring {
+  transform-origin: 50% 12%;
+  animation: qa-ring 6s ease-in-out 0.4s infinite;
+}
+@keyframes qa-ping {
+  0% { transform: scale(1); opacity: 0.55; }
+  60%, 100% { transform: scale(2.6); opacity: 0; }
+}
+.qa-ping {
+  animation: qa-ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .qa-ring, .qa-ping { animation: none; }
+}
+
+/* The app's background waves: three drifting waves behind the content, stuck to the bottom of the window. They take no
+   space and no clicks. The footer bar with the name sits in front of them (components/wave-footer.tsx). */
+.qa-waves {
+  position: sticky;
+  bottom: 0;
+  z-index: 0;
+  height: 9.375rem;
+  margin-top: -9.375rem;
+  overflow: hidden;
+  pointer-events: none;
+}
+/* 400rem wide with one wave every 100rem: exactly how far qa-drift slides it, so the loop has no seam on wide screens. */
+.qa-waves svg {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 400rem;
+  max-width: none;
+  height: 9.375rem;
+}
+.qa-waves .w1 { animation: qa-drift 26s linear infinite; fill: color-mix(in srgb, var(--acc) 8%, var(--grouped)); }
+.qa-waves .w2 { animation: qa-drift 18s linear infinite reverse; fill: color-mix(in srgb, var(--acc) 14%, var(--grouped)); }
+.qa-waves .w3 { animation: qa-drift 12s linear infinite; fill: color-mix(in srgb, var(--acc) 22%, var(--grouped)); }
+@keyframes qa-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-100rem, 0, 0); } }
+@media (prefers-reduced-motion: reduce) {
+  .qa-waves .w1, .qa-waves .w2, .qa-waves .w3 { animation: none; }
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  /* Thin, quiet scrollbars everywhere (Firefox and Chromium read scrollbar-*; Safari needs the pseudo-elements). */
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--mu) 38%, transparent) transparent;
+  /* Scrollbars: slim and invisible until something scrolls. components/scrollbar-activity.tsx marks the page or card being
+     scrolled with [data-scrolling] and clears it about a second after it stops, so the thumb shows only while moving.
+     The thumb is a soft mix of the theme colour and grey, so it follows the person's accent in light and dark. The
+     track keeps its thin width, so nothing shifts when it appears. Firefox and Chromium read scrollbar-*; Safari needs
+     the pseudo-elements. */
+  :root {
+    --scroll-thumb: color-mix(in srgb, color-mix(in srgb, var(--acc) 40%, var(--mu)) 55%, transparent);
   }
-  *:hover {
-    scrollbar-color: color-mix(in srgb, var(--mu) 60%, transparent) transparent;
+  /* The dissolve: --scroll-fade goes 0 → 1 quickly when scrolling starts and back to 0 slowly after it stops, and the
+     thumb's colour is mixed by it. It is registered (@property, below) so the browser can animate it. */
+  * {
+    --scroll-fade: 0;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--scroll-thumb) calc(var(--scroll-fade) * 100%), transparent) transparent;
+    transition: --scroll-fade 0.6s ease-out;
+  }
+  [data-scrolling] {
+    --scroll-fade: 1;
+    transition-duration: 0.15s;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none;
+    }
   }
   ::-webkit-scrollbar {
     width: 8px;
@@ -255,10 +527,10 @@
   ::-webkit-scrollbar-thumb {
     border: 2px solid transparent;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--mu) 38%, transparent) padding-box;
+    background: transparent padding-box;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    background-color: color-mix(in srgb, var(--mu) 62%, transparent);
+  ::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--scroll-thumb) calc(var(--scroll-fade) * 100%), transparent);
   }
   /* Checkboxes and radios in QA Hub's style instead of the browser's. */
   input[type="checkbox"]:not([role]),
@@ -440,7 +712,7 @@
 
 /* Each page's content rises in gently when it opens (app/(main)/layout.tsx). */
 .page-enter {
-  animation: page-rise 420ms var(--ease-out) both;
+  animation: page-rise 340ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 /* Lists and card grids: the first few children come in one after another. */
 .stagger > * {
@@ -452,7 +724,7 @@
 .stagger > *:nth-child(5) { animation-delay: 120ms; }
 .stagger > *:nth-child(n + 6) { animation-delay: 150ms; }
 @keyframes page-rise {
-  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  from { opacity: 0; transform: translate3d(0, 12px, 0); }
   to { opacity: 1; transform: none; }
 }
 /* Something that just appeared or changed: a badge, an unread dot, a saved note. */
@@ -525,14 +797,6 @@
   pointer-events: none;
 }
 /* Shown before React runs only when this session hasn't seen it yet (the inline script in components/app-splash.tsx). */
-/* The laptop footer stays at the bottom of the window (app/(main)/layout.tsx), so scrolling to something, or tabbing to
-   it, must stop above the footer. */
-@media (min-width: 48rem) and (min-height: 40rem) {
-  html {
-    scroll-padding-bottom: 3.25rem;
-  }
-}
-
 html:not(.qa-splash-on) .qa-splash {
   display: none;
 }

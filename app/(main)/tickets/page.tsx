@@ -13,22 +13,25 @@ import { TicketListSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { areaPath } from "@/lib/areas/tree";
+import { moduleOptions } from "@/lib/areas/tree";
 import { can, type Role } from "@/lib/auth/permissions";
 import { requireAction } from "@/lib/auth/session";
 import { db } from "@/lib/db";
-import { formatDateTime, timeAgo } from "@/lib/format";
+import { formatDateTime, shortAgo, timeAgo } from "@/lib/format";
 import { ticketFilters, type TicketFilters } from "@/lib/schemas/ticket";
+import { TO_START } from "@/lib/tickets/workflow";
 import { columnInView, TICKETS_VIEW_COOKIE, type BoardColumnKey, type TicketView } from "@/lib/tickets/board";
 import { notificationStore } from "@/lib/tickets/notifications";
-import { PAGE_SIZE, ticketStore, type TicketListRow } from "@/lib/tickets/store";
-import { allowedTransitions, canAssign, isDone, STATUS_LABELS, TICKET_TYPES, TYPE_LABELS, type Actor, type SeverityValue } from "@/lib/tickets/workflow";
+import { pageList } from "@/lib/tickets/pager";
+import { PAGE_SIZE, ticketStore, type TicketListRow, type ViewPatch } from "@/lib/tickets/store";
+import { allowedTransitions, canAssign, isDone, STATUS_LABELS, TICKET_TYPES, TYPE_LABELS, type Actor, type SeverityValue, CATEGORY_LABELS, NO_CATEGORY, TICKET_CATEGORIES } from "@/lib/tickets/workflow";
 import { cn } from "@/lib/utils";
 import { TicketBoard, type BoardCard } from "./board";
+import { FilterSelect } from "@/components/filter-select";
 import { FilterSheet } from "./filter-sheet";
 import { ticketFormOptions } from "./options";
-import { SeverityTag, TicketStatusPill, TicketTypeLabel, typeStyle, UnreadDot } from "./ticket-bits";
+import { levelDot, levelName, TicketStatusPill, TicketTypeLabel, typeStyle, UnreadDot } from "./ticket-bits";
 import { PhoneTicketGroups } from "./ticket-card";
 import { ViewSwitch } from "./view-switch";
 
@@ -88,6 +91,9 @@ function quickViews(role: Role): Quick[] {
   return [quick(role === "DEV" ? "Assigned to me" : "My open tickets", "open"), ...stages];
 }
 
+/** The 50 px table head row, as on the board: uppercase, on the table-head colour. Sticks to the top while rows scroll. */
+const HEAD = "sticky top-0 z-1 h-[3.125rem] bg-table-head px-4 text-left align-middle text-[0.7813rem] font-semibold tracking-[0.05em] text-navy uppercase first:rounded-l-lg last:rounded-r-lg";
+
 async function TicketList({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   await connection();
@@ -98,13 +104,16 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
   const view: TicketView = parsed.view ?? saved;
   // Links on the page name the view only when it isn't the remembered one, so filtering never switches it.
   const f: TicketFilters = { ...parsed, view: view === saved ? null : view };
-  const QUICK = quickViews(me.role);
+  const devFilter = f.assignee && f.assignee !== "me" ? f.assignee : null;
+  // A tab sets its own stage and people; a developer chosen in the filters stays on across tabs, unless the tab is "mine".
+  const QUICK = quickViews(me.role).map((v) => ({ ...v, patch: { ...v.patch, assignee: v.patch.assignee ?? devFilter } }));
   const deleted = typeof sp.deleted === "string" && /^\d+$/.test(sp.deleted) ? sp.deleted : null;
 
-  const [list, board, { areas, people }] = await Promise.all([
+  const [list, board, { areas, people }, viewCounts] = await Promise.all([
     view === "list" ? tickets.list(f, me) : null,
     view === "board" ? tickets.board(f, me) : null,
     ticketFormOptions(),
+    tickets.viewCounts(f, me, QUICK.map((v) => v.patch as ViewPatch)),
   ]);
   const rows = list?.rows ?? [];
   const total = list ? list.total : (board ?? []).reduce((n, c) => n + c.total, 0);
@@ -112,18 +121,16 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const now = new Date();
   const isQuick = (p: Quick["patch"]) => f.group === p.group && f.status === p.status && f.assignee === p.assignee && f.reporter === p.reporter;
-  const filtered = !!(f.type || f.area || f.q || (f.assignee && f.assignee !== "me"));
+  const filtered = !!(f.type || f.area || f.category || f.q || devFilter);
   const canFile = can(me, "tickets.create");
 
   const options = {
     type: [{ value: "", label: "All types" }, ...TICKET_TYPES.map((t) => ({ value: t, label: TYPE_LABELS[t] }))],
     area: [
       { options: [{ value: "", label: "All modules" }] },
-      ...areas.map((m) => ({
-        label: m.name,
-        options: [{ value: m.id, label: `${m.name} (all)` }, ...m.children.map((c) => ({ value: c.id, label: c.name }))],
-      })),
+      ...moduleOptions(areas, "all"),
     ],
+    category: [{ value: "", label: "All categories" }, ...TICKET_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABELS[c] })), { value: "none", label: NO_CATEGORY }],
     assignee: [
       { value: "", label: "Any developer" },
       ...(me.role === "ADMIN" ? [{ value: "me", label: "Me" }] : []),
@@ -140,18 +147,20 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
       {f.reporter ? <input type="hidden" name="reporter" value={f.reporter} /> : null}
     </>
   );
-  const clearHref = hrefWith(f, { q: null, type: null, area: null, assignee: null });
-  const activeFilters = [f.type, f.area, f.assignee && f.assignee !== "me" ? f.assignee : null].filter(Boolean).length;
+  const clearHref = hrefWith(f, { q: null, type: null, area: null, category: null, assignee: f.assignee === "me" ? "me" : null });
+  const activeFilters = [f.type, f.area, f.category, devFilter].filter(Boolean).length;
   // Switching keeps the view and every filter; only the list's page number resets.
   const viewHrefs = { list: hrefWith(f, { view: "list" }), board: hrefWith(f, { view: "board" }) };
 
   return (
-    <>
+    // Big screens (D21): the page fits the window. The header, tabs and filters keep their height; the list or board takes
+    // the rest and scrolls inside.
+    <div className="grid gap-6 desk:flex desk:h-[calc(100dvh-12.5rem)] desk:min-h-112 desk:flex-col">
       <PageHeader
         title={me.role === "ADMIN" ? "All tickets" : "My tickets"}
         description={SCOPE_TEXT[me.role]}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <ViewSwitch view={view} hrefs={viewHrefs} />
             {canFile ? (
               <span className="max-md:hidden">
@@ -168,6 +177,9 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
                   </Field>
                   <Field label="Module" htmlFor="farea">
                     <SelectField id="farea" name="area" defaultValue={f.area ?? ""} groups={options.area} />
+                  </Field>
+                  <Field label="Category" htmlFor="fcategory">
+                    <SelectField id="fcategory" name="category" defaultValue={f.category ?? ""} options={options.category} />
                   </Field>
                   {me.role !== "DEV" ? (
                     <Field label="Developer" htmlFor="fassignee">
@@ -204,6 +216,9 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
             <Field label="Module" htmlFor="farea">
               <SelectField id="farea" name="area" defaultValue={f.area ?? ""} groups={options.area} />
             </Field>
+            <Field label="Category" htmlFor="fcategory">
+              <SelectField id="fcategory" name="category" defaultValue={f.category ?? ""} options={options.category} />
+            </Field>
             {me.role !== "DEV" ? (
               <Field label="Developer" htmlFor="fassignee">
                 <SelectField id="fassignee" name="assignee" defaultValue={f.assignee ?? ""} options={options.assignee} />
@@ -221,6 +236,7 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
           {keep}
           {f.type ? <input type="hidden" name="type" value={f.type} /> : null}
           {f.area ? <input type="hidden" name="area" value={f.area} /> : null}
+          {f.category ? <input type="hidden" name="category" value={f.category} /> : null}
           {f.assignee ? <input type="hidden" name="assignee" value={f.assignee} /> : null}
           <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-[1.125rem] -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input
@@ -235,45 +251,97 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
         </form>
       </div>
 
-      <nav aria-label="Ticket views" className="flex flex-wrap gap-1.5 max-md:-mx-5 max-md:flex-nowrap max-md:gap-2 max-md:overflow-x-auto max-md:px-5 max-md:[scrollbar-width:none]">
-        {QUICK.map((v) => (
-          <Link
-            key={v.label}
-            href={hrefWith(f, v.patch)}
-            aria-current={isQuick(v.patch) ? "page" : undefined}
-            className={cn(
-              "rounded-full border px-3.5 py-1.5 text-[0.8438rem] font-medium whitespace-nowrap transition-colors max-md:flex max-md:h-9 max-md:shrink-0 max-md:items-center max-md:px-4 max-md:text-sm",
-              isQuick(v.patch)
-                ? "border-acc bg-acc text-primary-foreground"
-                : "border-line bg-card text-ink2 hover:border-acc-b hover:text-foreground max-md:border-transparent max-md:shadow-[0_0.0625rem_0.125rem_rgba(20,22,40,0.06),0_0.125rem_0.5rem_rgba(20,22,40,0.04)]",
-            )}
-          >
-            {v.label}
-          </Link>
-        ))}
+      {/* The views. Phones: chips that scroll sideways. Laptops: underline tabs with a count, as on the board. */}
+      <nav
+        aria-label="Ticket views"
+        className="flex gap-1.5 max-md:-mx-5 max-md:gap-2 max-md:overflow-x-auto max-md:px-5 max-md:[scrollbar-width:none] md:gap-1 md:overflow-x-auto md:overflow-y-hidden md:border-b md:border-line"
+      >
+        {QUICK.map((v, i) => {
+          const on = isQuick(v.patch);
+          return (
+            <Link
+              key={v.label}
+              href={hrefWith(f, v.patch)}
+              aria-current={on ? "page" : undefined}
+              className={cn(
+                "flex shrink-0 items-center gap-2 font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                // Phones
+                "max-md:h-9 max-md:rounded-full max-md:px-4 max-md:text-sm",
+                on ? "max-md:bg-acc max-md:text-primary-foreground" : "max-md:bg-card max-md:text-ink2 max-md:shadow-[0_0.0625rem_0.125rem_rgba(20,22,40,0.06),0_0.125rem_0.5rem_rgba(20,22,40,0.04)]",
+                // Laptops
+                "md:h-12 md:border-b-2 md:px-4 md:text-[0.9375rem] md:focus-visible:ring-inset",
+                on ? "md:border-acc md:text-primary-text" : "md:border-transparent md:text-muted-foreground md:hover:bg-row-hover md:hover:text-foreground",
+              )}
+            >
+              {v.label}
+              <span
+                className={cn(
+                  "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 font-mono text-[0.75rem] tabular-nums max-md:hidden",
+                  on ? "bg-acc-t text-acc-ink" : "bg-surface3 text-ink2",
+                )}
+              >
+                {viewCounts[i]}
+                <span className="sr-only"> tickets</span>
+              </span>
+            </Link>
+          );
+        })}
       </nav>
 
-      <form action="/tickets" className="flex flex-wrap items-end gap-2 max-md:hidden">
-        {keep}
-        <Input name="q" defaultValue={f.q} placeholder="Search title, text or #number" aria-label="Search" className="h-9 w-64 text-sm" />
-        <SelectField name="type" defaultValue={f.type ?? ""} aria-label="Type" size="sm" className="w-40" options={options.type} />
-        <SelectField name="area" defaultValue={f.area ?? ""} aria-label="Module" size="sm" className="w-56" groups={options.area} />
-        {/* A developer's list is already "assigned to me". */}
-        {me.role !== "DEV" ? <SelectField name="assignee" defaultValue={f.assignee ?? ""} aria-label="Developer" size="sm" className="w-48" options={options.assignee} /> : null}
-        <Button type="submit" variant="outline" size="sm">Filter</Button>
-        {filtered ? (
-          <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={clearHref} />}>
-            Clear
-          </Button>
-        ) : null}
-        {f.status ? <span className="text-[0.8125rem] text-muted-foreground">Status: {STATUS_LABELS[f.status]}</span> : null}
+      {/* Laptops: the filters in a card with visible labels. A choice applies at once; search applies on Enter. It stays a
+          plain GET form, so it still works without scripts (the hidden Apply button). */}
+      <form action="/tickets" aria-label="Filter tickets" className="max-md:hidden">
+        <Card className="flex-row flex-wrap items-end gap-2.5 p-4">
+          {keep}
+          <Field label="Search" htmlFor="tq" className="min-w-0 flex-[2_1_17.5rem]">
+            <div className="relative">
+              <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+              <Input id="tq" type="search" name="q" defaultValue={f.q} enterKeyHint="search" placeholder="Title, text or #number" className="pl-9" />
+            </div>
+          </Field>
+          <Field label="Type" htmlFor="ttype" className="min-w-0 flex-[1_1_9.5rem]">
+            <FilterSelect id="ttype" name="type" defaultValue={f.type ?? ""} options={options.type} />
+          </Field>
+          <Field label="Module" htmlFor="tarea" className="min-w-0 flex-[1_1_12rem]">
+            <FilterSelect id="tarea" name="area" defaultValue={f.area ?? ""} groups={options.area} />
+          </Field>
+          <Field label="Category" htmlFor="tcategory" className="min-w-0 flex-[1_1_10rem]">
+            <FilterSelect id="tcategory" name="category" defaultValue={f.category ?? ""} options={options.category} />
+          </Field>
+          {/* A developer's list is already "assigned to me". */}
+          {me.role !== "DEV" ? (
+            <Field label="Developer" htmlFor="tassignee" className="min-w-0 flex-[1_1_10.5rem]">
+              <FilterSelect id="tassignee" name="assignee" defaultValue={f.assignee ?? ""} options={options.assignee} />
+            </Field>
+          ) : null}
+          {/* Needed so Enter in Search submits the form; visible when a keyboard reaches it. */}
+          <Button type="submit" variant="outline" className="sr-only focus-visible:not-sr-only">Apply filters</Button>
+          {filtered ? (
+            <Button variant="ghost" nativeButton={false} render={<Link href={clearHref} />}>
+              Clear
+            </Button>
+          ) : null}
+          {f.status ? (
+            <p className="basis-full text-[0.8125rem] text-muted-foreground">
+              Status: {f.status === TO_START ? "Not started (new or reopened)" : STATUS_LABELS[f.status]}
+            </p>
+          ) : null}
+        </Card>
       </form>
 
       {total === 0 || (list && rows.length === 0) ? (
         <EmptyState
           icon={TicketIcon}
           title={total === 0 && !filtered && f.group === "open" && !f.assignee && !f.reporter && !f.status ? "No open tickets" : "Nothing matches"}
-          action={canFile ? <NewTicketButton /> : null}
+          action={
+            filtered ? (
+              <Button variant="outline" nativeButton={false} render={<Link href={clearHref} />}>
+                Clear the filters
+              </Button>
+            ) : canFile ? (
+              <NewTicketButton />
+            ) : null
+          }
         >
           {filtered || f.status || f.assignee || f.reporter
             ? "Try another view or clear the filters."
@@ -294,57 +362,80 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
         />
       ) : (
         <>
-        <PhoneTicketGroups
-          tickets={rows.map((t) => ({ ...t, person: me.role === "DEV" ? `from ${t.reporter.name}` : (t.assignee?.name ?? "Not assigned") }))}
-          unread={unread}
-          now={now}
-        />
-        <Card className="max-md:hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16">#</TableHead>
-                <TableHead>Ticket</TableHead>
-                <TableHead className="w-32">Status</TableHead>
-                <TableHead className="w-44">Developer</TableHead>
-                <TableHead className="w-28 text-right">Activity</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="stagger">
-              {rows.map((t) => (
-                <TableRow key={t.id} className="relative">
-                  <TableCell className={cn("font-mono text-[0.8125rem] text-muted-foreground", typeStyle(t.type).stripe)}>
-                    <span className="inline-flex items-center gap-2">
-                      {t.number}
-                      {unread.has(t.id) ? <UnreadDot /> : null}
-                    </span>
-                  </TableCell>
-                  <TableCell className="whitespace-normal">
-                    <Link href={`/tickets/${t.number}`} className={cn(unread.has(t.id) ? "font-semibold" : "font-medium", "after:absolute after:inset-0 hover:text-acc")}>
-                      {t.title}
-                    </Link>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.7813rem] text-muted-foreground">
-                      <TicketTypeLabel type={t.type} />
-                      <SeverityTag severity={t.severity as SeverityValue | null} />
-                      {t.area ? <span>{areaPath(t.area)}</span> : null}
-                      <span>by {t.reporter.name}</span>
-                      {t._count.comments ? (
-                        <span className="inline-flex items-center gap-1">
-                          <MessageSquareIcon className="size-3" aria-hidden /> {t._count.comments}
-                        </span>
-                      ) : null}
-                    </div>
-                  </TableCell>
-                  <TableCell><TicketStatusPill status={t.status} /></TableCell>
-                  <TableCell className={cn("text-[0.8438rem]", !t.assignee && "text-muted-foreground")}>{t.assignee?.name ?? "Not assigned"}</TableCell>
-                  <TableCell className="text-right text-[0.8125rem] text-muted-foreground" title={t.lastActivityAt.toISOString()}>
-                    {timeAgo(t.lastActivityAt, now)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
+          <PhoneTicketGroups
+            tickets={rows.map((t) => ({ ...t, person: me.role === "DEV" ? `from ${t.reporter.name}` : (t.assignee?.name ?? "Not assigned") }))}
+            unread={unread}
+            now={now}
+          />
+          {/* Laptops: the board's table. Big screens: the rows scroll inside the card under a sticky head, the pager stays below. */}
+          <Card className="p-4 max-md:hidden desk:min-h-0 desk:flex-1">
+            <div className="overflow-x-auto desk:min-h-0 desk:flex-1 desk:overflow-y-auto desk:overscroll-contain">
+              <table className="w-full min-w-[47.5rem] border-separate border-spacing-0 text-sm">
+                <thead>
+                  <tr>
+                    <th scope="col" className={cn(HEAD, "w-[4.75rem]")}>No.</th>
+                    <th scope="col" className={HEAD}>Ticket</th>
+                    <th scope="col" className={cn(HEAD, "w-32")}>Status</th>
+                    <th scope="col" className={cn(HEAD, "w-[9.375rem]")}>Developer</th>
+                    <th scope="col" className={cn(HEAD, "w-[5.75rem] text-right")}>Activity</th>
+                  </tr>
+                </thead>
+                <tbody className="stagger">
+                  {rows.map((t) => {
+                    const level = (t.severity as SeverityValue | null) ?? t.priority;
+                    const isUnread = unread.has(t.id);
+                    return (
+                      <tr key={t.id} className="relative transition-colors hover:bg-row-hover [&>td]:border-b [&>td]:border-line2 last:[&>td]:border-b-0">
+                        <td className={cn("h-14 px-4 align-middle font-mono text-[0.8125rem] text-muted-foreground", typeStyle(t.type).stripe)}>
+                          <span className="inline-flex items-center gap-2">
+                            {t.number}
+                            {isUnread ? <UnreadDot /> : null}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 align-middle">
+                          <Link
+                            href={`/tickets/${t.number}`}
+                            className={cn(isUnread ? "font-semibold" : "font-medium", "text-[0.9063rem] after:absolute after:inset-0 hover:text-primary-text hover:underline")}
+                          >
+                            {t.title}
+                          </Link>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8125rem] text-muted-foreground">
+                            <TicketTypeLabel type={t.type} className="border-transparent bg-transparent px-0" />
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className={cn("size-2 rounded-full", levelDot(level))} aria-hidden />
+                              {levelName(level)}
+                            </span>
+                            <span>{t.category ? CATEGORY_LABELS[t.category] : NO_CATEGORY}</span>
+                            {t.area ? <span>{areaPath(t.area)}</span> : null}
+                            {me.role !== "QA" ? <span>by {t.reporter.name}</span> : null}
+                            {t._count.comments ? (
+                              <span className="inline-flex items-center gap-1">
+                                <MessageSquareIcon className="size-3.5" aria-hidden />
+                                <span className="font-mono">{t._count.comments}</span>
+                                <span className="sr-only"> repl{t._count.comments === 1 ? "y" : "ies"}</span>
+                              </span>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td className="px-4 align-middle"><TicketStatusPill status={t.status} /></td>
+                        <td className={cn("max-w-[9.375rem] px-4 align-middle text-[0.875rem]", !t.assignee && "text-muted-foreground")}>
+                          <span className="block truncate" title={t.assignee?.name}>{t.assignee?.name ?? "Not assigned"}</span>
+                        </td>
+                        <td className="px-4 text-right align-middle text-[0.8125rem] text-muted-foreground" title={formatDateTime(t.lastActivityAt)}>
+                          {shortAgo(t.lastActivityAt, now)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <Pager f={f} total={total} pages={pages} />
+          </Card>
+          {/* Phones: the count and the pager under the cards. */}
+          <div className="md:hidden">
+            <Pager f={f} total={total} pages={pages} />
+          </div>
         </>
       )}
 
@@ -357,26 +448,67 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
           <PlusIcon className="size-5" aria-hidden /> New ticket
         </Link>
       ) : null}
+    </div>
+  );
+}
 
-      {list && total > 0 ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 text-[0.8125rem] text-muted-foreground">
-          <span>
-            {total} ticket{total === 1 ? "" : "s"}
-            {pages > 1 ? ` · page ${f.page} of ${pages}` : ""}
+/** "{n} tickets" and the numbered pages (‹ 1 … 4 5 6 … 12 ›). The numbers are hidden when everything fits on one page. */
+function Pager({ f, total, pages }: { f: TicketFilters; total: number; pages: number }) {
+  const page = Math.min(f.page, pages);
+  const box = "flex size-9 items-center justify-center rounded-lg border border-line text-sm font-medium tabular-nums transition-colors";
+  return (
+    <div className="flex min-h-15 flex-wrap items-center justify-between gap-3 pt-3 text-[0.8125rem] text-muted-foreground">
+      <span>
+        {total} ticket{total === 1 ? "" : "s"}
+      </span>
+      {/* Phones keep Previous and Next (D1): numbered pages don't fit a narrow screen. */}
+      {pages > 1 ? (
+        <span className="flex items-center gap-1.5 md:hidden">
+          <span className="mr-1">
+            Page {page} of {pages}
           </span>
-          {pages > 1 ? (
-            <div className="flex gap-1.5">
-              <Button variant="outline" size="sm" disabled={f.page <= 1} nativeButton={false} render={<Link href={hrefWith(f, { page: f.page - 1 })} aria-disabled={f.page <= 1} />}>
-                <ChevronLeftIcon /> Previous
-              </Button>
-              <Button variant="outline" size="sm" disabled={f.page >= pages} nativeButton={false} render={<Link href={hrefWith(f, { page: f.page + 1 })} aria-disabled={f.page >= pages} />}>
-                Next <ChevronRightIcon />
-              </Button>
-            </div>
-          ) : null}
-        </div>
+          <Button variant="outline" size="sm" disabled={page <= 1} nativeButton={false} render={<Link href={hrefWith(f, { page: page - 1 })} aria-disabled={page <= 1} />}>
+            <ChevronLeftIcon /> Previous
+          </Button>
+          <Button variant="outline" size="sm" disabled={page >= pages} nativeButton={false} render={<Link href={hrefWith(f, { page: page + 1 })} aria-disabled={page >= pages} />}>
+            Next <ChevronRightIcon />
+          </Button>
+        </span>
       ) : null}
-    </>
+      {pages > 1 ? (
+        <nav aria-label="Pages" className="flex items-center gap-1.5 max-md:hidden">
+          {page > 1 ? (
+            <Link href={hrefWith(f, { page: page - 1 })} aria-label="Previous page" className={cn(box, "text-foreground hover:bg-row-hover")}>
+              <ChevronLeftIcon className="size-4" aria-hidden />
+            </Link>
+          ) : (
+            <span aria-hidden className={cn(box, "opacity-40")}><ChevronLeftIcon className="size-4" /></span>
+          )}
+          {pageList(page, pages).map((n, i) =>
+            n === "gap" ? (
+              <span key={`gap-${i}`} aria-hidden className="w-6 text-center">…</span>
+            ) : (
+              <Link
+                key={n}
+                href={hrefWith(f, { page: n })}
+                aria-current={n === page ? "page" : undefined}
+                aria-label={`Page ${n}`}
+                className={cn(box, n === page ? "border-acc bg-acc text-primary-foreground" : "text-foreground hover:bg-row-hover")}
+              >
+                {n}
+              </Link>
+            ),
+          )}
+          {page < pages ? (
+            <Link href={hrefWith(f, { page: page + 1 })} aria-label="Next page" className={cn(box, "text-foreground hover:bg-row-hover")}>
+              <ChevronRightIcon className="size-4" aria-hidden />
+            </Link>
+          ) : (
+            <span aria-hidden className={cn(box, "opacity-40")}><ChevronRightIcon className="size-4" /></span>
+          )}
+        </nav>
+      ) : null}
+    </div>
   );
 }
 

@@ -144,7 +144,7 @@ export function useImageAttachments(restored: DraftFile[] = []) {
     const room = MAX_IMAGES_PER_POST - items.length - queue.length;
     enqueue(ok.slice(0, Math.max(0, room)).map((file) => ({ file })));
     if (incoming.some((f) => f.type === "image/heic" || f.type === "image/heif" || /\.hei[cf]$/i.test(f.name))) setError("HEIC photos can't be added. Use a JPEG photo or a screenshot.");
-    else if (images.length < incoming.length) setError("Only PNG, JPEG, WebP and GIF images go here. Add a recording with Add video.");
+    else if (images.length < incoming.length) setError("Only PNG, JPEG, WebP and GIF images, and MP4 or WebM videos, can be added.");
     else if (tooBig.length) setError(`${tooBig.map((f) => f.name).join(", ")} is larger than ${IMAGE_MAX_BYTES / 1024 / 1024} MB.`);
     else if (ok.length > room) setError(`At most ${MAX_IMAGES_PER_POST} images per post.`);
     else setError(null);
@@ -263,6 +263,8 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
   });
   useEffect(() => {
     const paste = (e: ClipboardEvent) => {
+      // On a ticket's Details tab the reply box is hidden, and the image must not land somewhere nobody can see it.
+      if (!inputRef.current?.getClientRects().length) return;
       const el = document.activeElement as HTMLElement | null;
       if (e.defaultPrevented || el?.closest("input, textarea, select, [contenteditable=''], [contenteditable='true'], [role='dialog']")) return;
       latestPaste.current(e);
@@ -273,32 +275,37 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
 
   return (
     <div
-      // Focusable, so clicking it and pressing Ctrl+V pastes here.
-      tabIndex={0}
-      role="group"
-      aria-label="Screenshots"
-      onPaste={state.onPaste}
-      onClick={(e) => {
-        // The markup dialog is this box's child in React, so its clicks arrive here too. Focusing the box for them
-        // would take the keyboard away from the dialog, and with it Ctrl+Z and every other shortcut.
-        if (!e.currentTarget.contains(e.target as Node)) return;
-        if (!(e.target as HTMLElement).closest("button, input, a")) e.currentTarget.focus();
-      }}
-      className={cn(
-        // Focused: a solid outline (ready for Ctrl+V). Dragging a file over keeps its own look, the filled box.
-        "grid cursor-default gap-2.5 rounded-[0.625rem] border border-dashed border-line p-3 transition-colors outline-none focus:border-solid focus:border-acc-b focus-visible:ring-3 focus-visible:ring-acc/30",
-        over && "border-acc bg-acc-t2",
-      )}
-      onDragOver={(e) => {
-        e.preventDefault();
-        setOver(true);
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setOver(false);
-        state.add(e.dataTransfer.files);
-      }}
+      {...(compact
+        ? // The box around it (the reply form, or the New ticket upload box) takes the paste and the drop.
+          { className: "contents" }
+        : {
+            // Focusable, so clicking it and pressing Ctrl+V pastes here.
+            tabIndex: 0,
+            role: "group",
+            "aria-label": "Screenshots",
+            onPaste: state.onPaste,
+            onClick: (e: React.MouseEvent<HTMLDivElement>) => {
+              // The markup dialog is this box's child in React, so its clicks arrive here too. Focusing the box for them
+              // would take the keyboard away from the dialog, and with it Ctrl+Z and every other shortcut.
+              if (!e.currentTarget.contains(e.target as Node)) return;
+              if (!(e.target as HTMLElement).closest("button, input, a")) e.currentTarget.focus();
+            },
+            className: cn(
+              // Focused: a solid outline (ready for Ctrl+V). Dragging a file over keeps its own look, the filled box.
+              "grid cursor-default gap-2.5 rounded-[0.625rem] border border-dashed border-line p-3 transition-colors outline-none focus:border-solid focus:border-acc-b focus-visible:ring-3 focus-visible:ring-acc/30",
+              over && "border-acc bg-acc-t2",
+            ),
+            onDragOver: (e: React.DragEvent) => {
+              e.preventDefault();
+              setOver(true);
+            },
+            onDragLeave: () => setOver(false),
+            onDrop: (e: React.DragEvent) => {
+              e.preventDefault();
+              setOver(false);
+              state.add(e.dataTransfer.files);
+            },
+          })}
     >
       {state.items.map((i) => (i.id ? <input key={i.key} type="hidden" name="uploadIds" value={i.id} /> : null))}
       <input
@@ -369,7 +376,7 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
                     <div className="h-full bg-acc transition-[width]" style={{ width: `${pct}%` }} />
                   </div>
                 ) : null}
-                <div className={cn("truncate px-2 py-1 text-[0.7188rem]", i.failed ? "font-medium text-destructive" : "text-muted-foreground")} title={i.name}>
+                <div className={cn("truncate px-2 py-1 text-[0.7188rem]", i.failed ? "font-medium text-destructive-text" : "text-muted-foreground")} title={i.name}>
                   {i.id ? formatBytes(i.size) : i.failed ? "Failed" : `${pct}%`} · {i.name}
                 </div>
                 {i.failed ? (
@@ -405,11 +412,11 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
         </ul>
       ) : null}
       {state.error ? (
-        <p role="alert" className="text-[0.7813rem] font-medium text-destructive">
+        <p role="alert" className="text-[0.7813rem] font-medium text-destructive-text">
           {state.error}
         </p>
       ) : null}
-      <MarkupEditor file={state.editing?.file ?? null} position={state.position} onDone={state.resolve} />
+      <MarkupEditor file={state.editing?.file ?? null} position={state.position} isEdit={state.editing?.replaceKey !== undefined} onDone={state.resolve} />
     </div>
   );
 }

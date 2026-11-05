@@ -57,7 +57,8 @@ export function pushMessage(e: PushEvent, t: PushTicket & { actorName: string; f
   return {
     title: t.previews ? `#${t.number} · ${clip(t.title, TITLE_MAX)}` : `#${t.number} · ${TYPE_LABELS[t.type]}`,
     body: `${line}\n${detail}`,
-    url: `/tickets/${t.number}`,
+    // A reply opens where it can be read and answered; anything else opens the ticket's Details.
+    url: `/tickets/${t.number}${e.kind === "reply" ? "?tab=conversation" : ""}`,
     // The same tag replaces an older notification about this ticket instead of piling up. Status changes are the
     // ticket's history (did the developer get to it?), so each one stays as its own notification.
     tag: e.kind === "status" ? `${ticketTag(t.number)}-${(t.at ?? new Date()).getTime().toString(36)}` : ticketTag(t.number),
