@@ -369,7 +369,7 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
                     <div className="h-full bg-acc transition-[width]" style={{ width: `${pct}%` }} />
                   </div>
                 ) : null}
-                <div className={cn("truncate px-2 py-1 text-[0.7188rem]", i.failed ? "font-medium text-destructive" : "text-muted-foreground")} title={i.name}>
+                <div className={cn("truncate px-2 py-1 text-[0.7188rem]", i.failed ? "font-medium text-destructive-text" : "text-muted-foreground")} title={i.name}>
                   {i.id ? formatBytes(i.size) : i.failed ? "Failed" : `${pct}%`} · {i.name}
                 </div>
                 {i.failed ? (
@@ -405,7 +405,7 @@ export function ImagePicker({ state, id = "images", compact }: { state: ImageAtt
         </ul>
       ) : null}
       {state.error ? (
-        <p role="alert" className="text-[0.7813rem] font-medium text-destructive">
+        <p role="alert" className="text-[0.7813rem] font-medium text-destructive-text">
           {state.error}
         </p>
       ) : null}

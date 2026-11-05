@@ -149,7 +149,7 @@ export function AvatarUpload({ person, avatarClassName, className, children }: {
         {children}
       </div>
       {upload.error ? (
-        <p role="alert" className="text-[0.8125rem] font-medium text-destructive">
+        <p role="alert" className="text-[0.8125rem] font-medium text-destructive-text">
           {upload.error}
         </p>
       ) : null}

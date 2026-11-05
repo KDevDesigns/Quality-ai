@@ -320,7 +320,7 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
                     </span>
                   </TableCell>
                   <TableCell className="whitespace-normal">
-                    <Link href={`/tickets/${t.number}`} className={cn(unread.has(t.id) ? "font-semibold" : "font-medium", "after:absolute after:inset-0 hover:text-acc")}>
+                    <Link href={`/tickets/${t.number}`} className={cn(unread.has(t.id) ? "font-semibold" : "font-medium", "after:absolute after:inset-0 hover:text-primary-text")}>
                       {t.title}
                     </Link>
                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.7813rem] text-muted-foreground">

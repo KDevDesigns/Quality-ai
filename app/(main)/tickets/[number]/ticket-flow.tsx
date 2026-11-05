@@ -9,9 +9,9 @@ import { cn } from "@/lib/utils";
 
 const DOT: Record<FlowTone, string> = {
   acc: "border-acc bg-acc text-primary-foreground",
-  ok: "border-ok bg-ok text-primary-foreground",
-  warn: "border-warn bg-warn text-primary-foreground",
-  bad: "border-bad bg-bad text-primary-foreground",
+  ok: "border-ok bg-ok text-on-tone",
+  warn: "border-warn bg-warn text-on-tone",
+  bad: "border-bad bg-bad text-on-tone",
   neutral: "border-ink2 bg-ink2 text-background",
 };
 const RING: Record<FlowTone, string> = {
@@ -21,7 +21,7 @@ const RING: Record<FlowTone, string> = {
   bad: "ring-bad-t",
   neutral: "ring-surface3",
 };
-const LABEL: Record<FlowTone, string> = { acc: "text-acc", ok: "text-ok", warn: "text-warn-ink", bad: "text-bad", neutral: "text-foreground" };
+const LABEL: Record<FlowTone, string> = { acc: "text-primary-text", ok: "text-ok", warn: "text-warn-ink", bad: "text-bad", neutral: "text-foreground" };
 
 function StepDot({ step, n }: { step: FlowStep; n: number }) {
   const base = "relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-[0.8125rem] font-semibold";

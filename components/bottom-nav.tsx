@@ -40,7 +40,7 @@ export function BottomNav({ role }: { role: Role }) {
           const badge = count ? (
             <span
               className={cn(
-                "absolute flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-bad px-1 text-[0.6875rem] leading-none font-bold text-white ring-2 ring-card",
+                "absolute flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-bad px-1 text-[0.6875rem] leading-none font-bold text-on-tone ring-2 ring-card",
                 t.main ? "-top-1.5 -right-2" : "-top-1.5 left-[calc(100%-0.5rem)]",
               )}
               aria-hidden

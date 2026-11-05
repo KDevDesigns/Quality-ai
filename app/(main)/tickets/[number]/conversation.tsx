@@ -25,7 +25,7 @@ export function Attachments({ files }: { files: FileRow[] }) {
               "metadata" made browsers fetch most of a phone recording on every visit, the biggest Storage download cost. */}
           <video src={`/files/${f.id}`} controls preload="none" playsInline className="max-h-[26.25rem] w-full rounded-lg border border-line bg-black" />
           <figcaption className="truncate text-[0.7188rem] text-muted-foreground" title={f.originalName}>
-            <a href={`/files/${f.id}`} target="_blank" rel="noopener" className="hover:text-acc">
+            <a href={`/files/${f.id}`} target="_blank" rel="noopener" className="hover:text-primary-text">
               {f.originalName}
             </a>
             {f.durationSec !== null ? ` · ${formatDuration(f.durationSec)}` : ""} · {formatBytes(f.size)}

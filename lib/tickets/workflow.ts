@@ -36,7 +36,7 @@ export const STATUS_LABELS: Record<TicketStatus, string> = {
 };
 
 export const STATUS_TONES: Record<TicketStatus, Tone> = {
-  NEW: "info",
+  NEW: "neutral",
   IN_PROGRESS: "acc",
   NEED_INFO: "warn",
   FIXED: "ok",

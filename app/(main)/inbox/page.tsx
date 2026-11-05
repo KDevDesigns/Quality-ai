@@ -80,7 +80,7 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
 
   return (
     <div
-      className="grid grid-cols-1 overflow-hidden rounded-xl border border-line bg-card lg:h-[calc(100dvh-16.25rem)] lg:min-h-[32.5rem] lg:grid-cols-[minmax(18.75rem,23.75rem)_minmax(0,1fr)]"
+      className="grid grid-cols-1 overflow-hidden rounded-xl border border-line bg-card lg:h-[calc(100dvh-17.5rem)] lg:min-h-[32.5rem] lg:grid-cols-[minmax(18.75rem,23.75rem)_minmax(0,1fr)]"
     >
       {/* Conversations */}
       <section aria-label="Conversations" className={cn("min-h-0 flex-col border-line lg:flex lg:border-r", t ? "hidden" : "flex")}>
@@ -116,7 +116,7 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
             ))}
             {more ? (
               <li className="border-t border-line2 p-3 text-center">
-                <Link href={hrefWith(p, { n: p.n + INBOX_PAGE })} className="text-sm font-medium text-acc hover:underline">
+                <Link href={hrefWith(p, { n: p.n + INBOX_PAGE })} className="text-sm font-medium text-primary-text hover:underline">
                   Show more
                 </Link>
               </li>
@@ -135,7 +135,7 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
           <MarkRead ticketId={t.id} number={t.number} lastActivityAt={t.lastActivityAt.toISOString()} />
           <ScrollToLatest targetId="inbox-messages" endId="inbox-reply" version={t.lastActivityAt.toISOString()} />
           <header className="grid grid-cols-1 gap-y-1.5 border-b border-line2 px-4 py-3">
-            <Link href={hrefWith(p, { t: null })} className="inline-flex items-center gap-1.5 text-[0.8438rem] text-muted-foreground hover:text-acc lg:hidden">
+            <Link href={hrefWith(p, { t: null })} className="inline-flex items-center gap-1.5 text-[0.8438rem] text-muted-foreground hover:text-primary-text lg:hidden">
               <ArrowLeftIcon className="size-3.5" aria-hidden /> My inbox
             </Link>
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 xl:flex-nowrap">
@@ -170,7 +170,7 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
         </section>
       ) : (
         <div className="hidden flex-col items-center justify-center gap-2.5 p-10 text-center lg:flex">
-          <span className="flex size-12 items-center justify-center rounded-full bg-acc-t text-acc" aria-hidden>
+          <span className="flex size-12 items-center justify-center rounded-full bg-acc-t text-primary-text" aria-hidden>
             <MessagesSquareIcon className="size-6" />
           </span>
           <p className="text-[0.9375rem] font-semibold">Pick a conversation</p>
@@ -200,7 +200,7 @@ function ThreadRow({ x, href, active, now }: { x: InboxThread; href: string; act
         <span className="flex items-center gap-2">
           <span className={cn("min-w-0 flex-1 truncate text-[0.8125rem]", x.unread ? "font-semibold text-foreground" : "text-muted-foreground")}>{x.preview}</span>
           {x.unreadMessages ? (
-            <span className="flex h-[1.125rem] min-w-[1.125rem] shrink-0 items-center justify-center rounded-full bg-bad px-1 text-[0.6875rem] leading-none font-semibold text-primary-foreground">
+            <span className="flex h-[1.125rem] min-w-[1.125rem] shrink-0 items-center justify-center rounded-full bg-bad px-1 text-[0.6875rem] leading-none font-semibold text-on-tone">
               {x.unreadMessages > 99 ? "99+" : x.unreadMessages}
               <span className="sr-only"> unread messages</span>
             </span>

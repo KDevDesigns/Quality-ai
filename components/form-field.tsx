@@ -26,12 +26,12 @@ export function Field({
     <div className={cn("grid content-start gap-2", className)}>
       <Label htmlFor={htmlFor}>
         {label}
-        {required ? <span className="-ml-1.5 text-destructive" aria-hidden>*</span> : null}
+        {required ? <span className="-ml-1.5 text-destructive-text" aria-hidden>*</span> : null}
       </Label>
       {children}
       {hint && !error?.length ? <p className="text-[0.7813rem] text-muted-foreground">{hint}</p> : null}
       {error?.length ? (
-        <p id={`${htmlFor}-error`} className="flex items-center gap-1.5 text-[0.7813rem] font-medium text-destructive">
+        <p id={`${htmlFor}-error`} className="flex items-center gap-1.5 text-[0.7813rem] font-medium text-destructive-text">
           <CircleAlertIcon className="size-3.5 shrink-0" aria-hidden />
           {error.join(" ")}
         </p>

@@ -39,7 +39,7 @@ export function AccountTabs({ tabs, initial }: { tabs: AccountTab[]; initial: st
         aria-label="Account settings"
         aria-orientation="vertical"
         onKeyDown={onKeyDown}
-        className="hidden md:sticky md:top-20 md:grid md:gap-1.5"
+        className="hidden md:sticky md:top-28 md:grid md:gap-1.5"
       >
         {tabs.map((t) => {
           const on = t.id === current;
@@ -62,7 +62,7 @@ export function AccountTabs({ tabs, initial }: { tabs: AccountTab[]; initial: st
               {t.icon}
               <span className="grid">
                 {t.label}
-                <span className={cn("hidden text-[0.75rem] font-normal md:block", on ? "text-primary-foreground/80" : "text-muted-foreground")}>{t.hint}</span>
+                <span className={cn("hidden text-[0.75rem] font-normal md:block", on ? "text-primary-foreground" : "text-muted-foreground")}>{t.hint}</span>
               </span>
             </button>
           );

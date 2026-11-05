@@ -123,7 +123,7 @@ async function MyWork({ me }: { me: { id: string; role: WorkRole } }) {
           <CardTitle>My modules</CardTitle>
           <CardDescription>{MODULES_TEXT[me.role]}</CardDescription>
           <CardAction>
-            <Link href={`/team?person=${me.id}`} className="text-sm font-medium text-acc hover:underline">View in directory</Link>
+            <Link href={`/team?person=${me.id}`} className="text-sm font-medium text-primary-text hover:underline">View in directory</Link>
           </CardAction>
         </CardHeader>
         {myAreas.length === 0 ? (
@@ -166,7 +166,7 @@ async function NotInAnyModule() {
         </CardTitle>
         <CardDescription>Developers and QA with no module, so nobody knows to send them tickets</CardDescription>
         <CardAction>
-          <Link href="/team" className="text-sm font-medium text-acc hover:underline">Assign</Link>
+          <Link href="/team" className="text-sm font-medium text-primary-text hover:underline">Assign</Link>
         </CardAction>
       </CardHeader>
       {unassigned.length === 0 ? (
@@ -233,14 +233,14 @@ function RecentTickets({ rows, role, unread }: { rows: Awaited<ReturnType<typeof
           {role === "DEV" ? "Assigned to you, most recent activity first" : "Tickets you filed, most recent activity first"}
         </CardDescription>
         <CardAction>
-          <Link href="/tickets?group=all" className="text-sm font-medium text-acc hover:underline">View all</Link>
+          <Link href="/tickets?group=all" className="text-sm font-medium text-primary-text hover:underline">View all</Link>
         </CardAction>
       </CardHeader>
       {rows.length === 0 ? (
         <CardContent>
           <p className="text-sm text-muted-foreground">
             {role === "DEV" ? "Nothing is assigned to you yet." : "No tickets yet."}{" "}
-            {role !== "DEV" ? <Link href="/tickets/new" className="font-medium text-acc hover:underline">File a ticket</Link> : null}
+            {role !== "DEV" ? <Link href="/tickets/new" className="font-medium text-primary-text hover:underline">File a ticket</Link> : null}
           </p>
         </CardContent>
       ) : (
@@ -253,7 +253,7 @@ function RecentTickets({ rows, role, unread }: { rows: Awaited<ReturnType<typeof
               </span>
               <Link
                 href={`/tickets/${t.number}`}
-                className={cn("min-w-0 flex-1 truncate after:absolute after:inset-0 hover:text-acc", unread.has(t.id) ? "font-semibold" : "font-medium")}
+                className={cn("min-w-0 flex-1 truncate after:absolute after:inset-0 hover:text-primary-text", unread.has(t.id) ? "font-semibold" : "font-medium")}
               >
                 {t.title}
               </Link>
@@ -291,7 +291,7 @@ function StatRow({ stats }: { stats: Stat[] }) {
             <Icon className="size-[1.125rem]" />
           </span>
           <span className="text-[1.875rem] leading-none font-bold tracking-[-0.03em] tabular-nums">{value}</span>
-          <span className={cn("text-[0.8438rem] leading-snug font-medium", i === 0 ? "text-primary-foreground/85" : "text-ink2")}>
+          <span className={cn("text-[0.8438rem] leading-snug font-medium", i === 0 ? "text-primary-foreground" : "text-ink2")}>
             {label}
             {note ? <span className="sr-only">, {note}</span> : null}
           </span>
@@ -305,7 +305,7 @@ function StatRow({ stats }: { stats: Stat[] }) {
           href={href}
           className="group flex items-center gap-4 rounded-xl border border-line bg-card p-5 transition-[border-color,box-shadow,transform] duration-200 ease-(--ease-out) hover:-translate-y-0.5 hover:border-acc-b hover:shadow-[0_0.625rem_1.5rem_rgba(40,46,140,0.08)] active:translate-y-0"
         >
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-[0.6875rem] bg-acc-t text-acc transition-transform duration-300 ease-(--ease-out) group-hover:scale-110" aria-hidden>
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-[0.6875rem] bg-acc-t text-primary-text transition-transform duration-300 ease-(--ease-out) group-hover:scale-110" aria-hidden>
             <Icon className="size-[1.375rem]" />
           </span>
           <span className="min-w-0 flex-1">
@@ -315,7 +315,7 @@ function StatRow({ stats }: { stats: Stat[] }) {
               {note ? <span className="text-[0.7813rem] whitespace-nowrap text-muted-foreground">{note}</span> : null}
             </span>
           </span>
-          <ArrowRightIcon className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-acc" aria-hidden />
+          <ArrowRightIcon className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary-text" aria-hidden />
         </Link>
       ))}
     </div>

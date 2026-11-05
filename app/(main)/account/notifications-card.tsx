@@ -145,7 +145,7 @@ export function WorkHoursCard({ initial }: { initial: { offHoursPush: OffHoursPu
                 </label>
               ))}
             </div>
-            {err.days?.length ? <p className="text-[0.7813rem] font-medium text-destructive">{err.days.join(" ")}</p> : null}
+            {err.days?.length ? <p className="text-[0.7813rem] font-medium text-destructive-text">{err.days.join(" ")}</p> : null}
           </fieldset>
           <fieldset className="grid gap-2.5">
             <legend className="mb-2 text-sm font-medium">Outside my work hours and days</legend>
@@ -156,7 +156,7 @@ export function WorkHoursCard({ initial }: { initial: { offHoursPush: OffHoursPu
                 <span className="col-start-2 text-[0.7813rem] text-muted-foreground">{o.hint}</span>
               </label>
             ))}
-            {err.offHoursPush?.length ? <p className="text-[0.7813rem] font-medium text-destructive">{err.offHoursPush.join(" ")}</p> : null}
+            {err.offHoursPush?.length ? <p className="text-[0.7813rem] font-medium text-destructive-text">{err.offHoursPush.join(" ")}</p> : null}
           </fieldset>
           <FormMessage state={state} />
           <div className="flex items-center justify-end gap-3">

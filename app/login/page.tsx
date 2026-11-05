@@ -30,7 +30,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
     // The page itself never scrolls; only the form column does. A page scrollbar (it appears on the taller Sign up
     // form) would narrow the window, resize the brand pane and make its text jump when switching tabs.
-    <div className="flex h-dvh overflow-hidden bg-background">
+    <div className="auth-page flex h-dvh overflow-hidden bg-background text-foreground">
       <BrandPane />
       <div className="flex h-dvh min-w-0 flex-1 flex-col">
         <div className="flex min-h-0 flex-1 overflow-y-auto px-4 pt-12 pb-8">

@@ -8,15 +8,14 @@ const TONE: Record<Tone, string> = {
   bad: "bg-bad-t text-bad",
   info: "bg-info-t text-info",
   acc: "bg-acc-t text-acc-ink",
-  neutral: "bg-surface3 text-ink2",
+  neutral: "bg-surface3 text-body2",
 };
 
-/** Status pill with a leading dot in the current text color. */
 export function StatusPill({ tone, children, className }: { tone: Tone; children: React.ReactNode; className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex h-[1.625rem] items-center gap-1.5 rounded-full px-2.5 text-[0.7813rem] font-semibold whitespace-nowrap before:size-[0.4375rem] before:rounded-full before:bg-current before:content-['']",
+        "inline-flex h-6 items-center gap-1.5 rounded-full px-[0.5625rem] text-[0.7813rem] font-medium whitespace-nowrap",
         TONE[tone],
         className,
       )}

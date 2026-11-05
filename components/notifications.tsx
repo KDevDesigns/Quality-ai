@@ -109,7 +109,7 @@ export function NotificationBell() {
         <BellIcon />
         {count ? (
           <span
-            className="absolute -top-1.5 -right-1.5 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-bad px-1 text-[0.6875rem] leading-none font-semibold text-primary-foreground ring-2 ring-background"
+            className="absolute -top-1.5 -right-1.5 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-bad px-1 text-[0.6875rem] leading-none font-semibold text-on-tone ring-2 ring-background"
             aria-hidden
           >
             {count > 9 ? "9+" : count}
@@ -143,13 +143,13 @@ export function NotificationBell() {
               <p className="px-3 py-6 text-center text-sm text-muted-foreground">You&apos;re all caught up.</p>
             )}
             <Menu.Separator className="-mx-1.5 my-1 h-px bg-line2" />
-            <Menu.Item className={cn(item, "h-10 items-center py-0 [&_svg]:size-4 [&_svg]:text-ink2 data-highlighted:[&_svg]:text-acc")} render={<Link href="/inbox" />}>
+            <Menu.Item className={cn(item, "h-10 items-center py-0 [&_svg]:size-4 [&_svg]:text-ink2 data-highlighted:[&_svg]:text-primary-text")} render={<Link href="/inbox" />}>
               <InboxIcon /> My inbox
             </Menu.Item>
             {count ? (
               <>
                 <Menu.Item
-                  className={cn(item, "h-10 items-center py-0 [&_svg]:size-4 [&_svg]:text-ink2 data-highlighted:[&_svg]:text-acc")}
+                  className={cn(item, "h-10 items-center py-0 [&_svg]:size-4 [&_svg]:text-ink2 data-highlighted:[&_svg]:text-primary-text")}
                   disabled={marking}
                   onClick={() =>
                     startTransition(async () => {

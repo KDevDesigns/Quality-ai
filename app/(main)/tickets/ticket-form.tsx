@@ -421,7 +421,7 @@ function TicketFormFields({
             </Field>
           ) : null}
         </div>
-        <div className="grid gap-5 @4xl:sticky @4xl:top-20 @4xl:rounded-[0.75rem] @4xl:border @4xl:border-line @4xl:bg-surface2 @4xl:p-5">
+        <div className="grid gap-5 @4xl:sticky @4xl:top-28 @4xl:rounded-[0.75rem] @4xl:border @4xl:border-line @4xl:bg-surface2 @4xl:p-5">
           <FormSection>Details</FormSection>
           <div className="grid gap-4 @md:grid-cols-2 @4xl:grid-cols-1">
             <Field label="Module" htmlFor="areaId" error={err.areaId} hint="Where in the ERP. It decides who is suggested below.">

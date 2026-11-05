@@ -676,7 +676,7 @@ export function MarkupEditor({ file, position, onDone }: { file: File | null; po
           </div>
 
           {error && img ? (
-            <p role="alert" className="text-[0.7813rem] font-medium text-destructive max-md:order-3 max-md:shrink-0 max-md:short:col-start-2 max-md:short:row-start-3">
+            <p role="alert" className="text-[0.7813rem] font-medium text-destructive-text max-md:order-3 max-md:shrink-0 max-md:short:col-start-2 max-md:short:row-start-3">
               {error}
             </p>
           ) : null}

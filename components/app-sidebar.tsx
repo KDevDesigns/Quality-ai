@@ -4,9 +4,13 @@ import type { AvatarPerson } from "@/lib/avatar";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { SearchIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -15,26 +19,30 @@ import {
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Role } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
-import { isActive, navGroups } from "./nav";
+import { filterNavGroups, isActive, navGroups } from "./nav";
 import { NavCount, useNotifications } from "./notifications";
+import { UserMenu } from "./user-menu";
 
-export type SidebarUser = AvatarPerson & { role: Role; mustChangePassword: boolean };
+export type SidebarUser = AvatarPerson & { role: Role };
 
-// Brand and 40px menu items follow the DCWD Careers (ERP HRMS) sidebar. The signed-in person is in the topbar (user-menu.tsx).
+// Brand, Search menu, 44 px menu items and the profile at the bottom follow the Base DCWD boards.
 // Minimised (the topbar's toggle or Ctrl+B), it springs down to a rail of icons: the brand text and the labels fade and
-// slide away one after another, the seal turns, counts become dots, and each icon gets its name as a tooltip.
+// slide away one after another, counts become dots, and each icon gets its name as a tooltip.
 
 const navButton = cn(
-  "h-10 gap-3.5 rounded-lg px-3.5 text-[0.9375rem] font-medium text-sidebar-foreground transition-[background-color,transform,box-shadow,width,height,padding] duration-200 hover:translate-x-[0.1875rem] hover:bg-acc-t2 data-active:translate-x-0 data-active:bg-acc data-active:font-medium data-active:text-primary-foreground data-active:shadow-[0_0.25rem_0.875rem_color-mix(in_srgb,var(--acc)_32%,transparent)] data-active:hover:bg-acc data-active:hover:text-primary-foreground [&_svg]:size-[1.125rem]",
-  // In the rail: exactly 40 px with the icon centred, and only the icon grows on hover, so nothing is clipped.
-  "group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:p-[0.6875rem]! group-data-[collapsible=icon]:hover:translate-x-0 group-data-[collapsible=icon]:hover:[&_svg]:scale-115 group-data-[collapsible=icon]:active:[&_svg]:scale-95",
-  "[&_svg]:transition-transform [&_svg]:duration-(--sidebar-dur) [&_svg]:ease-(--sidebar-ease)",
+  "h-11 gap-3.5 rounded-lg px-3.5 text-[0.9375rem] font-medium text-ink2 transition-[background-color,box-shadow,width,height,padding] duration-200 hover:bg-row-hover hover:[&_svg]:translate-x-0.5 data-active:bg-acc data-active:font-medium data-active:text-primary-foreground data-active:shadow-(--shadow-nav-active) data-active:hover:bg-acc data-active:hover:text-primary-foreground [&_svg]:size-[1.125rem]",
+  // In the rail: exactly 44 px with the icon centred.
+  "group-data-[collapsible=icon]:size-11! group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:p-[0.8125rem]!",
+  "[&_svg]:transition-transform [&_svg]:duration-220 [&_svg]:ease-(--ease-out)",
 );
 const groupLabel = cn(
-  "h-auto px-[0.5625rem] pt-5 pb-2.5 text-[0.6875rem] font-normal tracking-[0.12em] text-muted-foreground uppercase duration-300 ease-(--ease-out)",
+  "h-auto px-3.5 pt-4 pb-2 text-xs font-semibold tracking-[0.06em] text-body2 uppercase duration-300 ease-(--ease-out)",
   "group-data-[collapsible=icon]:-translate-x-3",
 );
 /** Text that fades and slides out when minimised, and back in (a beat later) when opened. */
@@ -43,7 +51,7 @@ const fadeText = cn(
   "group-data-[collapsible=icon]:-translate-x-3 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:delay-0",
 );
 /** The brand text also gives up its width in the rail, so it never spills past the edge while the sidebar shrinks. */
-const brandText = cn(fadeText, "max-w-40 overflow-hidden transition-[opacity,transform,max-width]", "group-data-[collapsible=icon]:max-w-0");
+const brandText = cn(fadeText, "max-w-48 overflow-hidden transition-[opacity,transform,max-width]", "group-data-[collapsible=icon]:max-w-0");
 
 export function AppSidebar({ user }: { user: SidebarUser | null }) {
   return <SidebarView pathname={usePathname()} user={user} />;
@@ -60,6 +68,10 @@ export function AppSidebarShell() {
 function SidebarView({ pathname, user }: { pathname: string | null; user: SidebarUser | null }) {
   const active = (href: string) => pathname !== null && isActive(pathname, href);
   const { data } = useNotifications();
+  const { state } = useSidebar();
+  const [query, setQuery] = useState("");
+  // The search box is hidden in the rail, so what was typed there must not hide any icons.
+  const groups = state === "collapsed" ? navGroups(user?.role ?? null) : filterNavGroups(navGroups(user?.role ?? null), query);
   // Unread replies on My inbox, unopened new tickets on Tickets, and sign-up and password requests on Users.
   const counts: Record<string, { count: number; label: string }> = {
     "/inbox": { count: data?.messages ?? 0, label: "unread messages" },
@@ -69,29 +81,51 @@ function SidebarView({ pathname, user }: { pathname: string | null; user: Sideba
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader
-        className={cn("h-[4.5rem] flex-row items-center gap-3 overflow-hidden border-b border-line2 px-4 py-0 transition-[padding] duration-(--sidebar-dur) ease-(--sidebar-ease)", "group-data-[collapsible=icon]:px-2")}
+        className={cn("h-24 shrink-0 flex-row items-center gap-2.5 overflow-hidden border-b border-line px-5 py-0 transition-[padding] duration-(--sidebar-dur) ease-(--sidebar-ease)", "group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0")}
       >
         <Link
           href="/"
-          className={cn("flex items-center gap-3 rounded-lg transition-[gap] duration-(--sidebar-dur) ease-(--sidebar-ease) focus-visible:ring-3 focus-visible:ring-acc/30 focus-visible:outline-none", "group-data-[collapsible=icon]:gap-0")}
+          className={cn("flex items-center gap-2.5 rounded-lg transition-[gap] duration-(--sidebar-dur) ease-(--sidebar-ease) focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none", "group-data-[collapsible=icon]:gap-0")}
         >
-          <Image
-            src="/dcwd-seal.png"
-            alt="DCWD seal"
-            width={40}
-            height={40}
-            priority
-            className="shrink-0"
-          />
+          <Image src="/dcwd-seal.png" alt="Davao City Water District seal" width={44} height={44} priority className="size-11 shrink-0" />
           <span className={cn("flex flex-col whitespace-nowrap", brandText)} style={{ "--d": "120ms" } as React.CSSProperties}>
-            <span className="text-[1.375rem] leading-none font-bold tracking-[-0.01em] text-acc">DCWD</span>
-            <span className="mt-1 text-[0.6875rem] font-semibold tracking-[0.14em] text-acc uppercase">QA Hub</span>
+            <span className="text-[1.0625rem] leading-[1.2] font-semibold text-brand">QA Hub</span>
+            <span className="mt-[0.1875rem] text-xs text-muted-foreground">DCWD ERP ticket hub</span>
           </span>
         </Link>
       </SidebarHeader>
-      <SidebarContent className={cn("gap-0 px-2 transition-[padding] duration-(--sidebar-dur) ease-(--sidebar-ease)", "group-data-[collapsible=icon]:px-0")}>
-        {navGroups(user?.role ?? null).map((group) => (
-          <SidebarGroup key={group.key}>
+      {/* Minimised, this button takes over from the one in the top bar. */}
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <SidebarTrigger
+              id="sidebar-expand"
+              variant="outline"
+              size="icon"
+              aria-label="Expand sidebar"
+              onClick={() => focusSoon("sidebar-minimize")}
+              className="mx-auto mt-4 hidden shrink-0 text-ink2 group-data-[collapsible=icon]:inline-flex"
+            />
+          }
+        />
+        <TooltipContent side="right">Expand sidebar</TooltipContent>
+      </Tooltip>
+      <div className="relative mx-4 mt-4 shrink-0 group-data-[collapsible=icon]:hidden">
+        <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+        <Input
+          id="menu-search"
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search menu"
+          aria-label="Search menu"
+          autoComplete="off"
+          className="h-10 bg-grouped pl-10 text-[0.9063rem]"
+        />
+      </div>
+      <SidebarContent className={cn("gap-0 px-4 transition-[padding] duration-(--sidebar-dur) ease-(--sidebar-ease)", "group-data-[collapsible=icon]:px-[1.375rem]")}>
+        {groups.map((group) => (
+          <SidebarGroup key={group.key} className="p-0">
             <SidebarGroupLabel className={groupLabel}>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="gap-1">
@@ -118,7 +152,7 @@ function SidebarView({ pathname, user }: { pathname: string | null; user: Sideba
                             <NavCount {...counts[href]} />
                           </SidebarMenuBadge>
                           {/* Minimised, the count becomes a dot on the icon. */}
-                          <span className={cn("pointer-events-none absolute top-[0.4375rem] left-[1.5625rem] pop-in hidden size-2.5 rounded-full border-2 border-sidebar bg-bad", "group-data-[collapsible=icon]:block")} aria-hidden />
+                          <span className={cn("pointer-events-none absolute top-2 left-7 pop-in hidden size-2.5 rounded-full border-2 border-sidebar bg-bad", "group-data-[collapsible=icon]:block")} aria-hidden />
                         </>
                       ) : null}
                     </SidebarMenuItem>
@@ -128,7 +162,20 @@ function SidebarView({ pathname, user }: { pathname: string | null; user: Sideba
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
+        {groups.length === 0 ? <p className="px-3.5 pt-4 text-sm text-muted-foreground" role="status">No menu item matches.</p> : null}
       </SidebarContent>
+      <SidebarFooter className="shrink-0 border-t border-line px-4 pt-3 pb-4 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-0">
+        {user ? <UserMenu user={user} active={active("/account")} /> : <div className="h-[3.25rem]" />}
+      </SidebarFooter>
     </Sidebar>
   );
+}
+
+/**
+ * The button just pressed hides itself, which would drop a keyboard user's place, so focus moves to the one that replaces it.
+ * Only when the keyboard is in use (`:focus-visible`), so a mouse click doesn't leave a focus ring showing.
+ */
+export function focusSoon(id: string) {
+  if (!document.activeElement?.matches(":focus-visible")) return;
+  requestAnimationFrame(() => document.getElementById(id)?.focus());
 }

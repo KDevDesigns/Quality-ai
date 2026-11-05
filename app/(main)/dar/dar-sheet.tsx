@@ -119,7 +119,7 @@ export function DarSheet({
                   id="dateSubmitted"
                   type="button"
                   title="Change the date submitted"
-                  className="cursor-pointer rounded-sm text-right font-bold underline decoration-dotted underline-offset-2 transition-colors hover:text-acc focus-visible:ring-3 focus-visible:ring-acc/25 focus-visible:outline-none"
+                  className="cursor-pointer rounded-sm text-right font-bold underline decoration-dotted underline-offset-2 transition-colors hover:text-primary-text focus-visible:ring-3 focus-visible:ring-acc/25 focus-visible:outline-none"
                 >
                   {longDate(dateSubmitted)}
                 </button>

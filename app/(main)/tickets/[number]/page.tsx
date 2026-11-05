@@ -83,7 +83,7 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
       <TicketTabs replies={t.comments.length}>
       <TicketPane tab="details">
       <div className="grid gap-3">
-        <Link href="/tickets" className="inline-flex w-fit items-center gap-1.5 text-[0.8438rem] text-muted-foreground hover:text-acc">
+        <Link href="/tickets" className="inline-flex w-fit items-center gap-1.5 text-[0.8438rem] text-muted-foreground hover:text-primary-text">
           <ArrowLeftIcon className="size-3.5" aria-hidden /> {me.role === "ADMIN" ? "All tickets" : "My tickets"}
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
@@ -100,7 +100,7 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
                 Filed by {t.reporter.name} · <time title={formatDateTime(t.createdAt)}>{timeAgo(t.createdAt, now)}</time>
               </span>
               {t.duplicateOf ? (
-                <Link href={`/tickets/${t.duplicateOf.number}`} className="font-medium text-acc hover:underline">
+                <Link href={`/tickets/${t.duplicateOf.number}`} className="font-medium text-primary-text hover:underline">
                   Duplicate of #{t.duplicateOf.number}
                 </Link>
               ) : null}
@@ -230,7 +230,7 @@ function ActivityLog({ entries }: { entries: LogEntry[] }) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <HistoryIcon className="size-4 text-acc" aria-hidden /> Activity log
+          <HistoryIcon className="size-4 text-primary-text" aria-hidden /> Activity log
         </CardTitle>
       </CardHeader>
       <ol className="max-h-[26.25rem] overflow-y-auto overscroll-contain" aria-label="Activity log, newest first">

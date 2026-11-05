@@ -63,7 +63,7 @@ export function TypeTile({ type, className }: { type: TicketType; className?: st
 }
 
 const SEVERITY_STYLE: Record<SeverityValue, string> = {
-  S1: "bg-bad text-white",
+  S1: "bg-bad text-on-tone",
   S2: "bg-bad-t text-bad",
   S3: "bg-warn-t text-warn-ink",
   S4: "bg-surface3 text-ink2",

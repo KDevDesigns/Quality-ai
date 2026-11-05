@@ -182,7 +182,7 @@ export function TicketBoard({ columns: fromServer, assign }: { columns: BoardCol
               }}
               className={cn(
                 "relative flex w-[min(20rem,85vw)] shrink-0 snap-start flex-col rounded-[0.875rem] bg-surface2 outline-2 -outline-offset-2 outline-transparent transition-[opacity,background-color,outline-color] duration-150 outline-dashed",
-                "md:h-[max(24rem,calc(100dvh-20rem))] md:w-auto md:min-w-[14rem] md:flex-1 md:basis-0",
+                "md:h-[max(24rem,calc(100dvh-21.25rem))] md:w-auto md:min-w-[14rem] md:flex-1 md:basis-0",
                 drag && !source && !droppable && "opacity-45",
                 droppable && "outline-acc-b",
                 droppable && over === col.key && "bg-acc-t outline-acc",
@@ -393,7 +393,7 @@ function Card({
         href={`/tickets/${card.number}`}
         draggable={false}
         className={cn(
-          "line-clamp-3 text-[0.875rem] leading-snug wrap-break-word outline-none after:absolute after:inset-0 after:rounded-[0.625rem] hover:text-acc focus-visible:after:ring-3 focus-visible:after:ring-acc/30",
+          "line-clamp-3 text-[0.875rem] leading-snug wrap-break-word outline-none after:absolute after:inset-0 after:rounded-[0.625rem] hover:text-primary-text focus-visible:after:ring-3 focus-visible:after:ring-acc/30",
           card.unread ? "font-semibold" : "font-medium",
         )}
       >
@@ -454,7 +454,7 @@ function Person({ person }: { person: BoardCard["person"] }) {
 }
 
 const item =
-  "flex h-9 cursor-default items-center gap-2.5 rounded-md px-3 text-[0.875rem] outline-hidden select-none data-highlighted:bg-acc-t2 data-highlighted:text-acc-ink [&_svg]:size-4 [&_svg]:text-ink2 data-highlighted:[&_svg]:text-acc";
+  "flex h-9 cursor-default items-center gap-2.5 rounded-md px-3 text-[0.875rem] outline-hidden select-none data-highlighted:bg-acc-t2 data-highlighted:text-acc-ink [&_svg]:size-4 [&_svg]:text-ink2 data-highlighted:[&_svg]:text-primary-text";
 
 /** Open, the status moves, and assigning. Shown on hover with a mouse; always there on touch screens. */
 function CardMenu({ card, onMove, onAssign }: { card: BoardCard; onMove: (m: Transition) => void; onAssign: () => void }) {
@@ -561,7 +561,7 @@ function TaskDialog({
       {!open ? null : move ? (
         <div className="grid max-h-[70vh] gap-3 overflow-y-auto pr-1">
           {moves.length > 1 ? (
-            <button type="button" onClick={() => onPick(null)} className="inline-flex w-fit items-center gap-1.5 text-[0.8125rem] text-muted-foreground hover:text-acc">
+            <button type="button" onClick={() => onPick(null)} className="inline-flex w-fit items-center gap-1.5 text-[0.8125rem] text-muted-foreground hover:text-primary-text">
               <ArrowLeftIcon className="size-3.5" aria-hidden /> Other choices
             </button>
           ) : null}
