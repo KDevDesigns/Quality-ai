@@ -15,11 +15,11 @@ export type LogEntry = { id: string; at: Date; who: string; kind: "created" | "s
 const status = (s: string | null) => (s ? (STATUS_LABELS[s as TicketStatus] ?? s) : "?");
 const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? "" : "s"}`;
 
-/** "2 images", "a video", "1 screenshot and a video". */
-function describeFiles(files: { kind?: string }[], image = "image"): string {
+/** "2 images", "a video", "1 screenshot and a screen recording". */
+function describeFiles(files: { kind?: string }[], image = "image", video = "video"): string {
   const videos = files.filter((f) => f.kind === "VIDEO").length;
   const images = files.length - videos;
-  return [images ? plural(images, image) : "", videos ? (videos === 1 ? "a video" : plural(videos, "video")) : ""].filter(Boolean).join(" and ");
+  return [images ? plural(images, image) : "", videos ? (videos === 1 ? `a ${video}` : plural(videos, video)) : ""].filter(Boolean).join(" and ");
 }
 
 export function buildActivityLog(t: LogInput): LogEntry[] {
@@ -27,20 +27,20 @@ export function buildActivityLog(t: LogInput): LogEntry[] {
 
   for (const e of t.events) {
     const base = { id: e.id, at: e.createdAt, who: e.actor.name };
-    if (e.kind === "CREATED") out.push({ ...base, kind: "created", text: "Filed the ticket" });
-    else if (e.kind === "STATUS") out.push({ ...base, kind: "status", text: `Moved it from ${status(e.from)} to ${status(e.to)}`, note: e.note ?? undefined });
+    if (e.kind === "CREATED") out.push({ ...base, kind: "created", text: "filed this ticket" });
+    else if (e.kind === "STATUS") out.push({ ...base, kind: "status", text: `moved this to ${status(e.to)}`, note: e.note ?? undefined });
     else if (e.kind === "ASSIGNEE") {
-      const text = !e.to ? `Unassigned ${e.from ?? "the developer"}` : e.from ? `Reassigned it from ${e.from} to ${e.to}` : `Assigned it to ${e.to}`;
+      const text = !e.to ? `unassigned ${e.from ?? "the developer"}` : e.from ? `reassigned this from ${e.from} to ${e.to}` : `assigned this to ${e.to}`;
       out.push({ ...base, kind: "assignee", text });
     } else if (e.kind === "FIELD") {
-      const text = e.field === "description" ? "Edited the description" : `Changed the ${e.field} from ${e.from ?? "none"} to ${e.to ?? "none"}`;
+      const text = e.field === "description" ? "edited the description" : `changed the ${e.field} from ${e.from ?? "none"} to ${e.to ?? "none"}`;
       out.push({ ...base, kind: "field", text });
     }
   }
 
   for (const c of t.comments) {
     const files = describeFiles(c.attachments);
-    const text = c.body ? (files ? `Replied, with ${files}` : "Replied") : `Posted ${files}`;
+    const text = c.body ? (files ? `replied, with ${files}` : "replied") : `posted ${files}`;
     out.push({ id: c.id, at: c.createdAt, who: c.author.name, kind: "reply", text });
   }
 
@@ -52,7 +52,7 @@ export function buildActivityLog(t: LogInput): LogEntry[] {
     if (g) g.files.push(a);
     else groups.set(key, { id: a.id, at: a.createdAt, who: a.uploader.name, files: [a] });
   }
-  for (const g of groups.values()) out.push({ id: g.id, at: g.at, who: g.who, kind: "attachment", text: `Attached ${describeFiles(g.files, "screenshot")}` });
+  for (const g of groups.values()) out.push({ id: g.id, at: g.at, who: g.who, kind: "attachment", text: `added ${describeFiles(g.files, "screenshot", "screen recording")}` });
 
   // Oldest first; at the same moment, "filed" comes before what was filed with it.
   const order: Record<LogEntry["kind"], number> = { created: 0, attachment: 1, assignee: 2, field: 3, status: 4, reply: 5 };

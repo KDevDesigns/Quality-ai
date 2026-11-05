@@ -32,18 +32,18 @@ describe("buildActivityLog", () => {
       ],
     });
     expect(log.map((e) => `${e.who}: ${e.text}`)).toEqual([
-      "Ana: Filed the ticket",
-      "Ana: Attached 2 screenshots",
-      "Ana: Assigned it to Ben",
-      "Ben: Moved it from New to Needs info",
-      "Ana: Replied",
-      "Ana: Posted 2 images",
-      "Ana: Changed the severity from S3 Minor to S1 Critical",
-      "Ana: Edited the description",
-      "Ben: Replied, with 1 image",
-      "Ana: Reassigned it from Ben to Cy",
-      "Ana: Unassigned Cy",
-      "Ana: Moved it from Fixed to Closed",
+      "Ana: filed this ticket",
+      "Ana: added 2 screenshots",
+      "Ana: assigned this to Ben",
+      "Ben: moved this to Needs info",
+      "Ana: replied",
+      "Ana: posted 2 images",
+      "Ana: changed the severity from S3 Minor to S1 Critical",
+      "Ana: edited the description",
+      "Ben: replied, with 1 image",
+      "Ana: reassigned this from Ben to Cy",
+      "Ana: unassigned Cy",
+      "Ana: moved this to Closed",
     ]);
     expect(log[3].note).toBe("Which month?");
   });
@@ -66,6 +66,6 @@ describe("buildActivityLog", () => {
         { id: "a2", kind: "VIDEO", createdAt: at, uploader: ana },
       ],
     });
-    expect(log.map((e) => e.text)).toEqual(["Attached 1 screenshot and a video", "Posted a video", "Replied, with 1 image and a video"]);
+    expect(log.map((e) => e.text)).toEqual(["added 1 screenshot and a screen recording", "posted a video", "replied, with 1 image and a video"]);
   });
 });

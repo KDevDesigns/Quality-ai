@@ -1,7 +1,9 @@
 import { BugIcon, LightbulbIcon, SparklesIcon } from "lucide-react";
 import { StatusPill } from "@/components/status-pill";
 import { cn } from "@/lib/utils";
-import { STATUS_LABELS, STATUS_TONES, TYPE_LABELS, TYPE_TONES, type SeverityValue, type TicketStatus, type TicketType, type TypeTone } from "@/lib/tickets/workflow";
+import { PRIORITY_LABELS, SEVERITY_LABELS, STATUS_LABELS, STATUS_TONES, TYPE_LABELS, TYPE_TONES, type SeverityValue, type TicketStatus, type TicketType, type TypeTone } from "@/lib/tickets/workflow";
+
+type PriorityValue = keyof typeof PRIORITY_LABELS;
 
 export function TicketStatusPill({ status, className }: { status: TicketStatus; className?: string }) {
   return (
@@ -62,16 +64,43 @@ export function TypeTile({ type, className }: { type: TicketType; className?: st
   );
 }
 
-const SEVERITY_STYLE: Record<SeverityValue, string> = {
-  S1: "bg-bad text-on-tone",
-  S2: "bg-bad-t text-bad",
-  S3: "bg-warn-t text-warn-ink",
-  S4: "bg-surface3 text-ink2",
-};
+/** Severity and priority share one colour scale, 1 to 4: red, orange, blue, grey (the --level-* tokens). */
+const LEVEL_DOTS = ["bg-level-1", "bg-level-2", "bg-level-3", "bg-level-4"];
+const LEVEL_TINTS = ["bg-level-1/15", "bg-level-2/15", "bg-level-3/15", "bg-level-4/15"];
 
-export function SeverityTag({ severity }: { severity: SeverityValue | null }) {
-  if (!severity) return null;
-  return <span className={cn("rounded-md px-1.5 py-0.5 font-mono text-[0.7188rem] font-semibold", SEVERITY_STYLE[severity])}>{severity}</span>;
+/** "S1" or "P1" to its place on the scale. */
+const levelIndex = (value: string) => Number(value[1]) - 1;
+
+/** The dot's colour class for a severity or priority, as whole class names so Tailwind sees them. */
+export const levelDot = (value: string) => LEVEL_DOTS[levelIndex(value)];
+
+const levelName = (value: SeverityValue | PriorityValue) => (value[0] === "S" ? SEVERITY_LABELS[value as SeverityValue] : PRIORITY_LABELS[value as PriorityValue]);
+
+/** A short tag for lists and cards, such as "S1" or "P3", with its full name on hover. The colour is never alone. */
+export function LevelTag({ value, className }: { value: SeverityValue | PriorityValue; className?: string }) {
+  return (
+    <span title={levelName(value)} className={cn("inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-mono text-[0.7188rem] font-semibold text-foreground", LEVEL_TINTS[levelIndex(value)], className)}>
+      <span className={cn("size-1.5 rounded-full", levelDot(value))} aria-hidden />
+      {value}
+      <span className="sr-only"> {levelName(value)}</span>
+    </span>
+  );
+}
+
+/** The full name with its dot, such as "P3 Normal", for the ticket page. */
+export function LevelLabel({ value }: { value: SeverityValue | PriorityValue }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={cn("size-2 shrink-0 rounded-full", levelDot(value))} aria-hidden />
+      {levelName(value)}
+    </span>
+  );
+}
+
+/** Bugs show their severity; other types show their priority in the same place. */
+export function SeverityTag({ severity, priority }: { severity: SeverityValue | null; priority?: PriorityValue }) {
+  if (severity) return <LevelTag value={severity} />;
+  return priority ? <LevelTag value={priority} /> : null;
 }
 
 /** The red dot on a ticket with activity you haven't opened yet. Screen readers hear "Unread". */

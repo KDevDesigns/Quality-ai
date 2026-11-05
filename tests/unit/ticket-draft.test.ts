@@ -87,3 +87,10 @@ describe("guessDevice", () => {
     expect(isDeviceType(null)).toBe(false);
   });
 });
+
+describe("draft fields", () => {
+  it("keeps the category", () => {
+    const raw = JSON.stringify({ savedAt: 1000, fields: { title: "Bill total wrong", category: "UI_UX" }, files: [] });
+    expect(parseDraft(raw, 2000)?.fields.category).toBe("UI_UX");
+  });
+});

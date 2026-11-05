@@ -8,7 +8,7 @@ import { DEVICE_TYPES, type DeviceType } from "./workflow";
 export const DRAFT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 /** The fields a draft keeps. */
-export const DRAFT_FIELDS = ["type", "title", "description", "areaId", "severity", "priority", "foundIn", "deviceType", "assigneeId"] as const;
+export const DRAFT_FIELDS = ["type", "title", "description", "areaId", "category", "severity", "priority", "foundIn", "deviceType", "assigneeId"] as const;
 
 export type DraftFile = { id: string; kind: "IMAGE" | "VIDEO"; name: string; size: number; durationSec: number | null; uploadedAt: number };
 export type TicketDraft = { savedAt: number; fields: Record<string, string>; files: DraftFile[] };

@@ -145,14 +145,14 @@ async function Inbox({ searchParams }: { searchParams: PageProps<"/inbox">["sear
               </h2>
               <div className="flex shrink-0 items-center gap-2">
                 <TicketStatusPill status={t.status} />
-                <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`/tickets/${t.number}`} />}>
+                <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`/tickets/${t.number}?tab=conversation`} />}>
                   Open ticket <ArrowRightIcon />
                 </Button>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[0.8125rem] text-muted-foreground">
               <TicketTypeLabel type={t.type} />
-              <SeverityTag severity={t.severity as SeverityValue | null} />
+              <SeverityTag severity={t.severity as SeverityValue | null} priority={t.priority} />
               <span>{t.area ? areaPath(t.area) : "Module not set"}</span>
               <span>Filed by {t.reporter.name}</span>
               <span>{t.assignee ? `Developer: ${t.assignee.name}` : "Not assigned"}</span>

@@ -16,6 +16,12 @@ export type SeverityValue = (typeof SEVERITIES)[number];
 export const DEVICE_TYPES = ["COMPUTER", "ANDROID", "IPHONE", "TABLET"] as const;
 export type DeviceType = (typeof DEVICE_TYPES)[number];
 
+export const TICKET_CATEGORIES = ["FRONT_END", "BACK_END", "UI_UX"] as const;
+export type TicketCategoryValue = (typeof TICKET_CATEGORIES)[number];
+export const CATEGORY_LABELS: Record<TicketCategoryValue, string> = { FRONT_END: "Front-end", BACK_END: "Back-end", UI_UX: "UI/UX" };
+/** What a ticket with no category shows. Tickets filed before Category existed have none until someone tags them. */
+export const NO_CATEGORY = "Not tagged yet";
+
 export const TYPE_LABELS: Record<TicketType, string> = { BUG: "Bug", SUGGESTION: "Suggestion", IMPROVEMENT: "Improvement" };
 
 /** The colour each type is shown in: Bug red, Suggestion amber, Improvement blue (the --type-* tokens in globals.css). */
@@ -51,6 +57,14 @@ export const STATUS_TONES: Record<TicketStatus, Tone> = {
 export const SEVERITY_LABELS: Record<SeverityValue, string> = { S1: "S1 Critical", S2: "S2 Major", S3: "S3 Minor", S4: "S4 Trivial" };
 
 export const DEVICE_LABELS: Record<DeviceType, string> = { COMPUTER: "Computer", ANDROID: "Android phone", IPHONE: "iPhone", TABLET: "Tablet" };
+/** Where a problem was found. Older tickets may hold free text from before this was a choice. */
+export const FOUND_IN = ["Dev", "Staging", "Production"] as const;
+
+/** The Found in choices, plus what an older ticket already says, so editing it doesn't lose that. */
+export function foundInOptions(current: string): string[] {
+  return current && !(FOUND_IN as readonly string[]).includes(current) ? [...FOUND_IN, current] : [...FOUND_IN];
+}
+
 export const PRIORITIES = ["P1", "P2", "P3", "P4"] as const;
 export const PRIORITY_LABELS = { P1: "P1 Urgent", P2: "P2 High", P3: "P3 Normal", P4: "P4 Low" } as const;
 
@@ -105,7 +119,7 @@ const RULES: Rule[] = [
   { from: ["NEW", "REOPENED"], to: "IN_PROGRESS", label: "Start work", who: devSide },
   { from: ["NEED_INFO"], to: "IN_PROGRESS", label: "Info added, resume", who: (t, u) => reporter(t, u) || devSide(t, u) },
   { from: WORKING, to: "FIXED", label: "Mark fixed", who: devSide },
-  { from: ["FIXED"], to: "VERIFIED", label: "Verified", who: qaSide },
+  { from: ["FIXED"], to: "VERIFIED", label: "Mark as verified", who: qaSide },
   { from: ["VERIFIED"], to: "CLOSED", label: "Close", who: qaSide },
   { from: WORKING, to: "NEED_INFO", label: "Ask for info", who: devSide, needsNote: true },
   { from: ["FIXED", "VERIFIED", "CLOSED", "REJECTED", "DUPLICATE", "WONT_FIX"], to: "REOPENED", label: "Reopen", who: qaSide, needsNote: true },
@@ -148,3 +162,5 @@ export const canEditTicket = (t: TicketRef, u: Actor) => can(u, "tickets.create"
 /** Deleting is permanent, so the same people as editing. */
 export const canDeleteTicket = (t: TicketRef, u: Actor) => can(u, "tickets.delete") && reporter(t, u);
 export const canAssign = (u: Actor) => can(u, "tickets.assign");
+/** Correcting the category: the assigned developer once they've identified the problem, or an admin. */
+export const canCategorize = (t: TicketRef, u: Actor) => can(u, "tickets.categorize") && (u.role === "ADMIN" || t.assigneeId === u.id);

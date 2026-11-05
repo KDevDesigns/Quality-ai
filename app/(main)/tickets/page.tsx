@@ -15,6 +15,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { areaPath } from "@/lib/areas/tree";
+import { moduleOptions } from "@/lib/areas/tree";
 import { can, type Role } from "@/lib/auth/permissions";
 import { requireAction } from "@/lib/auth/session";
 import { db } from "@/lib/db";
@@ -23,7 +24,7 @@ import { ticketFilters, type TicketFilters } from "@/lib/schemas/ticket";
 import { columnInView, TICKETS_VIEW_COOKIE, type BoardColumnKey, type TicketView } from "@/lib/tickets/board";
 import { notificationStore } from "@/lib/tickets/notifications";
 import { PAGE_SIZE, ticketStore, type TicketListRow } from "@/lib/tickets/store";
-import { allowedTransitions, canAssign, isDone, STATUS_LABELS, TICKET_TYPES, TYPE_LABELS, type Actor, type SeverityValue } from "@/lib/tickets/workflow";
+import { allowedTransitions, canAssign, isDone, STATUS_LABELS, TICKET_TYPES, TYPE_LABELS, type Actor, type SeverityValue, CATEGORY_LABELS, NO_CATEGORY, TICKET_CATEGORIES } from "@/lib/tickets/workflow";
 import { cn } from "@/lib/utils";
 import { TicketBoard, type BoardCard } from "./board";
 import { FilterSheet } from "./filter-sheet";
@@ -112,18 +113,16 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const now = new Date();
   const isQuick = (p: Quick["patch"]) => f.group === p.group && f.status === p.status && f.assignee === p.assignee && f.reporter === p.reporter;
-  const filtered = !!(f.type || f.area || f.q || (f.assignee && f.assignee !== "me"));
+  const filtered = !!(f.type || f.area || f.category || f.q || (f.assignee && f.assignee !== "me"));
   const canFile = can(me, "tickets.create");
 
   const options = {
     type: [{ value: "", label: "All types" }, ...TICKET_TYPES.map((t) => ({ value: t, label: TYPE_LABELS[t] }))],
     area: [
       { options: [{ value: "", label: "All modules" }] },
-      ...areas.map((m) => ({
-        label: m.name,
-        options: [{ value: m.id, label: `${m.name} (all)` }, ...m.children.map((c) => ({ value: c.id, label: c.name }))],
-      })),
+      ...moduleOptions(areas, "all"),
     ],
+    category: [{ value: "", label: "All categories" }, ...TICKET_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABELS[c] })), { value: "none", label: NO_CATEGORY }],
     assignee: [
       { value: "", label: "Any developer" },
       ...(me.role === "ADMIN" ? [{ value: "me", label: "Me" }] : []),
@@ -140,8 +139,8 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
       {f.reporter ? <input type="hidden" name="reporter" value={f.reporter} /> : null}
     </>
   );
-  const clearHref = hrefWith(f, { q: null, type: null, area: null, assignee: null });
-  const activeFilters = [f.type, f.area, f.assignee && f.assignee !== "me" ? f.assignee : null].filter(Boolean).length;
+  const clearHref = hrefWith(f, { q: null, type: null, area: null, category: null, assignee: null });
+  const activeFilters = [f.type, f.area, f.category, f.assignee && f.assignee !== "me" ? f.assignee : null].filter(Boolean).length;
   // Switching keeps the view and every filter; only the list's page number resets.
   const viewHrefs = { list: hrefWith(f, { view: "list" }), board: hrefWith(f, { view: "board" }) };
 
@@ -168,6 +167,9 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
                   </Field>
                   <Field label="Module" htmlFor="farea">
                     <SelectField id="farea" name="area" defaultValue={f.area ?? ""} groups={options.area} />
+                  </Field>
+                  <Field label="Category" htmlFor="fcategory">
+                    <SelectField id="fcategory" name="category" defaultValue={f.category ?? ""} options={options.category} />
                   </Field>
                   {me.role !== "DEV" ? (
                     <Field label="Developer" htmlFor="fassignee">
@@ -204,6 +206,9 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
             <Field label="Module" htmlFor="farea">
               <SelectField id="farea" name="area" defaultValue={f.area ?? ""} groups={options.area} />
             </Field>
+            <Field label="Category" htmlFor="fcategory">
+              <SelectField id="fcategory" name="category" defaultValue={f.category ?? ""} options={options.category} />
+            </Field>
             {me.role !== "DEV" ? (
               <Field label="Developer" htmlFor="fassignee">
                 <SelectField id="fassignee" name="assignee" defaultValue={f.assignee ?? ""} options={options.assignee} />
@@ -221,6 +226,7 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
           {keep}
           {f.type ? <input type="hidden" name="type" value={f.type} /> : null}
           {f.area ? <input type="hidden" name="area" value={f.area} /> : null}
+          {f.category ? <input type="hidden" name="category" value={f.category} /> : null}
           {f.assignee ? <input type="hidden" name="assignee" value={f.assignee} /> : null}
           <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-[1.125rem] -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input
@@ -258,6 +264,7 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
         <Input name="q" defaultValue={f.q} placeholder="Search title, text or #number" aria-label="Search" className="h-9 w-64 text-sm" />
         <SelectField name="type" defaultValue={f.type ?? ""} aria-label="Type" size="sm" className="w-40" options={options.type} />
         <SelectField name="area" defaultValue={f.area ?? ""} aria-label="Module" size="sm" className="w-56" groups={options.area} />
+        <SelectField name="category" defaultValue={f.category ?? ""} aria-label="Category" size="sm" className="w-44" options={options.category} />
         {/* A developer's list is already "assigned to me". */}
         {me.role !== "DEV" ? <SelectField name="assignee" defaultValue={f.assignee ?? ""} aria-label="Developer" size="sm" className="w-48" options={options.assignee} /> : null}
         <Button type="submit" variant="outline" size="sm">Filter</Button>
@@ -325,8 +332,9 @@ async function TicketList({ searchParams }: { searchParams: Promise<Record<strin
                     </Link>
                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.7813rem] text-muted-foreground">
                       <TicketTypeLabel type={t.type} />
-                      <SeverityTag severity={t.severity as SeverityValue | null} />
+                      <SeverityTag severity={t.severity as SeverityValue | null} priority={t.priority} />
                       {t.area ? <span>{areaPath(t.area)}</span> : null}
+                      <span>{t.category ? CATEGORY_LABELS[t.category] : NO_CATEGORY}</span>
                       <span>by {t.reporter.name}</span>
                       {t._count.comments ? (
                         <span className="inline-flex items-center gap-1">

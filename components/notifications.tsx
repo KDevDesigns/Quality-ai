@@ -126,7 +126,7 @@ export function NotificationBell() {
             <Menu.Separator className="-mx-1.5 my-1 h-px bg-line2" />
             {data?.items.length ? (
               data.items.map((t) => (
-                <Menu.Item key={t.id} className={item} render={<Link href={`/tickets/${t.number}`} />}>
+                <Menu.Item key={t.id} className={item} render={<Link href={`/tickets/${t.number}?tab=conversation`} />}>
                   <UnreadDot className="mt-2" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">

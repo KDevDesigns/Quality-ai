@@ -6,6 +6,10 @@ import { MAX_IMAGES_PER_POST, MAX_PENDING_PER_USER, MAX_VIDEOS_PER_POST, type Up
 import { BOARD_COLUMN_LIMIT, BOARD_COLUMNS } from "./board";
 import {
   canAssign,
+  canCategorize,
+  CATEGORY_LABELS,
+  NO_CATEGORY,
+  type TicketCategoryValue,
   canDeleteTicket,
   canEditTicket,
   DONE_STATUSES,
@@ -56,6 +60,7 @@ const listSelect = {
   status: true,
   severity: true,
   priority: true,
+  category: true,
   createdAt: true,
   lastActivityAt: true,
   areaId: true,
@@ -131,6 +136,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
     if (f.status) filters.status = f.status;
     else if (f.group !== "all") filters.status = { in: [...(f.group === "open" ? OPEN_STATUSES : DONE_STATUSES)] as TicketStatus[] };
     if (f.type) filters.type = f.type;
+    if (f.category) filters.category = f.category === "none" ? null : f.category;
     if (f.area) {
       const subs = await db.erpArea.findMany({ where: { parentId: f.area }, select: { id: true } });
       filters.areaId = { in: [f.area, ...subs.map((s) => s.id)] };
@@ -182,6 +188,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
                 priority: input.priority,
                 foundIn: input.foundIn,
                 deviceType: input.deviceType,
+                category: input.category ?? null,
                 reporterId: actor.id,
                 assigneeId: input.assigneeId,
                 createdAt: at,
@@ -225,6 +232,22 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
         await tx.ticketEvent.createMany({ data: changes.map((c) => ({ ticketId: id, actorId: actor.id, kind: "FIELD", ...c, createdAt: at })) });
       });
       return changes.length;
+    },
+
+    /**
+     * Corrects or sets the category. It leaves a line in the log but marks nothing unread and sends nothing: a developer tagging
+     * older tickets would otherwise flood QA testers.
+     */
+    async categorize(actor: Actor, id: string, category: TicketCategoryValue): Promise<void> {
+      const t = await load(id, actor);
+      if (!canCategorize(t, actor)) throw new TicketError("Only the assigned developer or an admin can change the category.");
+      if (t.category === category) return;
+      await db.$transaction(async (tx) => {
+        await tx.ticket.update({ where: { id }, data: { category } });
+        await tx.ticketEvent.create({
+          data: { ticketId: id, actorId: actor.id, kind: "FIELD", field: "category", from: t.category ? CATEGORY_LABELS[t.category] : NO_CATEGORY, to: CATEGORY_LABELS[category], createdAt: now() },
+        });
+      });
     },
 
     /** Assigns or reassigns the developer; `note` is an optional reason, shown on the timeline line. */

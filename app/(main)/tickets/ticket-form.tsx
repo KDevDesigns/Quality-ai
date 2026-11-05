@@ -7,17 +7,19 @@ import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { moduleOptions } from "@/lib/areas/tree";
 import { ROLE_LABELS, type Role } from "@/lib/auth/permissions";
 import { initialFormState, type FormState } from "@/lib/form";
 import { takeSharedFiles } from "@/lib/tickets/shared-files";
-import { VIDEO_TYPES } from "@/lib/uploads/limits";
+import { IMAGE_MAX_BYTES, MAX_IMAGES_PER_POST, VIDEO_MAX_MB, VIDEO_MAX_SECONDS, VIDEO_TYPES } from "@/lib/uploads/limits";
 import { DRAFT_FIELDS, draftKey, FILING_KEY, guessDevice, isDeviceType, isEmptyDraft, parseDraft, type DraftFile, type TicketDraft } from "@/lib/tickets/draft";
-import { DEVICE_LABELS, DEVICE_TYPES, PRIORITIES, PRIORITY_LABELS, SEVERITIES, SEVERITY_LABELS, TICKET_TYPES, TYPE_LABELS, type DeviceType, type SeverityValue, type TicketType } from "@/lib/tickets/workflow";
+import { CATEGORY_LABELS, DEVICE_LABELS, DEVICE_TYPES, foundInOptions, TICKET_CATEGORIES, PRIORITIES, PRIORITY_LABELS, SEVERITIES, SEVERITY_LABELS, TICKET_TYPES, TYPE_LABELS, type DeviceType, type SeverityValue, type TicketType } from "@/lib/tickets/workflow";
 import { cn } from "@/lib/utils";
 import { createTicket, editTicket } from "./actions";
-import { TYPE_ICON, typeStyle } from "./ticket-bits";
-import { ImagePicker, useImageAttachments } from "./image-picker";
-import { useVideoUpload, VideoPicker } from "./video-picker";
+import { EVIDENCE_BOX, EVIDENCE_INPUT, EvidenceBox } from "./evidence-box";
+import { levelDot, TYPE_ICON, TypeTile, typeStyle } from "./ticket-bits";
+import { useImageAttachments } from "./image-picker";
+import { useVideoUpload } from "./video-picker";
 
 export type AreaOption = { id: string; name: string; children: { id: string; name: string }[] };
 /** A developer or admin, with the areas they belong to, so the picker can suggest the right people. */
@@ -60,25 +62,38 @@ export function submitKeepingInput(action: (fd: FormData) => void) {
   };
 }
 
+/** Each field that can be refused and what to focus for it, in the order the form is read. */
+const ERROR_ORDER = [
+  ["title", "title"],
+  ["description", "description"],
+  ["uploadIds", EVIDENCE_BOX],
+  ["areaId", "areaId"],
+  ["category", "category"],
+] as const;
+
+const DESCRIPTION_HINTS: Record<TicketType, string> = {
+  BUG: "Input the Ticket Description Here.",
+  SUGGESTION: "Describe your idea and how it would help.",
+  IMPROVEMENT: "Describe what could work better and why it helps.",
+};
+
 const TYPE_HINTS: Record<TicketType, string> = {
   BUG: "Something in the ERP is wrong or broken.",
   SUGGESTION: "An idea for something new.",
   IMPROVEMENT: "Something that works but could be better.",
 };
 
-export function AreaSelect({ areas, value, onChange, id = "areaId" }: { areas: AreaOption[]; value: string; onChange: (v: string) => void; id?: string }) {
+export function AreaSelect({ areas, value, onChange, emptyLabel, invalid, id = "areaId" }: { areas: AreaOption[]; value: string; onChange: (v: string) => void; emptyLabel: string; invalid?: boolean; id?: string }) {
   return (
     <SelectField
       id={id}
       name="areaId"
       value={value}
       onValueChange={onChange}
+      aria-invalid={invalid}
       groups={[
-        { options: [{ value: "", label: "— Not sure —" }] },
-        ...areas.map((m) => ({
-          label: m.name,
-          options: [{ value: m.id, label: `${m.name} (whole module)` }, ...m.children.map((c) => ({ value: c.id, label: c.name }))],
-        })),
+        { options: [{ value: "", label: emptyLabel }] },
+        ...moduleOptions(areas, "whole module"),
       ]}
     />
   );
@@ -276,6 +291,13 @@ function TicketFormFields({
     }
   }, initialFormState);
   const err = state.fieldErrors ?? {};
+  // After a refused post, the keyboard goes to the first thing to fix, in the order the form is read.
+  useEffect(() => {
+    const errors = state.fieldErrors;
+    if (!errors) return;
+    const first = ERROR_ORDER.find(([field]) => errors[field]?.length);
+    if (first) document.getElementById(first[1])?.focus();
+  }, [state.fieldErrors]);
   const d = restored?.fields;
   const [type, setType] = useState<TicketType>(ticket?.type ?? (d?.type as TicketType | undefined) ?? "BUG");
   const [areaId, setAreaId] = useState(ticket?.areaId ?? d?.areaId ?? "");
@@ -321,13 +343,17 @@ function TicketFormFields({
     };
   }, [draftUserId]);
 
+  const foundIn = ticket?.foundIn ?? d?.foundIn ?? "";
+  /** A field across both columns of New ticket's Details card. */
+  const wide = !ticket ? "xl:col-span-2" : undefined;
+
   const saveSoon = () => {
     clearTimeout(typing.current);
     typing.current = setTimeout(() => save.current(), 500);
   };
 
   return (
-    <form ref={form} onSubmit={submitKeepingInput(action)} onInput={saveSoon} className="@container grid gap-5">
+    <form ref={form} onSubmit={submitKeepingInput(action)} onInput={saveSoon} className={cn("@container grid gap-5", !ticket && "xl:flex xl:min-h-0 xl:flex-1 xl:flex-col")}>
       {shareNote ? <InlineAlert tone="warn" role="status">{shareNote}</InlineAlert> : null}
       {restored ? (
         <InlineAlert tone="info" role="status">
@@ -357,30 +383,33 @@ function TicketFormFields({
         </>
       ) : null}
 
-      {/* Wide screens: what happened on the left, the details beside it. In the edit dialog it stays one column. */}
-      <div className="grid gap-5 @4xl:grid-cols-[minmax(0,1fr)_minmax(17.5rem,21.25rem)] @4xl:items-start @4xl:gap-8">
-        <div className="grid min-w-0 gap-5">
+      {/* New ticket: what happened in the main card, the details in one beside it, dropping under when they no longer fit. From xl they
+          fill the window (tickets/new/page.tsx), so the page doesn't scroll and a card with too much in it scrolls inside. In the edit dialog, one plain column. */}
+      <div className={cn("flex flex-wrap items-stretch gap-6", ticket && "gap-5", !ticket && "xl:min-h-0 xl:flex-1 xl:flex-nowrap")}>
+        <div className={cn("grid min-w-0 flex-[999_1_35rem] content-start gap-5", !ticket && "rounded-[0.875rem] border border-line bg-card p-5 shadow-(--shadow-card) max-md:rounded-2xl max-md:border-transparent md:p-6 xl:flex xl:flex-col xl:overflow-y-auto")}>
           <fieldset className="grid gap-2">
             <legend className="mb-2 text-sm font-medium">What is it?</legend>
             {/* Phones: three compact buttons side by side (icon over name); the picked one is outlined and bold. */}
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-3 gap-2.5 md:grid-cols-[repeat(auto-fit,minmax(11.25rem,1fr))]">
               {TICKET_TYPES.map((t) => {
                 const Icon = TYPE_ICON[t];
                 return (
                 <label
                   key={t}
                   className={cn(
-                    "flex cursor-pointer items-start gap-2.5 rounded-[0.625rem] border border-line p-3 text-sm transition-[border-color,background-color,transform] duration-200 active:scale-[0.99] has-focus-visible:ring-3 has-focus-visible:ring-acc/25 max-md:flex-col max-md:items-center max-md:gap-1.5 max-md:rounded-xl max-md:border-[0.125rem] max-md:px-1 max-md:py-3 max-md:text-center max-md:has-checked:font-semibold",
+                    "flex cursor-pointer items-start gap-3 rounded-[0.625rem] border border-line p-4 text-sm transition-[border-color,background-color,transform] duration-200 active:scale-[0.99] has-focus-visible:ring-3 has-focus-visible:ring-acc/25 max-md:flex-col max-md:items-center max-md:gap-1.5 max-md:rounded-xl max-md:border-[0.125rem] max-md:px-1 max-md:py-3 max-md:text-center max-md:has-checked:font-semibold",
                     typeStyle(t).choice,
+                    "md:hover:border-line md:hover:bg-row-hover md:has-checked:border-2 md:has-checked:border-acc md:has-checked:bg-acc-t2 md:has-checked:p-[0.9375rem]",
                   )}
                 >
-                  <input type="radio" name="type" value={t} checked={type === t} onChange={() => setType(t)} className="mt-0.5 max-md:sr-only" />
-                  <span className="max-md:contents">
+                  <input type="radio" name="type" value={t} checked={type === t} onChange={() => setType(t)} className="sr-only" />
+                  <TypeTile type={t} className="max-md:hidden" />
+                  <span className="min-w-0 max-md:contents">
                     <span className="flex items-center gap-1.5 font-medium max-md:flex-col max-md:gap-1.5">
-                      <Icon className={cn("size-4 max-md:size-6", typeStyle(t).icon)} aria-hidden />
+                      <Icon className={cn("size-6 md:hidden", typeStyle(t).icon)} aria-hidden />
                       {TYPE_LABELS[t]}
                     </span>
-                    <span className="text-[0.7813rem] text-muted-foreground max-md:hidden">{TYPE_HINTS[t]}</span>
+                    <span className="mt-0.5 block text-sm text-muted-foreground max-md:hidden">{TYPE_HINTS[t]}</span>
                   </span>
                 </label>
                 );
@@ -388,15 +417,16 @@ function TicketFormFields({
             </div>
           </fieldset>
 
-          <Field label="Title" htmlFor="title" error={err.title} required hint="One line someone can understand from the list, e.g. “Senior citizen discount not applied on bill reprint”.">
-            <Input id="title" name="title" defaultValue={ticket?.title ?? d?.title} required minLength={5} maxLength={150} aria-invalid={!!err.title} />
+          <Field label="Title" htmlFor="title" error={err.title} required tip="One line someone can understand from the list, e.g. “Senior citizen discount not applied on bill reprint”.">
+            <Input id="title" name="title" defaultValue={ticket?.title ?? d?.title} required minLength={5} maxLength={150} aria-invalid={!!err.title} placeholder="e.g. Senior citizen discount not applied on bill reprint" />
           </Field>
 
           <Field
             label="Description"
             htmlFor="description"
             error={err.description}
-            hint={type === "BUG" ? "Steps to reproduce, what you expected, and what happened instead. Use QA- test accounts where you can." : "What you'd like and why it helps."}
+            className={cn(!ticket && "xl:min-h-36 xl:flex-[1_1_9rem] xl:grid-rows-[auto_minmax(0,1fr)_auto] xl:content-stretch")}
+            tip={type === "BUG" ? "Steps to reproduce, what you expected, and what happened instead. Use QA- test accounts where you can." : "What you'd like and why it helps."}
           >
             <Textarea
               id="description"
@@ -404,39 +434,49 @@ function TicketFormFields({
               defaultValue={ticket?.description ?? d?.description}
               maxLength={20000}
               rows={8}
-              className="min-h-40"
+              className={cn("min-h-40", !ticket && "xl:h-full xl:min-h-24 xl:resize-none")}
               aria-invalid={!!err.description}
-              placeholder={type === "BUG" ? "Input the Ticket Description Here." : undefined}
+              placeholder={DESCRIPTION_HINTS[type]}
             />
           </Field>
 
           {!ticket ? (
-            <Field label="Screenshots" htmlFor="images" error={err.images}>
-              <ImagePicker state={images} />
-            </Field>
-          ) : null}
-          {!ticket ? (
-            <Field label="Video" htmlFor="video">
-              <VideoPicker state={video} />
+            <Field label="Screenshots and video" htmlFor={EVIDENCE_INPUT} error={err.uploadIds} required className="xl:flex-[1_0_10rem] xl:grid-rows-[auto_minmax(auto,1fr)_auto] xl:content-stretch" tip={`Up to ${MAX_IMAGES_PER_POST} images, ${IMAGE_MAX_BYTES / 1024 / 1024} MB each, opened in the markup tools first. One MP4 or WebM video, up to ${VIDEO_MAX_SECONDS / 60} min and ${VIDEO_MAX_MB} MB.`}>
+              <EvidenceBox images={images} video={video} />
             </Field>
           ) : null}
         </div>
-        <div className="grid gap-5 @4xl:sticky @4xl:top-28 @4xl:rounded-[0.75rem] @4xl:border @4xl:border-line @4xl:bg-surface2 @4xl:p-5">
-          <FormSection>Details</FormSection>
-          <div className="grid gap-4 @md:grid-cols-2 @4xl:grid-cols-1">
-            <Field label="Module" htmlFor="areaId" error={err.areaId} hint="Where in the ERP. It decides who is suggested below.">
-              <AreaSelect areas={areas} value={areaId} onChange={setAreaId} />
+        <div className={cn("flex min-w-0 flex-[1_1_20rem] flex-col gap-4", !ticket && "rounded-[0.875rem] border border-line bg-card p-5 shadow-(--shadow-card) max-md:rounded-2xl max-md:border-transparent xl:flex-[0_0_27.5rem] xl:overflow-hidden")}>
+          {ticket ? <FormSection>Details</FormSection> : <h2 className="text-lg font-semibold">Details</h2>}
+          {/* Severity and Device type come last: only Bug has them, so choosing another type moves nothing above them. */}
+          <div className={cn("grid gap-4", !ticket && "xl:min-h-0 xl:flex-1 xl:grid-cols-2 xl:content-start xl:overflow-y-auto xl:p-0.5")}>
+            <Field label="Module" htmlFor="areaId" error={err.areaId} className={wide} required={!ticket} tip="Where in the ERP. It decides who is suggested for Developer.">
+              <AreaSelect areas={areas} value={areaId} onChange={setAreaId} emptyLabel={ticket ? "— Not set —" : "Choose a module"} invalid={!!err.areaId} />
             </Field>
-            <Field label="Found in" htmlFor="foundIn" error={err.foundIn} hint="Optional: ERP build, server or page.">
-              <Input id="foundIn" name="foundIn" defaultValue={ticket?.foundIn ?? d?.foundIn ?? ""} maxLength={100} placeholder="e.g. staging, build 2026.10.2" />
+            {/* After filing, the developer corrects it in the ticket's Details, so it isn't in the edit dialog. */}
+            {!ticket ? (
+              <Field label="Category" htmlFor="category" error={err.category} className={wide} required tip="Front-end is what you see on screen. Back-end is data and processing. UI/UX is design work. It counts in Module progress on the Dashboard, and the developer can correct it later.">
+                <SelectField id="category" name="category" defaultValue={d?.category ?? ""} aria-invalid={!!err.category} options={[{ value: "", label: "Choose a category" }, ...TICKET_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABELS[c] }))]} />
+              </Field>
+            ) : null}
+            <Field label="Found in" htmlFor="foundIn" error={err.foundIn} tip="Optional: which environment you saw it in.">
+              <SelectField id="foundIn" name="foundIn" defaultValue={foundIn} options={[{ value: "", label: "— Not set —" }, ...foundInOptions(foundIn).map((v) => ({ value: v, label: v }))]} />
             </Field>
-            {type === "BUG" ? (
-              <Field label="Severity" htmlFor="severity" error={err.severity} hint="How bad the effect is: S1 blocks work or gets money wrong.">
-                <SelectField id="severity" name="severity" defaultValue={ticket?.severity ?? d?.severity ?? "S3"} options={SEVERITIES.map((s) => ({ value: s, label: SEVERITY_LABELS[s] }))} />
+            <Field label="Priority" htmlFor="priority" error={err.priority} required tip="How soon it should be looked at.">
+              <SelectField id="priority" name="priority" defaultValue={ticket?.priority ?? d?.priority ?? "P3"} options={PRIORITIES.map((p) => ({ value: p, label: PRIORITY_LABELS[p], dot: levelDot(p) }))} />
+            </Field>
+            {!ticket && canAssign ? (
+              <Field label="Developer" htmlFor="assigneeId" error={err.assigneeId} className={wide} tip="Who should fix it. You can change it later.">
+                <AssigneeSelect areas={areas} people={people} areaId={areaId} defaultValue={d?.assigneeId} />
               </Field>
             ) : null}
             {type === "BUG" ? (
-              <Field label="Device type" htmlFor="deviceType" error={err.deviceType} hint="What the bug happened on.">
+              <Field label="Severity" htmlFor="severity" error={err.severity} required tip="How bad the effect is: S1 blocks work or gets money wrong.">
+                <SelectField id="severity" name="severity" defaultValue={ticket?.severity ?? d?.severity ?? "S3"} options={SEVERITIES.map((s) => ({ value: s, label: SEVERITY_LABELS[s], dot: levelDot(s) }))} />
+              </Field>
+            ) : null}
+            {type === "BUG" ? (
+              <Field label="Device type" htmlFor="deviceType" error={err.deviceType} tip="What the bug happened on.">
                 <SelectField
                   id="deviceType"
                   name="deviceType"
@@ -446,19 +486,11 @@ function TicketFormFields({
                 />
               </Field>
             ) : null}
-            <Field label="Priority" htmlFor="priority" error={err.priority} hint="How soon it should be looked at.">
-              <SelectField id="priority" name="priority" defaultValue={ticket?.priority ?? d?.priority ?? "P3"} options={PRIORITIES.map((p) => ({ value: p, label: PRIORITY_LABELS[p] }))} />
-            </Field>
-            {!ticket && canAssign ? (
-              <Field label="Developer" htmlFor="assigneeId" error={err.assigneeId} hint="Who should fix it. You can change it later.">
-                <AssigneeSelect areas={areas} people={people} areaId={areaId} defaultValue={d?.assigneeId} />
-              </Field>
-            ) : null}
           </div>
           <FormMessage state={state} />
           {/* Phones: the main button stays at the bottom of the screen, full width, clear of the home bar. */}
-          <div className="flex justify-end gap-2 @4xl:grid max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-5 max-md:-mb-5 max-md:border-t max-md:border-line2 max-md:bg-card/90 max-md:px-5 max-md:pt-3 max-md:pb-[calc(0.75rem+env(safe-area-inset-bottom))] max-md:backdrop-blur-xl">
-            <Button type="submit" disabled={pending || video.busy || images.busy || images.failed || video.blocked} size="lg" className="max-md:h-12 max-md:w-full max-md:rounded-[0.875rem] max-md:text-base">
+          <div className={cn("flex justify-end gap-2 max-md:sticky max-md:bottom-0 max-md:z-10 max-md:-mx-5 max-md:-mb-5 max-md:border-t max-md:border-line2 max-md:bg-card/90 max-md:px-5 max-md:pt-3 max-md:pb-[calc(0.75rem+env(safe-area-inset-bottom))] max-md:backdrop-blur-xl", !ticket && "shrink-0 md:mt-auto")}>
+            <Button type="submit" disabled={pending || video.busy || images.busy || images.failed || video.blocked} size="lg" className={cn("max-md:h-12 max-md:w-full max-md:rounded-[0.875rem] max-md:text-base", !ticket && "md:w-full")}>
 
               {video.busy ? "Uploading video…" : images.busy ? "Uploading…" : images.failed || video.blocked ? "Finish the files above" : pending ? "Saving…" : ticket ? "Save changes" : "File ticket"}
             </Button>

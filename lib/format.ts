@@ -9,6 +9,13 @@ export function formatDateTime(d: Date): string {
   return dateTime.format(d);
 }
 
+const dateOnly = new Intl.DateTimeFormat("en-PH", { timeZone: TIME_ZONE, dateStyle: "medium" });
+
+/** "Oct 29, 2026" */
+export function formatDate(d: Date): string {
+  return dateOnly.format(d);
+}
+
 /** "just now", "5 min ago", "3 h ago", "2 d ago", then the date. */
 export function timeAgo(d: Date, now = new Date()): string {
   const s = Math.max(0, Math.round((now.getTime() - d.getTime()) / 1000));

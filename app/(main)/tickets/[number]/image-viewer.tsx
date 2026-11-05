@@ -204,14 +204,14 @@ export function ImageGallery({ images, children }: { images: GalleryImage[]; chi
 }
 
 /** A thumbnail that opens the ticket's gallery at this image. Its caption ("name · size") is its name for screen readers. */
-export function ImageThumb({ file }: { file: GalleryImage }) {
+export function ImageThumb({ file, className }: { file: GalleryImage; className?: string }) {
   const show = useContext(GalleryContext);
   return (
     <button
       type="button"
       aria-haspopup="dialog"
       onClick={() => show(file.id)}
-      className="group block w-44 cursor-pointer overflow-hidden rounded-lg border border-line bg-surface2 text-left hover:border-acc-b focus-visible:ring-3 focus-visible:ring-acc/30 focus-visible:outline-none"
+      className={cn("group block w-44 cursor-pointer overflow-hidden rounded-lg border border-line bg-surface2 text-left hover:border-acc-b focus-visible:ring-3 focus-visible:ring-acc/30 focus-visible:outline-none", className)}
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- served by the auth-checked /files route, not next/image */}
       <img src={`/files/${file.id}`} alt="" loading="lazy" className="h-28 w-full object-cover" />

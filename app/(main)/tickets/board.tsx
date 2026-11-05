@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type RefObject } from "react";
 import { Menu } from "@base-ui/react/menu";
-import { ArrowDownToLineIcon, ArrowLeftIcon, EllipsisIcon, FlagIcon, MessageSquareIcon, SquareArrowOutUpRightIcon, UserRoundIcon, UserRoundPlusIcon } from "lucide-react";
+import { ArrowDownToLineIcon, ArrowLeftIcon, EllipsisIcon, MessageSquareIcon, SquareArrowOutUpRightIcon, UserRoundIcon, UserRoundPlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { StatusPill } from "@/components/status-pill";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -14,7 +14,7 @@ import { PRIORITY_LABELS, STATUS_LABELS, TYPE_LABELS, type SeverityValue, type T
 import { cn } from "@/lib/utils";
 import { AssignForm, MoveForm } from "./[number]/ticket-controls";
 import { moveTicket } from "./actions";
-import { SeverityTag, TicketStatusPill, TYPE_ICON, typeStyle, UnreadDot } from "./ticket-bits";
+import { LevelTag, SeverityTag, TicketStatusPill, TYPE_ICON, typeStyle, UnreadDot } from "./ticket-bits";
 import type { AreaOption, AssigneeOption } from "./ticket-form";
 
 // The Board view of the tickets page, like ClickUp's or Planner's: a column per stage (lib/tickets/board.ts) and a
@@ -406,7 +406,7 @@ function Card({
         </span>
         {sideState ? <TicketStatusPill status={card.status} className="h-5 px-2 text-[0.6875rem]" /> : null}
         <SeverityTag severity={card.severity} />
-        <PriorityFlag priority={card.priority} />
+        <LevelTag value={card.priority as keyof typeof PRIORITY_LABELS} />
         <span className="ml-auto flex items-center gap-2">
           {card.comments ? (
             <span className="inline-flex items-center gap-0.5" title={`${card.comments} repl${card.comments === 1 ? "y" : "ies"}`}>
@@ -421,19 +421,6 @@ function Card({
         </span>
       </div>
     </li>
-  );
-}
-
-const PRIORITY_TONE: Record<string, string> = { P1: "text-bad", P2: "text-warn-ink" };
-
-/** Only urgent and high priority show; normal and low would be noise on every card. */
-function PriorityFlag({ priority }: { priority: string }) {
-  if (!(priority in PRIORITY_TONE)) return null;
-  return (
-    <span title={PRIORITY_LABELS[priority as keyof typeof PRIORITY_LABELS]} className={cn("inline-flex items-center gap-0.5 font-mono text-[0.7188rem] font-semibold", PRIORITY_TONE[priority])}>
-      <FlagIcon className="size-3" aria-hidden />
-      {priority}
-    </span>
   );
 }
 

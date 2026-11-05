@@ -28,7 +28,7 @@ describe("pushMessage", () => {
     expect(pushMessage(reply("Can you check the total again?"), t)).toEqual({
       title: "#12 · Bill shows the wrong total",
       body: "Ana: Can you check the total again?\nModule: Billing",
-      url: "/tickets/12",
+      url: "/tickets/12?tab=conversation",
       tag: "ticket-12",
       stack: { line: "Ana: Can you check the total again?", detail: "Module: Billing" },
     });

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { areaPath } from "@/lib/areas/tree";
 import { dayGroup, shortAgo } from "@/lib/format";
 import type { TicketStatus, TicketType } from "@/lib/tickets/workflow";
+import { CATEGORY_LABELS, NO_CATEGORY, type TicketCategoryValue } from "@/lib/tickets/workflow";
 import { cn } from "@/lib/utils";
 import { TicketStatusPill, TypeTile } from "./ticket-bits";
 
@@ -16,6 +17,8 @@ export type PhoneTicket = {
   status: TicketStatus;
   lastActivityAt: Date;
   area: { name: string; parent?: { name: string } | null } | null;
+  /** Left out where a list has no category to show, such as the Dashboard for now. */
+  category?: TicketCategoryValue | null;
   person: string;
 };
 
@@ -46,6 +49,7 @@ export function PhoneTicketRow({ t, unread, now }: { t: PhoneTicket; unread: boo
         <div className="flex flex-wrap items-center gap-2 text-[0.8125rem] text-muted-foreground">
           <TicketStatusPill status={t.status} />
           <span className="truncate">{t.person}</span>
+          {t.category !== undefined ? <span className="truncate">{t.category ? CATEGORY_LABELS[t.category] : NO_CATEGORY}</span> : null}
         </div>
       </div>
       {unread ? (

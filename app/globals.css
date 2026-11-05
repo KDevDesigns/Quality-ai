@@ -69,6 +69,11 @@
   --color-pending-bg: var(--pending-bg);
   --color-pending-text: var(--pending-text);
   --color-pending-border: var(--pending-border);
+  --color-ok-step: var(--ok-step);
+  --color-level-1: var(--level-1);
+  --color-level-2: var(--level-2);
+  --color-level-3: var(--level-3);
+  --color-level-4: var(--level-4);
   --color-bad-w: var(--bad-w);
   --color-destructive-text: var(--destructive-text);
   --color-acc: var(--acc);
@@ -153,7 +158,14 @@
   --shadow-dropdown: 0 1.25rem 3.125rem rgba(20, 28, 90, 0.22);
   --shadow-nav-active: 0 0.25rem 0.875rem color-mix(in srgb, var(--acc) 32%, transparent);
   /* #0f6e4f, not Base DCWD's #12805c: that one is 4.38:1 on the green pill, below the 4.5 AA needs. */
+  /* Severity and priority, 1 to 4: red, orange, blue, grey (app/(main)/tickets/ticket-bits.tsx). Fixed values, not the theme
+     colour, so "normal" looks the same for everyone and never like "urgent". */
+  --level-1: #d92d20;
+  --level-2: #ea7a0c;
+  --level-3: #2f6fed;
+  --level-4: #8b8f98;
   --ok: #0f6e4f;
+  --ok-step: #219a6d;
   --ok-t: #e7f5ef;
   --ok-b: #bfe3d2;
   --warn: #b45309;
@@ -245,37 +257,45 @@
   --acc: #5b62e0;
   --primary-text: #a9b0f5;
   --primary-hover: #6b72ea;
-  --acc-t: #252e7c;
-  --acc-t2: #19225f;
-  --acc-b: #36408f;
+  --acc-t: color-mix(in srgb, var(--acc) 22%, var(--sf));
+  --acc-t2: color-mix(in srgb, var(--acc) 9%, var(--sf));
+  --acc-b: color-mix(in srgb, var(--acc) 42%, var(--sf));
   --acc-ink: #c3c8fa;
-  --brand: #eef2fd;
-  --sf: #141c55;
-  --sf2: #111a4d;
-  --sf3: #1b2466;
-  --grouped: #0b1240;
-  --tx: #eef2fd;
-  --tx2: #d6dbf7;
-  --body-2: #c3c9ee;
-  --mu: #b3bbea;
-  /* 2.91:1: for outlines and the S4 dot, which always has text beside it. Never for text. */
-  --muted-2: #5d669e;
-  --placeholder: #7f87c4;
-  --ln: #2a3373;
-  --ln2: #212a68;
-  --navy: #c7ccf7;
-  --table-head: #1b2466;
-  --row-hover: #1a2364;
-  --on-tone: #0b1240;
-  --disabled-bg: #1f2860;
-  --disabled-text: #5d669e;
+  --brand: #eceef2;
+  /* A neutral charcoal rather than Base DCWD's navy (the owner's choice), with the theme colour in the borders. */
+  --sf: #17181c;
+  --sf2: #131417;
+  --sf3: #212227;
+  --grouped: #0e0f12;
+  --tx: #eceef2;
+  --tx2: #d3d5db;
+  --body-2: #bfc2ca;
+  --mu: #a3a6af;
+  /* For the S4 dot, which always has text beside it. Never for text. */
+  --muted-2: #62656e;
+  --placeholder: #83868f;
+  --ln: color-mix(in srgb, var(--acc) 30%, var(--sf));
+  --ln2: color-mix(in srgb, var(--acc) 18%, var(--sf));
+  /* Control outlines need 3:1 against the surface, so these mix from the lighter text colour. */
+  --input: color-mix(in srgb, var(--primary-text) 50%, var(--sf));
+  --navy: #c9cbd2;
+  --table-head: #212227;
+  --row-hover: #1f2025;
+  --on-tone: #0e0f12;
+  --disabled-bg: #26272d;
+  --disabled-text: #62656e;
   --pending-bg: #2e2510;
   --pending-text: #f4c24f;
   --pending-border: #6b5418;
   --shadow-card: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.25);
   --shadow-hover: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.35);
-  --shadow-dropdown: 0 1.25rem 3.125rem rgba(3, 6, 30, 0.5);
+  --shadow-dropdown: 0 1.25rem 3.125rem rgba(0, 0, 0, 0.5);
+  --level-1: #f2726a;
+  --level-2: #f59e42;
+  --level-3: #6ea1f7;
+  --level-4: #8f939c;
   --ok: #4cc79a;
+  --ok-step: #2fae7f;
   --ok-t: #16332a;
   --ok-b: #24503f;
   --warn: #f0a24b;
@@ -293,8 +313,8 @@
   --risk-critical: #6b2620;
   --type-sug-b: rgba(240, 162, 75, 0.35);
   --type-imp: #a9b0f5;
-  --type-imp-t: #252e7c;
-  --type-imp-b: #36408f;
+  --type-imp-t: rgba(169, 176, 245, 0.14);
+  --type-imp-b: rgba(169, 176, 245, 0.35);
   --destructive: #d2433d;
   color-scheme: dark;
 }
@@ -303,9 +323,9 @@
   --acc: var(--acc-base);
   --primary-text: color-mix(in srgb, var(--acc-base) 50%, white);
   --primary-hover: color-mix(in srgb, var(--acc-base) 88%, white);
-  --acc-t: color-mix(in srgb, var(--acc-base) 25%, var(--sf));
-  --acc-t2: color-mix(in srgb, var(--acc-base) 7%, var(--sf));
-  --acc-b: color-mix(in srgb, var(--acc-base) 48%, var(--sf));
+  --acc-t: color-mix(in srgb, var(--acc) 22%, var(--sf));
+  --acc-t2: color-mix(in srgb, var(--acc) 9%, var(--sf));
+  --acc-b: color-mix(in srgb, var(--acc) 42%, var(--sf));
   --acc-ink: color-mix(in srgb, var(--acc-base) 30%, white);
 }
 

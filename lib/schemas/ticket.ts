@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TICKET_VIEWS, type TicketView } from "@/lib/tickets/board";
-import { DEVICE_TYPES, PRIORITIES, SEVERITIES, TICKET_STATUSES, TICKET_TYPES } from "@/lib/tickets/workflow";
+import { DEVICE_TYPES, PRIORITIES, SEVERITIES, TICKET_CATEGORIES, TICKET_STATUSES, TICKET_TYPES, type TicketCategoryValue } from "@/lib/tickets/workflow";
 import { optionalText } from "./common";
 
 const emptyToNull = z
@@ -23,8 +23,20 @@ const ticketFields = z.object({
 /** Severity and device type only apply to bugs, so they are dropped for suggestions and improvements. */
 const bugOnly = <T extends { type: string; severity: string | null; deviceType: string | null }>(v: T): T => (v.type === "BUG" ? v : { ...v, severity: null, deviceType: null });
 
-export const ticketCreate = ticketFields.extend({ assigneeId: emptyToNull }).transform(bugOnly);
-export type TicketCreate = z.infer<typeof ticketCreate>;
+/** Filing a ticket: it must say where in the ERP, what kind of work, and show the problem. Editing stays free of these, for older tickets. */
+export const ticketCreate = ticketFields
+  .extend({
+    assigneeId: emptyToNull,
+    areaId: z.string().trim().min(1, "Choose a module"),
+    category: z.enum(TICKET_CATEGORIES, "Choose a category"),
+    uploadIds: z.array(z.string()).min(1, "Add at least one screenshot or video."),
+  })
+  .transform(bugOnly);
+
+/** What the store saves. The columns stay optional in the database, for tickets filed before these were required. */
+export type TicketCreate = Omit<z.infer<typeof ticketCreate>, "areaId" | "category" | "uploadIds"> & { areaId: string | null; category?: TicketCategoryValue | null };
+
+export const categoryInput = z.enum(TICKET_CATEGORIES, "Choose a category");
 
 export const ticketEdit = ticketFields.transform(bugOnly);
 export type TicketEdit = z.infer<typeof ticketEdit>;
@@ -58,6 +70,8 @@ export const ticketFilters = z.object({
   status: param.transform((v) => ((TICKET_STATUSES as readonly string[]).includes(v) ? (v as (typeof TICKET_STATUSES)[number]) : null)),
   type: param.transform((v) => ((TICKET_TYPES as readonly string[]).includes(v) ? (v as (typeof TICKET_TYPES)[number]) : null)),
   area: param.transform((v) => v || null),
+  /** A category, or "none" for tickets not tagged yet. */
+  category: param.transform((v) => (v === "none" || (TICKET_CATEGORIES as readonly string[]).includes(v) ? (v as TicketCategoryValue | "none") : null)),
   /** A user id, "me" or "none". */
   assignee: param.transform((v) => v || null),
   /** A user id or "me". */

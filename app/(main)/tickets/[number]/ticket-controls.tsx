@@ -1,17 +1,18 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { ArrowRightLeftIcon, PencilIcon, SendIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
+import { startTransition, useActionState, useState } from "react";
+import { ArrowRightLeftIcon, SendIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
 import { Field, FormMessage } from "@/components/form-field";
 import { FormDialog } from "@/components/form-dialog";
+import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useTouchScreen } from "@/hooks/use-touch-screen";
 import { initialFormState, type FormState } from "@/lib/form";
-import { STATUS_LABELS, type TicketStatus, type Transition } from "@/lib/tickets/workflow";
-import { addComment, assignTicket, deleteTicket, moveTicket } from "../actions";
+import { CATEGORY_LABELS, NO_CATEGORY, STATUS_LABELS, TICKET_CATEGORIES, type TicketCategoryValue, type TicketStatus, type Transition } from "@/lib/tickets/workflow";
+import { addComment, assignTicket, categorizeTicket, deleteTicket, moveTicket } from "../actions";
 import { AttachMenu } from "../attach-menu";
 import { ImagePicker, useImageAttachments } from "../image-picker";
 import { useVideoUpload, VideoPicker } from "../video-picker";
@@ -23,22 +24,22 @@ type Ref = { id: string; number: number };
 const FORWARD: readonly TicketStatus[] = ["IN_PROGRESS", "FIXED", "VERIFIED"];
 const isMain = (m: Transition) => !m.back && (FORWARD.includes(m.to) || (m.to === "CLOSED" && m.label === "Close"));
 
-/** The status buttons. Each opens a short dialog for the note. */
+/** Moves that send a ticket back or end it against the reporter's wish, so they read as a warning. */
+const RED: readonly TicketStatus[] = ["REOPENED", "REJECTED"];
+
+/** The status buttons, the main one last. Each opens a short dialog for the note. */
 export function StatusMoves({ ticket, status, moves }: { ticket: Ref; status: TicketStatus; moves: Transition[] }) {
   if (!moves.length) return null;
   const main = moves.find(isMain);
+  const ordered = main ? [...moves.filter((m) => m !== main), main] : moves;
   return (
     <div className="flex flex-wrap gap-2">
-      {moves.map((m) => (
+      {ordered.map((m) => (
         <FormDialog
           key={m.to}
           title={m.label}
           description={`${STATUS_LABELS[status]} → ${STATUS_LABELS[m.to]}`}
-          trigger={
-            <Button variant={m === main ? "default" : "outline"} size="sm">
-              {m.label}
-            </Button>
-          }
+          trigger={<Button variant={m === main ? "default" : RED.includes(m.to) ? "ghost-red" : "outline"}>{m.label}</Button>}
         >
           {(close) => <MoveForm ticket={ticket} move={m} onDone={close} />}
         </FormDialog>
@@ -119,6 +120,34 @@ export function AssignControl({
   return <AssignForm ticket={ticket} areas={areas} people={people} areaId={areaId} assigneeId={assigneeId} onDone={close} onCancel={assigneeId ? close : undefined} />;
 }
 
+/** The Category row for those allowed to change it (canCategorize). A choice saves straight away, with a line in the activity log. */
+export function CategoryControl({ ticket, category }: { ticket: Ref; category: TicketCategoryValue | null }) {
+  const [state, action, pending] = useActionState(categorizeTicket, initialFormState);
+  const options = TICKET_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABELS[c] }));
+  return (
+    <div className="grid justify-items-end gap-1.5">
+      <SelectField
+        key={category ?? "none"}
+        aria-label="Category"
+        size="sm"
+        className="w-[9.75rem]"
+        disabled={pending}
+        defaultValue={category ?? ""}
+        options={category ? options : [{ value: "", label: NO_CATEGORY }, ...options]}
+        onValueChange={(next) => {
+          if (!next) return;
+          const fd = new FormData();
+          fd.set("id", ticket.id);
+          fd.set("number", String(ticket.number));
+          fd.set("category", next);
+          startTransition(() => action(fd));
+        }}
+      />
+      <FormMessage state={state} />
+    </div>
+  );
+}
+
 /** The developer picker, with an optional reason when reassigning. Also the board's Assign dialog. */
 export function AssignForm({
   ticket,
@@ -168,7 +197,10 @@ export function AssignForm({
   );
 }
 
-export function CommentForm({ ticket }: { ticket: Ref }) {
+/** `replyTo`: on the ticket page, the other person's name (or "" if there is none yet), for a visible label and the fuller buttons. */
+export function CommentForm({ ticket, replyTo }: { ticket: Ref; replyTo?: string }) {
+  const full = replyTo !== undefined;
+  const asking = replyTo ? `Write a reply to ${replyTo}` : "Write a reply";
   const images = useImageAttachments();
   const video = useVideoUpload();
   const touch = useTouchScreen();
@@ -206,7 +238,7 @@ export function CommentForm({ ticket }: { ticket: Ref }) {
     >
       <input type="hidden" name="id" value={ticket.id} />
       <input type="hidden" name="number" value={ticket.number} />
-      <label htmlFor="body" className="sr-only">Your message</label>
+      <label htmlFor="body" className={full ? "text-[0.9063rem] font-medium" : "sr-only"}>{full ? "Reply" : "Your message"}</label>
       <Textarea
         id="body"
         name="body"
@@ -223,15 +255,15 @@ export function CommentForm({ ticket }: { ticket: Ref }) {
           e.preventDefault();
           if (canSend) e.currentTarget.form?.requestSubmit();
         }}
-        placeholder={touch ? "Write a reply…" : "Write a reply… (Enter to send, Shift+Enter for a new line, Ctrl+V to paste a screenshot)"}
+        placeholder={touch ? `${asking}…` : `${asking}… (Enter to send, Shift+Enter for a new line, Ctrl+V to paste a screenshot)`}
       />
       <ImagePicker state={images} id="comment-images" compact />
       <VideoPicker state={video} id="comment-video" compact />
       <FormMessage state={state} />
-      <div className="flex items-center justify-between gap-2">
-        <AttachMenu images={images} video={video} imagesId="comment-images" videoId="comment-video" />
-        <Button type="submit" disabled={!canSend}>
-          <SendIcon /> {video.busy ? "Uploading video…" : images.busy ? "Uploading…" : images.failed || video.blocked ? "Finish the files above" : pending ? "Sending…" : "Send"}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <AttachMenu images={images} video={video} imagesId="comment-images" videoId="comment-video" long={full} />
+        <Button type="submit" disabled={!canSend} variant={full ? "soft" : "default"} size={full ? "sm" : "default"}>
+          <SendIcon /> {video.busy ? "Uploading video…" : images.busy ? "Uploading…" : images.failed || video.blocked ? "Finish the files above" : pending ? "Sending…" : full ? "Send reply" : "Send"}
         </Button>
       </div>
     </form>
@@ -259,8 +291,8 @@ export function DeleteTicketDialog({ ticket, replies, files }: { ticket: { id: s
     >
       <DialogTrigger
         render={
-          <Button variant="outline" size="sm" className="border-bad-b text-bad hover:border-bad hover:bg-bad-t hover:text-bad">
-            <Trash2Icon /> Delete
+          <Button variant="ghost-red" size="sm">
+            Delete
           </Button>
         }
       />
@@ -309,7 +341,7 @@ export function EditTicketDialog({ ticket, areas, people }: { ticket: TicketValu
       title={`Edit #${ticket.number}`}
       trigger={
         <Button variant="outline" size="sm">
-          <PencilIcon /> Edit
+          Edit
         </Button>
       }
     >

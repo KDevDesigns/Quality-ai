@@ -1,40 +1,64 @@
 # UI (Web) Rework: developer handoff
 
-**Status: not ready to build.** The boards are not approved yet, so the app build stays on hold (`README.md`). Section 1
-lists the decisions needed first. Each has a recommendation, so approving it can be one word.
+**Status: ready to build.** The boards were approved on 2026-11-05 (canvas version 76), and every decision in section 1 is
+made. Build in the order in section 2.
 
 | Read this | For |
 |---|---|
 | The [canvas](https://claude.ai/artifact/4FM6sNF7gXezWyPrwkS7tB) (press Play) | What it looks like. This is the live design. |
-| `*.dc.html` in this folder | Exact sizes, copy and sample states. A copy of the canvas from 2026-11-05. |
+| `*.dc.html` in this folder | Exact sizes, copy and sample states. A copy of the approved canvas (version 76, 2026-11-05). |
 | `README.md` | New features, and the full rules for Module progress. They are not repeated here. |
 | This file | How the boards meet the real app: what to keep, change and add, and what the boards don't show. |
 
-If this file and a board disagree on the look, the board wins. If they disagree on behaviour, permissions or data, the
-code in `lib/` wins until a decision changes it.
+The decisions in section 1 come first, including where they differ from a board. After those, if this file and a board
+disagree on the look, the board wins. If they disagree on behaviour, permissions or data, the code in `lib/` wins.
 
 **The boards are prototypes.** Their data is sample data and their logic is not app logic. Rebuild the look with the
 app's own components; don't copy the markup. Section 9 lists what must not be copied.
 
 ---
 
-## 1. Decisions needed before building
+## 1. Decisions
 
-| # | Question | Why it matters | Recommendation |
+All decided on 2026-11-05. D12 follows the approved board; the owner accepted the recommendations for the others.
+
+**Where these differ from the approved boards** (the boards themselves were not redrawn):
+
+| Board | Build this instead | Decision |
+|---|---|---|
+| New ticket | No UI/UX type card or Approved design field yet. The UI/UX category stays | D3 |
+| New ticket | No asterisk on Developer or Device type | D8 |
+| Dashboard | My DAR in the menu for every role; the board hides it for Developer and Admin | D2 |
+| Dashboard | Progress cards are links for admins only | D6 |
+| Sign in | No "Office network only" text | D10 |
+| Users | A confirmation before Reject | D9 |
+| Profile menu | Appearance added above My account | D4 |
+| All | The three contrast fixes in section 8 | D11 |
+| All | Charcoal dark mode instead of navy, with borders in the theme colour | D14 |
+| All | Severity and priority in red, orange, blue, grey | D15 |
+| New ticket | Fills the window on laptops; Details card wider, in two columns, in a new field order | D16 |
+| New ticket | Found in is a select, not text | D17 |
+
+| # | Question | Why it matters | Decision |
 |---|---|---|---|
 | D1 | What do phones look like? | Every board is desktop only. The app has its own phone layout: `BottomNav`, `/settings`, `PhoneTicketGroups`, `FilterSheet`. The design system's own rule below 900 px would put the sidebar on top and remove that. | Keep the phone layout and only give it the new tokens. New features still reach phones (section 7). |
 | D2 | Who gets My DAR? | The Dashboard board shows it to QA testers only, and the Users board leaves it out for admins. `dar.use` in `permissions.ts` allows all three roles, and `navGroups` shows it to everyone. | Keep today's rule: everyone. |
 | D3 | Do we build UI/UX tickets now? | The picker lists designs "approved in Design reviews", but Design reviews doesn't exist: no table, no pages, no board. Only the `designs.*` permissions and `User.designer` exist. Also, `tickets.create` leaves out developers, so a designer who is a developer couldn't file one. | Leave the UI/UX **type** out of this rework and build it with Design reviews. The UI/UX **category** still ships. |
-| D4 | Where do light/dark and the theme colour go? | Today they are in the user menu (`user-menu.tsx`, `Appearance`). The new profile menu has only My account and Sign out, and no board has a place for them. Base DCWD also fixes the colour at `--primary`, while the app lets people pick one of six accents. | Keep Appearance in the profile menu, above My account. Keep light/dark. Remove the accent choice if you want one fixed DCWD look; otherwise map `--primary` to `--acc`. |
+| D4 | Where do light/dark and the theme colour go? | Today they are in the user menu (`user-menu.tsx`, `Appearance`). The new profile menu has only My account and Sign out, and no board has a place for them. Base DCWD also fixes the colour at `--primary`, while the app lets people pick one of six accents. | Keep Appearance in the profile menu, above My account, with light/dark and the six accents. Map `--primary` to `--acc`, so saved choices keep working and the default stays the DCWD colour. |
 | D5 | Who may change a ticket's category? | The board says "Developer". The README only asks for "a permission". | The assigned developer or an admin: a new `tickets.categorize` action for `ADMIN` and `DEV`, plus the same per-ticket check as `devSide` in `workflow.ts`. |
 | D6 | Where does a Module progress card link? | The counts cover **all** tickets in a module, but `/tickets` shows QA testers and developers only their own. A card saying "28 of 38" could open a list of 3. | A link for admins only. For everyone else it is a plain card with no hover. |
-| D7 | What happens to accounts set to "Notify me silently"? | The option is removed from the page, but `SILENT` is still an enum value and accounts may hold it. | Change those accounts to `NONE` (Don't notify me), since both mean no noise outside work hours and the bell keeps everything. Ask before applying the migration. |
+| D7 | What happens to accounts set to "Notify me silently"? | The option is removed from the page, but `SILENT` is still an enum value and accounts may hold it. | Change those accounts to `NONE` (Don't notify me), since both mean no noise outside work hours and the bell keeps everything. The data change still needs a backup, and a go-ahead just before it is applied. |
 | D8 | Are Developer and Device type really required? | Both have an asterisk, yet both offer an empty choice ("Not assigned yet", "Not set"). Today both are optional in `lib/schemas/ticket.ts`. | Remove both asterisks and keep today's rules. |
 | D9 | Should reject need a confirmation? | Approve has a dialog. Reject has none, but `rejectSignUp` permanently deletes the request. | Add a confirmation in the same dialog style. |
-| D10 | Is "Office network only" still true? | It is on the Login board and the live sign-in footer, but the app runs on public Vercel. I found nothing in `docs/OPERATIONS.md` that limits it to the office. | Remove that phrase unless IT really does restrict it. |
-| D11 | Approve the contrast fixes? | Three colours fail WCAG AA in the light theme (section 8). | Yes. |
-| D12 | Keep "Search menu" in the sidebar? | It filters only 5 or 6 items. `PRODUCT.md` says to add nothing that doesn't help someone work. | Leave it out until the menu is long. It can be added later without changing the layout. |
-| D13 | When someone edits an older ticket with no module or category, must they set them? | The README requires both on new tickets only. `ticket-form.tsx` is shared by New and Edit. | Don't force it on Edit. Show "Not set" and let them choose. Only `createTicket` refuses. |
+| D10 | Is "Office network only" still true? | It is on the Login board and the live sign-in footer, but the app runs on public Vercel. I found nothing in `docs/OPERATIONS.md` that limits it to the office. | Remove that phrase, on the page and in the live footer. |
+| D11 | Approve the contrast fixes? | Three colours fail WCAG AA in the light theme (section 8). | Yes, apply them. |
+| D12 | Keep "Search menu" in the sidebar? | It filters only 5 or 6 items. `PRODUCT.md` says to add nothing that doesn't help someone work. | Keep it, as on the approved boards. |
+| D13 | When someone edits an older ticket with no module or category, must they set them? | The README requires both on new tickets only. `ticket-form.tsx` is shared by New and Edit. | Don't force it on Edit. Show "Not set" and let them choose. Only `createTicket` refuses. Category isn't in the Edit dialog: D5 decides who may change it, in the ticket's Details. |
+| D14 | Which colours does dark mode use? | The owner found the navy too strong after seeing it in the app (2026-11-05). | A neutral charcoal (surface `#17181c`, page `#0e0f12`) replaces the navy values in section 4. Borders and control outlines mix in the person's theme colour. The sign-in page keeps its own colours. |
+| D15 | What colours do severity and priority use? | Level 3 used `--primary`, which follows the theme colour, and looked close to level 4. | One fixed scale for both, the `--level-*` tokens: 1 red, 2 orange, 3 blue, 4 grey. It doesn't follow the theme colour. Used everywhere a severity or priority appears, always with its text. |
+| D16 | How does New ticket fit the screen on a laptop? | Changing type moved the layout, because Bug has two more fields. | From 1280 px wide the cards fill the window, so the page doesn't scroll and a full card scrolls inside. The Details card is 440 px with two columns. Severity and Device type come last, so nothing above them moves. |
+| D17 | Is Found in free text? | The owner wants a fixed choice. | A select: Dev, Staging, Production, or not set. Optional. Older tickets keep their free text, offered as an extra choice when edited. |
+| D18 | Module dropdown | Sub-modules were hard to tell apart. | A tree: modules in bold, sub-modules indented under them. Once chosen, a sub-module shows as "Module › Sub-module". |
 
 ---
 
@@ -77,6 +101,7 @@ The app reaches the same result differently: `html { font-size: clamp(16px, 0.83
 | Top bar and brand block | `--size-topbar` | 96 px (6rem) | Brand 4.5rem | Taller |
 | Nav item | `--size-nav-item` | 44 px | 40 px | Taller |
 | Brand text | | "QA Hub" 17/600, "DCWD ERP ticket hub" 12 | "DCWD" and "QA HUB" | New text |
+| Search menu | | 40 px field under the brand; filters the nav items, hidden when minimized | None | New (D12) |
 | Profile | | Bottom of sidebar, in view on long pages | Top bar (`user-menu.tsx`) | Moves |
 | Page content | `--space-32` | 32 px padding, no maximum width | 40 px, `max-w-[82.5rem]` | Remove the maximum width |
 | Page background | `--surface` | White | | `tokens.css` overrides `--page` for the shell |
@@ -104,6 +129,7 @@ prototype.
 ## 4. Design tokens
 
 All values are in `ds/base-dcwd/tokens.css`, with `tokens.json` as the data form. Use the token names; don't paste values.
+Dark mode's surface, text and border values below are replaced by D14; `app/globals.css` has the real ones.
 
 **Don't run two palettes.** Change the values of the existing app tokens and add only the names that are missing:
 
@@ -165,7 +191,7 @@ uses the same names (`--tx`, `--mu`, `--ln`...). Before changing those values, f
 | Reopened | red | |
 | Closed, Rejected, Duplicate, Won't fix | gray | The last three aren't on a board; this is the app's rule |
 
-Severity and priority dot: 1 `--danger`, 2 `--warning`, 3 `--primary`, 4 `--muted-2`. Bugs show severity; other types show
+Severity and priority dot: the `--level-1` to `--level-4` tokens, red, orange, blue, grey (D15). Bugs show severity; other types show
 priority in the same place. Type text: Bug `--danger-text`, Suggestion `--warning`, Improvement `--primary-text`.
 
 ---
@@ -320,9 +346,11 @@ Puts the ticket's state and the next move on top, then Details or Conversation.
 
 Other rules:
 
-- **Tabs:** Details, Conversation with a reply count. Keep the tab in the URL, as `account-tabs.tsx` does, with the same
-  keyboard handling. Default is Details. A link from a notification or inbox should open Conversation (not on the board,
-  but that is what the person came for).
+- **Tabs:** Details, Conversation with a reply count. **`ticket-tabs.tsx` already does this on phones;** laptops show every
+  part at once today. Extend it to laptops instead of building new tabs. Keep what it has: `?tab=conversation` in the URL,
+  and both tabs staying mounted, so **a half-written reply survives switching tabs** (the board's version would lose it).
+  Default is Details. A link from a notification or inbox should use `?tab=conversation` (not on the board, but that is
+  what the person came for).
 - **Evidence:** real thumbnails through `/files/[id]` and the existing `ImageGallery`. The bracketed labels are sample text.
 - **Conversation:** existing `Thread` and `CommentForm`; status events sit inline. Keep the description and its files where
   they are in the Report.
@@ -367,8 +395,11 @@ Mostly a restyle: dialog 1180 wide, canvas area 470 high on `--sample-black`.
 
 - Eleven tools with keys: Select V, Box B, Circle E, Arrow A, Pen P, Highlight M, Text T, Steps N, Callout K, Hide H,
   Crop C. Four colours, undo, redo, clear, zoom, Fit, Shortcuts.
-- **Check each tool against `markup-toolbar.tsx` and `shortcuts.ts` when building.** I did not compare them one by one. Any
-  difference is a question for the designer, not a change to make silently.
+- **Checked against the code:** the tool names, keys and hints match `TOOL_BUTTONS` in `shortcuts.ts`, and the four colours
+  match `MARK_COLORS`. Read them from there; don't retype them. The colours stay literal because they are part of the image,
+  not the theme.
+- **The board's Shortcuts panel lists only 4 shortcuts. Keep the full `SHORTCUT_HELP` list** (colour keys, nudging, Delete,
+  zoom, Esc and more), so nothing people use today disappears.
 - Keep `close-guard` for unsaved marks, and the phone-sideways layout (`short` variant).
 - The Hide tool's black box must be burned into the saved image. It protects customer data (`CLAUDE.md` rule 1).
 
@@ -386,8 +417,8 @@ Show more, and the phone's one-pane-at-a-time layout.
 
 ### Team and modules: `team/page.tsx`, `Team.dc.html`
 
-- Left: module search, **new** "Show modules for" person filter, module list. Right: owners table with Lead, Developers, QA.
-- Selected module and filters go in the URL.
+- Left: module search, "Show modules for" person filter, module list. Right: owners table with Lead, Developers, QA.
+- The person filter already exists (`?person=`), so keep it and its logic. Add the selected module to the URL the same way.
 - Selected person's chips turn blue. An empty cell shows "None" as plain muted text.
 - No match: "No module matches. Clear the search or choose Everyone."
 - Admin buttons (Add module, Add sub-module, Edit module, Edit) open the existing `team-dialogs.tsx`. Everyone else sees none.
@@ -399,19 +430,20 @@ Show more, and the phone's one-pane-at-a-time layout.
 - Day button: 64 high; weekday, number, green dot if filled. Selected: 2 px `--primary`. Today: label "Today". Rest days:
   `--surface-subtle`. Accessible name: "Wed Nov 4, filled".
 - Day card pill: Filled (green), Empty, Rest day or Not yet (gray).
-- Save button shows Save when changed and Saved when not. Keep today's protection for unsaved changes when changing period.
+- Save button shows Save when changed and Saved when not. Keep both of today's unsaved-changes guards in `dar-editor.tsx`:
+  the question when changing period, and the browser's warning when leaving the page.
 - Print and Download Excel use the existing `dar-sheet` and `dar/export` route.
 - **Wording:** the DAR board says "Core duties", the set-up board "A.) Core functions". Use the set-up wording throughout,
   as it matches the `coreFunctions` data. Confirm it matches the official form.
-- **Date submitted** is plain text on the board, but `DarReport.dateSubmitted` is saved data. Keep it editable if
-  `dar-editor.tsx` has that today.
+- **Date submitted** is plain text on the board ("Not yet"), but `dar-editor.tsx` lets people set it today and saves it to
+  the report. Keep it editable in "This report".
 - Not set up: the card "Set up your DAR", linking to `/dar/setup`.
 
 ### My DAR set-up: `dar/setup/`, `DarSetup.dc.html`
 
 A restyle of `setup-form.tsx` and `functions-editor.tsx`. Sections: First period, Header, Signatories, Duties and MFOs.
-Add errors with `dc-error` and keep the existing save result. The board removes a row at once, with no question; keep
-whatever `functions-editor.tsx` does today.
+Add errors with `dc-error` and keep the existing save result. Rows behave the same on the board and in
+`functions-editor.tsx` today: Move up only, and Remove acts at once with no question, so keep that.
 
 ### My account: `account/`, `Account.dc.html`
 
@@ -470,7 +502,7 @@ Keep `?mode=` and `?next=`. Add the `InfoTip` styles here too: this page doesn't
 
 **Use the app's 768 px breakpoint, not the design system's 900 px rule.** Between them the sidebar stays, as today.
 
-New features on phones, with no board (a proposal, to confirm under D1):
+New features on phones, with no board (D1 keeps today's layout; this is how they fit into it):
 
 | Feature | Phone |
 |---|---|

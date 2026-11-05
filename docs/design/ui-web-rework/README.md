@@ -1,14 +1,15 @@
 # UI (Web) Rework: design notes
 
 This folder is a copy of the boards on the [QA Hub Redesign canvas](https://claude.ai/artifact/4FM6sNF7gXezWyPrwkS7tB),
-last copied on 2026-11-05. **The canvas is the live design.** If the canvas changes, copy it here again.
+copied at version 76, which was **approved on 2026-11-05**. If the canvas changes after this, copy it here again.
+Build details are in `HANDOFF.md`.
 
 - `*.dc.html` holds one board per page, with sample data.
 - `ds/base-dcwd/` holds the Base DCWD Design System files the boards use, plus the shared sidebar and notifications
   behaviour (`shell.js`, `tokens.css`).
 - These files are a reference for building. They don't run on their own: a board needs the canvas to draw it, and its
   images live on the canvas. To see a design, open the canvas and press Play.
-- Nothing here is app code. The app build is on hold until the boards are approved.
+- Nothing here is app code. The boards are approved; `HANDOFF.md` has the build order, the decisions made, and where they differ from a board.
 
 ## Boards
 
@@ -33,7 +34,7 @@ last copied on 2026-11-05. **The canvas is the live design.** If the canvas chan
 |---|---|---|
 | Ticket category: Front-end, Back-end or UI/UX, required when filing | New ticket, Ticket detail, Tickets | Yes |
 | Module progress: three percentages per module, with a filter | Dashboard | None beyond ticket category |
-| UI/UX ticket from an approved design | New ticket | Yes: a `UIUX` ticket type and a link to the design. Design reviews has no board yet. |
+| UI/UX ticket from an approved design: **later**, with Design reviews (not in this rework) | New ticket | Yes: a `UIUX` ticket type and a link to the design. Design reviews has no board yet. |
 | Own password at sign-up, approval with confirmation | Sign in, Users | Probably none |
 | At least one attachment on every new ticket | New ticket | None |
 | One upload box with Ctrl+V | New ticket | None |
