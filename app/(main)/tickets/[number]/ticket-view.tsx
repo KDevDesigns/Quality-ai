@@ -20,7 +20,7 @@ import { TICKET_TITLE_ID } from "@/lib/tickets/peek";
 import { ticketStore } from "@/lib/tickets/store";
 import {
   allowedTransitions,
-  canAssign,
+  canAssignTicket,
   canCategorize,
   CATEGORY_LABELS,
   NO_CATEGORY,
@@ -54,13 +54,14 @@ export async function TicketView({ params, mode }: { params: Promise<{ number: s
   await connection();
   const me = await requireAction("tickets.view");
   const number = /^\d{1,9}$/.test(raw) ? Number(raw) : NaN;
-  // Someone else's ticket is a 404, the same as a missing one. In the panel, a short note says so instead.
+  // Anyone may read any ticket (the All tab); the buttons below only show what this person may change. A missing ticket
+  // is a 404; in the panel, a short note says so instead.
   const t = Number.isFinite(number) ? await tickets.get(number, me) : null;
   if (!t) {
     if (mode === "page") notFound();
     return (
       <EmptyState icon={TicketXIcon} title="Ticket not found">
-        It may have been deleted, or it isn&apos;t one you can see.
+        It may have been deleted.
       </EmptyState>
     );
   }
@@ -70,7 +71,7 @@ export async function TicketView({ params, mode }: { params: Promise<{ number: s
   const editable = canEditTicket(t, me);
   const deletable = canDeleteTicket(t, me);
   const log = buildActivityLog(t);
-  const assignable = canAssign(me) && !isDone(t.status);
+  const assignable = canAssignTicket(t, me) && !isDone(t.status);
   const options = editable || assignable ? await ticketFormOptions() : null;
   const now = new Date();
 

@@ -5,7 +5,8 @@ import { DatePicker } from "@/components/date-picker";
 import type { DarCells } from "@/lib/dar/autofill";
 import { longDate, periodLabel } from "@/lib/dar/period";
 import type { DarReportData } from "@/lib/dar/store";
-import type { DarFunction } from "@/lib/dar/template";
+import { dutyLayout, type DarFunction } from "@/lib/dar/template";
+import { CELL_MAX } from "@/lib/dar/autofill";
 import { cn } from "@/lib/utils";
 
 // The DAR on screen, drawn like the DCWD paper form (same layout as lib/dar/html.ts, which makes the
@@ -217,14 +218,22 @@ function FunctionRows({
   rows: string[][];
   onCell: (section: keyof DarCells, row: number, day: number, value: string) => void;
 }) {
+  // A duty with several MFOs: its number and duty cells span its rows, as on the paper form.
+  const layout = dutyLayout(fns);
   return fns.map((f, i) => (
     <tr key={i}>
-      <td className={cn(CELL, "text-center text-[11px]")}>{i + 1}</td>
+      {layout[i].span ? (
+        <>
+          <td rowSpan={layout[i].span} className={cn(CELL, "text-center text-[11px]")}>{layout[i].number}</td>
+          <td rowSpan={layout[i].span} className={cn(CELL, "px-1.5 py-1 text-[11px] leading-snug whitespace-pre-line")}>
+            {f.duty}
+          </td>
+        </>
+      ) : null}
       <td className={cn(CELL, "px-1.5 py-1 text-[11px] leading-snug whitespace-pre-line")}>
-        {f.duty}
+        {f.mfo}
         {f.autofill ? <span className="mt-1 block text-[10px] font-medium text-[#3f4fd6] print:hidden">↻ from my ticket work</span> : null}
       </td>
-      <td className={cn(CELL, "px-1.5 py-1 text-[11px] leading-snug whitespace-pre-line")}>{f.mfo}</td>
       {(rows[i] ?? []).map((v, j) => (
         // A click anywhere in the cell edits it, as in a spreadsheet.
         <td key={j} className={cn(CELL, "cursor-text p-0 align-middle hover:bg-[#fff7f0]")} onMouseDown={(e) => focusCell(e)}>
@@ -232,7 +241,7 @@ function FunctionRows({
             aria-label={`${label} row ${i + 1}, day ${j + 1}`}
             value={v}
             rows={1}
-            maxLength={200}
+            maxLength={CELL_MAX}
             onChange={(e) => onCell(section, i, j, e.target.value)}
             className="block min-h-8 w-full resize-none bg-transparent px-0.5 py-1 text-center text-[10.5px] leading-tight text-black outline-none [field-sizing:content] focus:bg-[#fff3e8] focus:ring-2 focus:ring-[#f4a46a] focus:ring-inset"
           />

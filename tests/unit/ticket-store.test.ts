@@ -236,30 +236,44 @@ describe("ticketStore", () => {
     expect((await s.list(filters({ group: "all" }), admin)).total).toBe(3);
   });
 
-  it("shows QA testers only their own tickets and developers only their assignments", async () => {
+  it("keeps QA testers' and developers' own tabs to their own tickets, and shows everyone every ticket on All", async () => {
     const s = ticketStore(db, now);
     const qa2: Actor = { id: (await db.user.create({ data: { name: "Bea QA", email: "bea@x.ph", passwordHash: "x", role: "QA" } })).id, role: "QA" };
     const mine = await s.create(qa, input({ title: "Ana's bug", assigneeId: dev.id }));
     const theirs = await s.create(qa2, input({ title: "Bea's bug", assigneeId: dev2.id }));
     await s.create(admin, input({ title: "Unassigned" }));
 
-    const list = async (who: Actor, raw: Record<string, string> = { group: "all" }) => (await s.list(filters(raw), who)).rows.map((r) => r.title);
+    const list = async (who: Actor, raw: Record<string, string> = {}) => (await s.list(filters(raw), who)).rows.map((r) => r.title);
+    // Own tabs (Open, Done, a status): only your own.
     expect(await list(qa)).toEqual(["Ana's bug"]);
     expect(await list(qa2)).toEqual(["Bea's bug"]);
     expect(await list(dev)).toEqual(["Ana's bug"]);
-    expect(await list(dev2)).toEqual(["Bea's bug"]);
+    expect(await list(dev2, { group: "open", status: "NEW" })).toEqual(["Bea's bug"]);
     expect(await list(admin)).toHaveLength(3);
-    // A filter can narrow the scope but never widen it.
-    expect(await list(qa, { group: "all", reporter: qa2.id })).toEqual([]);
-    expect(await list(dev, { group: "all", assignee: dev2.id })).toEqual([]);
+    // A filter can narrow the own tabs but never widen them.
+    expect(await list(qa, { reporter: qa2.id })).toEqual([]);
+    expect(await list(dev, { assignee: dev2.id })).toEqual([]);
+    // The All tab: every ticket for everyone, and the QA tester and developer filters pick from all of them.
+    for (const who of [qa, qa2, dev, dev2, admin]) expect(await list(who, { group: "all" })).toHaveLength(3);
+    expect(await list(qa, { group: "all", reporter: qa2.id })).toEqual(["Bea's bug"]);
+    expect(await list(dev, { group: "all", assignee: dev2.id })).toEqual(["Bea's bug"]);
+    expect(await s.viewCounts(filters(), qa, [{ group: "open", status: null, assignee: null, reporter: null }, { group: "all", status: null, assignee: null, reporter: null }])).toEqual([1, 3]);
 
-    expect(await s.get(2, qa)).toBeNull();
-    expect((await s.get(1, qa))?.title).toBe("Ana's bug");
-    expect(await s.get(2, dev)).toBeNull();
-    await expect(s.comment(qa, theirs.id, "Hi")).rejects.toThrow(/no longer exists/);
-    await expect(s.transition(dev, theirs.id, { to: "FIXED", note: null, duplicateOf: null })).rejects.toThrow(/no longer exists/);
+    // Anyone may read another person's ticket and reply to it…
+    expect((await s.get(2, qa))?.title).toBe("Bea's bug");
+    expect((await s.get(2, dev))?.title).toBe("Bea's bug");
+    await s.comment(qa, theirs.id, "Seen this on my side too");
+    await s.comment(dev, theirs.id, "Looks like the same cause as #1");
+    expect(await db.ticketComment.count({ where: { ticketId: theirs.id } })).toBe(2);
+    // …but not change it.
+    await expect(s.transition(dev, theirs.id, { to: "IN_PROGRESS", note: null, duplicateOf: null })).rejects.toThrow(/no longer exists/);
+    await expect(s.transition(qa, theirs.id, { to: "CLOSED", note: "x", duplicateOf: null })).rejects.toThrow(/no longer exists/);
+    await expect(s.assign(qa, theirs.id, dev.id)).rejects.toThrow(/no longer exists/);
+    await expect(s.update(qa, theirs.id, { ...input({ title: "Renamed by Ana" }) })).rejects.toThrow(/no longer exists/);
+    await expect(s.delete(qa, theirs.id, "Bea's bug")).rejects.toThrow(/no longer exists/);
+    await expect(s.categorize(dev, theirs.id, "UI_UX")).rejects.toThrow(/no longer exists/);
 
-    // Reassigning takes the ticket off the old developer's list.
+    // Reassigning takes the ticket off the old developer's own list.
     await s.assign(qa, mine.id, dev2.id);
     expect(await list(dev)).toEqual([]);
     // Same activity time (the test clock stands still): the newer ticket comes first.
@@ -303,9 +317,11 @@ describe("ticketStore", () => {
     expect(await board(admin)).toMatchObject({ todo: { total: 2 }, doing: { total: 1 }, done: { total: 0, numbers: [] } });
     expect(await board(admin, { group: "done" })).toMatchObject({ todo: { total: 0 }, doing: { total: 0 }, done: { numbers: [3] } });
     expect(await board(admin, { status: "IN_PROGRESS" })).toMatchObject({ todo: { total: 0 }, doing: { numbers: [2] } });
-    // Developers see their assignments, QA testers what they filed.
-    expect(await board(dev, { group: "all" })).toMatchObject({ todo: { numbers: [1] }, doing: { numbers: [2] }, done: { total: 0 } });
-    expect(await board(qa, { group: "all" })).toMatchObject({ todo: { numbers: [1] }, doing: { numbers: [2] }, done: { numbers: [3] } });
+    // Developers see their assignments, QA testers what they filed; on All, everyone sees every ticket.
+    expect(await board(dev)).toMatchObject({ todo: { numbers: [1] }, doing: { numbers: [2] }, done: { total: 0 } });
+    expect(await board(dev, { group: "done" })).toMatchObject({ done: { total: 0 } });
+    expect(await board(qa, { group: "done" })).toMatchObject({ done: { numbers: [3] } });
+    expect(await board(dev, { group: "all" })).toMatchObject({ todo: { numbers: [1, 4] }, done: { numbers: [3] } });
     // Module, type, people and search filter too.
     expect(await board(admin, { area: billing })).toMatchObject({ todo: { numbers: [1] }, doing: { numbers: [2] } });
     expect(await board(admin, { group: "all", type: "IMPROVEMENT" })).toMatchObject({ todo: { total: 0 }, done: { numbers: [3] } });
@@ -333,15 +349,36 @@ describe("ticketStore", () => {
     expect(done.rows[0].number).toBe(53);
   });
 
-  it("only gives out attachments on tickets the person can see", async () => {
+  it("gives out a ticket's attachments to anyone who may read tickets", async () => {
     const s = ticketStore(db, now);
     const file = img("c");
     await s.create(qa, input({ assigneeId: dev.id }), [await ready(s, qa, file)]);
     const att = await db.attachment.findFirstOrThrow();
     expect(await s.attachmentFor(qa, att.id)).toMatchObject({ storedName: file.storedName });
     expect(await s.attachmentFor(dev, att.id)).not.toBeNull();
-    expect(await s.attachmentFor(dev2, att.id)).toBeNull();
+    // Not assigned to them, but readable from the All tab.
+    expect(await s.attachmentFor(dev2, att.id)).not.toBeNull();
     expect(await s.attachmentFor(admin, att.id)).not.toBeNull();
+    expect(await s.attachmentFor(admin, "missing")).toBeNull();
+  });
+
+  it("filters by severity, priority, QA tester and the day filed (Manila time)", async () => {
+    const s = ticketStore(db, now);
+    // 2026-10-29 08:00 Manila is 00:00 UTC; 23:30 the day before in Manila is 15:30 UTC on the 28th.
+    t = Date.parse("2026-10-28T15:30:00Z");
+    await s.create(qa, input({ title: "Late on the 28th", severity: "S1", priority: "P1" }));
+    t = Date.parse("2026-10-29T00:00:00Z");
+    await s.create(qa, input({ title: "Morning of the 29th", severity: "S3", priority: "P3" }));
+    t = Date.parse("2026-10-30T16:30:00Z"); // 00:30 on the 31st in Manila
+    await s.create(admin, input({ title: "Just after midnight on the 31st", type: "SUGGESTION", severity: null, priority: "P1" }));
+
+    const list = async (raw: Record<string, string>) => (await s.list(filters({ group: "all", ...raw }), admin)).rows.map((r) => r.title).sort();
+    expect(await list({ severity: "S1" })).toEqual(["Late on the 28th"]);
+    expect(await list({ priority: "P1" })).toEqual(["Just after midnight on the 31st", "Late on the 28th"]);
+    expect(await list({ reporter: qa.id })).toEqual(["Late on the 28th", "Morning of the 29th"]);
+    expect(await list({ from: "2026-10-29" })).toEqual(["Just after midnight on the 31st", "Morning of the 29th"]);
+    expect(await list({ to: "2026-10-28" })).toEqual(["Late on the 28th"]);
+    expect(await list({ from: "2026-10-29", to: "2026-10-30" })).toEqual(["Morning of the 29th"]);
   });
 
   it("deletes permanently only for the filing QA tester or an admin, after the exact title is typed", async () => {

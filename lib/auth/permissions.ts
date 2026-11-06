@@ -6,9 +6,9 @@ export const ROLE_LABELS: Record<Role, string> = { ADMIN: "Admin", QA: "QA teste
 /** Every permission check in the app goes through this matrix. Per-ticket rules (assignee, reporter) are in lib/tickets/workflow.ts. */
 const MATRIX = {
   "team.view": ["ADMIN", "QA", "DEV"],
-  /** Opening the ticket pages. Which tickets each person sees is decided by ticketScope in lib/tickets/workflow.ts. */
+  /** Opening the ticket pages and reading any ticket. Which tickets are a person's own is decided by ticketScope in lib/tickets/workflow.ts. */
   "tickets.view": ["ADMIN", "QA", "DEV"],
-  /** Every ticket, not just your own. */
+  /** Every ticket counts as your own, in every tab and for every change. (Anyone may read any ticket from the All tab.) */
   "tickets.viewAll": ["ADMIN"],
   /** Filing, editing and deleting tickets is for QA testers (their own) and admins. */
   "tickets.create": ["ADMIN", "QA"],

@@ -8,6 +8,7 @@ import { memberModules, moduleProgress as buildModuleProgress } from "./progress
 import {
   canAssign,
   canCategorize,
+  canReadTicket,
   CATEGORY_LABELS,
   NO_CATEGORY,
   type TicketCategoryValue,
@@ -57,6 +58,14 @@ export function scopeWhere(actor: Actor): Prisma.TicketWhereInput {
   return s === "all" ? {} : s;
 }
 
+/** The Prisma filter for the tickets `actor` may read: every ticket, for anyone who may view tickets (see canReadTicket). */
+export function readWhere(actor: Actor): Prisma.TicketWhereInput {
+  return canReadTicket(actor) ? {} : { id: { in: [] } };
+}
+
+/** Midnight at the start of a YYYY-MM-DD day in Manila (UTC+8, no daylight saving). */
+const manilaDay = (day: string, addDays = 0) => new Date(Date.parse(`${day}T00:00:00+08:00`) + addDays * 86_400_000);
+
 /** What a row of the list, or a card on the board, shows. */
 const listSelect = {
   id: true,
@@ -82,6 +91,13 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
   /** A ticket the actor may see. Someone else's ticket gets the same answer as a missing one. */
   async function load(id: string, actor: Actor) {
     const t = await db.ticket.findFirst({ where: { id, ...scopeWhere(actor) } });
+    if (!t) throw new TicketError("This ticket no longer exists. Refresh the page.");
+    return t;
+  }
+
+  /** A ticket the actor may read and reply to: any ticket, from the All tab. */
+  async function loadToRead(id: string, actor: Actor) {
+    const t = await db.ticket.findFirst({ where: { id, ...readWhere(actor) }, select: { id: true } });
     if (!t) throw new TicketError("This ticket no longer exists. Refresh the page.");
     return t;
   }
@@ -154,12 +170,16 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
     if (f.assignee === "none") filters.assigneeId = null;
     else if (f.assignee) filters.assigneeId = f.assignee === "me" ? actor.id : f.assignee;
     if (f.reporter) filters.reporterId = f.reporter === "me" ? actor.id : f.reporter;
+    if (f.severity) filters.severity = f.severity;
+    if (f.priority) filters.priority = f.priority;
+    if (f.from || f.to) filters.createdAt = { ...(f.from ? { gte: manilaDay(f.from) } : {}), ...(f.to ? { lt: manilaDay(f.to, 1) } : {}) };
     if (f.q) {
       const num = /^#?(\d{1,9})$/.exec(f.q);
       filters.OR = [{ title: { contains: f.q, mode: "insensitive" } }, { description: { contains: f.q, mode: "insensitive" } }, ...(num ? [{ number: Number(num[1]) }] : [])];
     }
-    // AND, so a filter can only narrow the person's scope, never widen it.
-    return { AND: [scopeWhere(actor), filters] };
+    // AND, so a filter can only narrow the person's scope, never widen it. The All tab reads every ticket; the other
+    // tabs are the person's own.
+    return { AND: [f.group === "all" ? readWhere(actor) : scopeWhere(actor), filters] };
   }
 
   /** Bumps lastActivityAt and records who did it, so everyone else sees the ticket as unread. */
@@ -310,7 +330,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
       if (!can(actor, "tickets.comment")) throw new TicketError("You can't comment on tickets.");
       const ids = uploadCount(uploadIds);
       if (!body.trim() && ids.length === 0) throw new TicketError("Write a message or attach an image or video.");
-      await load(id, actor);
+      await loadToRead(id, actor);
       return db.$transaction(async (tx) => {
         const at = now();
         const c = await tx.ticketComment.create({ data: { ticketId: id, authorId: actor.id, body: body.trim(), createdAt: at } });
@@ -456,6 +476,25 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
       return { cards: cards.filter((c) => mine.has(c.id)), total };
     },
 
+    /**
+     * What the module report counts: every ticket's module, category and status (and how a Closed one got there), whoever
+     * is looking. Only numbers leave here: no titles, text or names.
+     */
+    async reportRows() {
+      const [areas, rows] = await Promise.all([
+        db.erpArea.findMany({ select: { id: true, name: true, parentId: true, active: true } }),
+        db.ticket.findMany({
+          select: {
+            areaId: true,
+            category: true,
+            status: true,
+            events: { where: { kind: "STATUS", to: "CLOSED" }, orderBy: { createdAt: "desc" }, take: 1, select: { from: true } },
+          },
+        }),
+      ]);
+      return { areas, tickets: rows.map((t) => ({ areaId: t.areaId, category: t.category, status: t.status, closedFrom: t.status === "CLOSED" ? (t.events[0]?.from ?? null) : null })) };
+    },
+
     /** The most recently active tickets `actor` may see, or the newest filed with `newest`. */
     async recent(actor: Actor, take = 6, newest = false) {
       return db.ticket.findMany({
@@ -481,10 +520,10 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
 
     /** An attachment `actor` may open: it belongs to a ticket they can see. */
     async attachmentFor(actor: Actor, attachmentId: string) {
-      return db.attachment.findFirst({ where: { id: attachmentId, ticket: scopeWhere(actor) }, select: { storedName: true, mime: true, originalName: true } });
+      return db.attachment.findFirst({ where: { id: attachmentId, ticket: readWhere(actor) }, select: { storedName: true, mime: true, originalName: true } });
     },
 
-    /** A ticket by number, or null when it doesn't exist or `actor` may not see it. */
+    /** A ticket by number, or null when it doesn't exist or `actor` may not read it. Changing it is checked separately. */
     async get(number: number, actor: Actor) {
       const person = { select: { id: true, name: true, role: true, avatarColor: true, avatarName: true } } as const;
       const file = {
@@ -492,7 +531,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
         orderBy: { createdAt: "asc" },
       } as const;
       return db.ticket.findFirst({
-        where: { number, ...scopeWhere(actor) },
+        where: { number, ...readWhere(actor) },
         include: {
           area: { select: { id: true, name: true, parent: { select: { name: true } } } },
           reporter: person,

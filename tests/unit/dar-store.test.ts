@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { strFromU8, unzipSync } from "fflate";
 import type { PrismaClient } from "@/lib/generated/prisma/client";
-import { REST_DAY } from "@/lib/dar/autofill";
+import { NO_ENTRY, REST_DAY } from "@/lib/dar/autofill";
 import { darXlsx } from "@/lib/dar/excel";
 import { darStore, type DarUser } from "@/lib/dar/store";
 import { LEGACY_TEMPLATE, type DarProfileInput } from "@/lib/dar/template";
@@ -74,9 +74,10 @@ describe("darStore", () => {
     expect(r.saved).toBe(false);
     expect(r.days).toHaveLength(15);
     expect(r.cells.core[0][0]).toBe("QA - BCA");
-    expect(r.cells.core[0][1]).toBe(REST_DAY); // Ben's ticket, not Ana's
+    expect(r.cells.core[0][1]).toBe(NO_ENTRY); // Ben's ticket, not Ana's; a Friday, so "-"
     expect(r.cells.core[0][4]).toBe("QA - HR-RSP");
-    expect(r.cells.support[0].every((c) => c === "")).toBe(true); // not an auto-fill row
+    // Not an auto-fill row: each day's default, "-" on work days and REST DAY on the weekend (Oct 3 and 4).
+    expect(r.cells.support[0].slice(0, 5)).toEqual([NO_ENTRY, NO_ENTRY, REST_DAY, REST_DAY, NO_ENTRY]);
     expect(r.cells.support[1][0]).toBe("QA - BCA");
     expect(r.daysAttended).toBe(2);
     expect(r.dateSubmitted).toBe("2026-10-16");
@@ -166,5 +167,39 @@ describe("darStore", () => {
     expect(all).toMatch(/FBD4B4/i);
     expect(Object.keys(files).some((f) => f.startsWith("xl/media/"))).toBe(true); // the seal
     expect(all).not.toMatch(/<f>/); // no formulas
+  });
+
+  it("imports My details with 3rd–17th periods and several MFOs per duty, and replaces the chosen periods", async () => {
+    const s = darStore(db, now);
+    const NOV = { start: "2026-10-18", end: "2026-11-02" };
+    await s.saveProfile(ana.id, {
+      ...QA_SETUP,
+      periodScheme: "3-18",
+      firstPeriodStart: "2026-10-03",
+      coreFunctions: [
+        { duty: "Design ERP screens", mfo: "Billing UI", autofill: false },
+        { duty: "", mfo: "HRM UI", autofill: false, continues: true },
+      ],
+      supportFunctions: [],
+    });
+    expect((await s.profile(ana.id))?.periodScheme).toBe("3-18");
+    const n = await s.importReports(ana, [{ period: NOV, cells: { core: [["NSC redesign"], ["", "PDS"]], support: [] }, dateSubmitted: "2026-11-04" }]);
+    expect(n).toBe(1);
+    const r = await s.load(ana, NOV);
+    expect(r.saved).toBe(true);
+    expect(r.days).toHaveLength(16);
+    expect(r.cells.core).toHaveLength(2);
+    expect(r.cells.core[0][0]).toBe("NSC redesign");
+    expect(r.cells.core[1][1]).toBe("PDS");
+    expect(r.dateSubmitted).toBe("2026-11-04");
+    expect(r.header.core[1]).toMatchObject({ duty: "", continues: true });
+
+    // The Excel file covers the days into November and merges the duty cell down its two MFO rows.
+    const xlsxText = Object.values(unzipSync(new Uint8Array(await darXlsx(r)))).map((f) => strFromU8(f)).join("\n");
+    expect(xlsxText).toContain("Oct 18, 2026 to Nov 02, 2026");
+    expect(xlsxText).toContain("NOV\n2\nMON");
+    expect(xlsxText).toMatch(/<mergeCell ref="A\d+:A\d+"\/>/);
+    // Ben's DAR is untouched.
+    expect((await s.list(ben.id))).toEqual([]);
   });
 });

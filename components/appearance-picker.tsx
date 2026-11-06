@@ -1,8 +1,7 @@
 "use client";
 
-import { useTheme } from "next-themes";
 import { CheckIcon, MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
-import { setAccent, useAccent } from "@/components/theme";
+import { setAccent, useAccent, useThemeSwitch } from "@/components/theme";
 import { ACCENTS } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +15,7 @@ export const MODES = [
 ] as const;
 
 export function AppearancePicker() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme } = useThemeSwitch();
   const accent = useAccent();
   const mode = theme ?? "system";
   return (
@@ -32,7 +31,7 @@ export function AppearancePicker() {
                 mode === value ? "bg-card font-semibold text-foreground shadow-[0_0.0625rem_0.1875rem_rgba(20,20,40,0.12)]" : "text-muted-foreground",
               )}
             >
-              <input type="radio" name="mode" value={value} checked={mode === value} onChange={() => setTheme(value)} className="sr-only" />
+              <input type="radio" name="mode" value={value} checked={mode === value} onChange={(e) => setTheme(value, e.currentTarget.parentElement)} className="sr-only" />
               <Icon className="size-4" aria-hidden /> {label}
             </label>
           ))}

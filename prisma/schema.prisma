@@ -338,6 +338,7 @@ model DarProfile {
   coreFunctions    Json? // [{ duty, mfo, autofill }]
   supportFunctions Json?
   firstPeriodStart String? // "2026-11-01", where their list of periods starts
+  periodScheme     String? // "1-16" (default) or "3-18": the days their periods start on (lib/dar/period.ts)
   updatedAt        DateTime @updatedAt
 }
 

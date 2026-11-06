@@ -172,6 +172,10 @@
   --pending-text: #b45309;
   --pending-border: #f7d56b;
   --shadow-card: 0 0.125rem 0.375rem rgba(20, 28, 90, 0.06);
+  /* Cards: a border with a touch of the theme colour, and a faint line of it along the top edge, like light catching it.
+     Kept quiet so cards read as surfaces, not as outlined boxes. */
+  --card-border: color-mix(in srgb, var(--acc) 10%, var(--ln));
+  --card-highlight: inset 0 0.0625rem 0 color-mix(in srgb, var(--acc) 9%, transparent);
   --shadow-hover: 0 0.125rem 0.5rem rgba(20, 22, 60, 0.08);
   --shadow-dropdown: 0 1.25rem 3.125rem rgba(20, 28, 90, 0.22);
   --shadow-nav-active: 0 0.25rem 0.875rem color-mix(in srgb, var(--acc) 32%, transparent);
@@ -280,32 +284,37 @@
   --acc-b: color-mix(in srgb, var(--acc) 42%, var(--sf));
   --acc-ink: #c3c8fa;
   --brand: #eceef2;
-  /* A neutral charcoal rather than Base DCWD's navy (the owner's choice), with the theme colour in the borders. */
-  --sf: #17181c;
-  --sf2: #131417;
-  --sf3: #212227;
-  --grouped: #0e0f12;
-  --tx: #eceef2;
-  --tx2: #d3d5db;
-  --body-2: #bfc2ca;
-  --mu: #a3a6af;
+  /* A soft slate rather than near-black: easier on the eyes, with layers a step apart (page, card, raised). Every surface
+     takes a breath of the theme colour, so dark mode follows the colour picked in the account menu. Text is a shade off
+     pure white to cut glare; all text pairs stay above 4.5:1 (muted on a raised surface is about 6:1). */
+  --sf: color-mix(in srgb, var(--acc) 5%, #1b1d22);
+  --sf2: color-mix(in srgb, var(--acc) 4%, #17191d);
+  --sf3: color-mix(in srgb, var(--acc) 6%, #24272d);
+  --grouped: color-mix(in srgb, var(--acc) 4%, #131418);
+  --tx: #e7e9ee;
+  --tx2: #d0d3da;
+  --body-2: #bcc0c9;
+  --mu: #a2a6b0;
   /* For the S4 dot, which always has text beside it. Never for text. */
   --muted-2: #62656e;
   --placeholder: #83868f;
-  --ln: color-mix(in srgb, var(--acc) 30%, var(--sf));
-  --ln2: color-mix(in srgb, var(--acc) 18%, var(--sf));
+  /* Lines take the theme colour lightly: enough to tie them to it, not enough to glow. */
+  --ln: color-mix(in srgb, var(--primary-text) 16%, var(--sf));
+  --ln2: color-mix(in srgb, var(--primary-text) 9%, var(--sf));
+  --card-border: color-mix(in srgb, var(--primary-text) 18%, var(--sf));
+  --card-highlight: inset 0 0.0625rem 0 color-mix(in srgb, var(--primary-text) 16%, transparent);
   /* Control outlines need 3:1 against the surface, so these mix from the lighter text colour. */
   --input: color-mix(in srgb, var(--primary-text) 50%, var(--sf));
   --navy: #c9cbd2;
-  --table-head: #212227;
-  --row-hover: #1f2025;
+  --table-head: var(--sf3);
+  --row-hover: color-mix(in srgb, var(--acc) 8%, #202227);
   --on-tone: #0e0f12;
-  --disabled-bg: #26272d;
+  --disabled-bg: #282a30;
   --disabled-text: #62656e;
   --pending-bg: #2e2510;
   --pending-text: #f4c24f;
   --pending-border: #6b5418;
-  --shadow-card: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.25);
+  --shadow-card: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.22);
   --shadow-hover: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.35);
   --shadow-dropdown: 0 1.25rem 3.125rem rgba(0, 0, 0, 0.5);
   --level-1: #f2726a;
@@ -347,7 +356,7 @@
   --acc-ink: color-mix(in srgb, var(--acc-base) 30%, white);
 }
 
-/* The sign-in page keeps its own colours (Login board: "exactly as the app has it"). Tokens resolve where they are declared,
+/* The sign-in page's own palette, in the theme colour picked (its dots or the app's) and in light or dark. Tokens resolve where they are declared,
    so the ones built from others (--background, --acc-t...) are declared again here, or they would keep the app's values. */
 .auth-page {
   --acc: var(--acc-base);
@@ -620,6 +629,9 @@
 /* Sign-in brand pane, from the DCWD Careers design (careers-static.css / careers-motion.css).
    Its colours are DCWD indigo in both modes (not the user's accent), so they live here as pane tokens with a dark set. */
 .auth-brand {
+  /* The emblem's disc and the preloader's water. */
+  --ab-emblem: #4f56d3;
+  --ab-emblem-deep: #1e2a78;
   --ab-bg: #eef2fd;
   --ab-ink: #1e2a78;
   --ab-eyebrow: #5b63c7;
@@ -661,6 +673,50 @@
   --ab-wave-2: #1d2756;
   --ab-wave-3: #222d63;
 }
+/* The sign-in brand panel and the preloader in the theme colour someone picked (data-accent; the default indigo keeps the
+   values above). Built from the colour the same way the indigo palette relates to #4f56d3. */
+html[data-accent] .auth-brand {
+  --ab-emblem: var(--acc-base);
+  --ab-emblem-deep: color-mix(in srgb, var(--acc-base) 50%, #0b1030);
+  --ab-bg: color-mix(in srgb, var(--acc-base) 8%, #ffffff);
+  --ab-ink: color-mix(in srgb, var(--acc-base) 45%, #10142e);
+  --ab-eyebrow: color-mix(in srgb, var(--acc-base) 85%, #ffffff);
+  --ab-text: color-mix(in srgb, var(--acc-base) 30%, #3a3f55);
+  --ab-foot: color-mix(in srgb, var(--acc-base) 38%, #33384f);
+  --ab-ring-1: color-mix(in srgb, var(--acc-base) 30%, #ffffff);
+  --ab-ring-2: color-mix(in srgb, var(--acc-base) 24%, #ffffff);
+  --ab-ring-3: color-mix(in srgb, var(--acc-base) 18%, #ffffff);
+  --ab-ring-4: color-mix(in srgb, var(--acc-base) 14%, #ffffff);
+  --ab-ripple: color-mix(in srgb, var(--acc-base) 55%, transparent);
+  --ab-seal-shadow: 0 18px 50px color-mix(in srgb, var(--acc-base) 18%, transparent), 0 0 0 8px rgba(255, 255, 255, 0.6);
+  --ab-chip-line: color-mix(in srgb, var(--acc-base) 16%, #ffffff);
+  --ab-chip-ink: color-mix(in srgb, var(--acc-base) 45%, #10142e);
+  --ab-chip-icon: var(--acc-base);
+  --ab-wave-1: color-mix(in srgb, var(--acc-base) 11%, #ffffff);
+  --ab-wave-2: color-mix(in srgb, var(--acc-base) 17%, #ffffff);
+  --ab-wave-3: color-mix(in srgb, var(--acc-base) 23%, #ffffff);
+}
+html.dark[data-accent] .auth-brand {
+  --ab-bg: color-mix(in srgb, var(--acc-base) 16%, #0c0e1a);
+  --ab-ink: color-mix(in srgb, var(--acc-base) 10%, #ffffff);
+  --ab-eyebrow: color-mix(in srgb, var(--acc-base) 55%, #ffffff);
+  --ab-text: color-mix(in srgb, var(--acc-base) 25%, #c4c7d6);
+  --ab-foot: color-mix(in srgb, var(--acc-base) 30%, #b8bccd);
+  --ab-glow: color-mix(in srgb, var(--acc-base) 24%, transparent);
+  --ab-ring-1: color-mix(in srgb, var(--acc-base) 42%, #0c0e1a);
+  --ab-ring-2: color-mix(in srgb, var(--acc-base) 35%, #0c0e1a);
+  --ab-ring-3: color-mix(in srgb, var(--acc-base) 29%, #0c0e1a);
+  --ab-ring-4: color-mix(in srgb, var(--acc-base) 24%, #0c0e1a);
+  --ab-ripple: color-mix(in srgb, color-mix(in srgb, var(--acc-base) 70%, #ffffff) 45%, transparent);
+  --ab-seal-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), 0 0 0 8px rgba(255, 255, 255, 0.08);
+  --ab-chip-bg: rgba(255, 255, 255, 0.06);
+  --ab-chip-line: color-mix(in srgb, var(--acc-base) 35%, #0c0e1a);
+  --ab-chip-ink: color-mix(in srgb, var(--acc-base) 18%, #ffffff);
+  --ab-chip-icon: color-mix(in srgb, var(--acc-base) 55%, #ffffff);
+  --ab-wave-1: color-mix(in srgb, var(--acc-base) 22%, #0c0e1a);
+  --ab-wave-2: color-mix(in srgb, var(--acc-base) 27%, #0c0e1a);
+  --ab-wave-3: color-mix(in srgb, var(--acc-base) 32%, #0c0e1a);
+}
 .auth-brand .rg {
   position: absolute;
   left: 50%;
@@ -685,11 +741,12 @@
 .auth-brand .rip:nth-child(3) { animation-delay: 3.6s; }
 .auth-brand .rip:nth-child(4) { animation-delay: 5.4s; }
 .auth-brand .seal { animation: auth-float 6.4s ease-in-out infinite; }
-/* 4000 px wide, one wave every 800 px: exactly how far auth-drift slides it, so the loop is seamless on wide screens. */
+/* 4000 px wide at true scale; the shape repeats every 800 px (a rise and a fall, wavePath in components/preloader.tsx),
+   exactly how far auth-drift slides it, so the loop has no jump. */
 .auth-brand .wave { position: absolute; left: 0; bottom: 0; width: 4000px; max-width: none; height: 220px; }
-.auth-brand .w1 { animation: auth-drift 22s linear infinite; }
-.auth-brand .w2 { animation: auth-drift 15s linear infinite reverse; }
-.auth-brand .w3 { animation: auth-drift 10s linear infinite; }
+.auth-brand .w1 { animation: auth-drift 26s linear infinite; }
+.auth-brand .w2 { animation: auth-drift 18s linear infinite reverse; }
+.auth-brand .w3 { animation: auth-drift 12s linear infinite; }
 .auth-enter > * { animation: auth-rise 560ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 .auth-enter > *:nth-child(2) { animation-delay: 60ms; }
 .auth-enter > *:nth-child(3) { animation-delay: 110ms; }
@@ -833,4 +890,19 @@ html:not(.qa-splash-on) .qa-splash {
   .skeleton-shine::after {
     display: none;
   }
+}
+
+/* Switching light and dark (components/theme.tsx, useThemeSwitch): the new look is revealed in a growing circle over a
+   still picture of the old one. Script draws the circle; these turn off the browser's own cross-fade while it runs, so
+   the two pictures don't blend. Without the API, or with motion turned off, it's instant. */
+html.theme-reveal::view-transition-old(root),
+html.theme-reveal::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+html.theme-reveal::view-transition-old(root) {
+  z-index: 0;
+}
+html.theme-reveal::view-transition-new(root) {
+  z-index: 1;
 }
