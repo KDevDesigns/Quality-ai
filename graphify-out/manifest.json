@@ -1716,9 +1716,9 @@
     "semantic_hash": ""
   },
   "app/(main)/tickets/ticket-peek.tsx": {
-    "mtime": 1793926446.1493678,
-    "seen": 1793927431.3382618,
-    "ast_hash": "50a658e0c3540074fd4fe6b8f650a564",
+    "mtime": 1793934688.4156263,
+    "seen": 1793934800.0580683,
+    "ast_hash": "9ac7e6e3b1201842b7e72ecb6c7fed01",
     "semantic_hash": ""
   },
   "app/login/claim-card.tsx": {
@@ -1794,9 +1794,9 @@
     "semantic_hash": ""
   },
   "lib/tickets/peek.ts": {
-    "mtime": 1793925805.6228156,
-    "seen": 1793927431.3382618,
-    "ast_hash": "8c026e975b556f4838873524158db666",
+    "mtime": 1793934677.772431,
+    "seen": 1793934800.1188543,
+    "ast_hash": "8ffd4650b772194c10acfcdb0bf78fed",
     "semantic_hash": ""
   },
   "lib/tickets/progress.ts": {
@@ -1848,9 +1848,9 @@
     "semantic_hash": ""
   },
   "tests/unit/ticket-peek.test.ts": {
-    "mtime": 1793925751.3901255,
-    "seen": 1793927431.3382618,
-    "ast_hash": "0ad10502016a06128a0fd70aa3ef6976",
+    "mtime": 1793934677.9992528,
+    "seen": 1793934800.1490738,
+    "ast_hash": "fae4e5c2e1fb38719dcbc0c5b8295dd1",
     "semantic_hash": ""
   },
   "tests/unit/users-filter.test.ts": {

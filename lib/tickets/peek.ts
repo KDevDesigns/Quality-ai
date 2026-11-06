@@ -18,13 +18,31 @@ export type PeekClick = {
   shiftKey: boolean;
   altKey: boolean;
   defaultPrevented: boolean;
+  /** The browser's click count: 2 for the second click of a double-click, 0 for Enter. */
+  detail: number;
 };
 
 /**
  * True when a click on a ticket link should open the panel: a plain primary click (or Enter) on a laptop-wide screen.
- * Phones, and Ctrl/Cmd/Shift/Alt or middle clicks (a new tab or window), keep going to the ticket page.
+ * Phones, Ctrl/Cmd/Shift/Alt or middle clicks (a new tab or window), and the second click of a double-click keep going
+ * to the ticket page.
  */
 export function opensPeek(click: PeekClick, wide: boolean): boolean {
-  if (!wide || click.defaultPrevented || click.button !== 0) return false;
+  if (!wide || click.defaultPrevented || click.button !== 0 || click.detail > 1) return false;
   return !(click.metaKey || click.ctrlKey || click.shiftKey || click.altKey);
+}
+
+/**
+ * True when the panel is asked to close by the second click of a double-click. The first click opened the panel and put
+ * its backdrop under the pointer, so the second lands there, which counts as a click outside. A double-click means "open
+ * the ticket", so it goes to the ticket page instead. Esc, the X and Back only ever close.
+ */
+export function wantsFullPage(reason: string, clickCount: number): boolean {
+  return reason === "outside-press" && clickCount > 1;
+}
+
+/** The ticket page behind a panel's URL: /tickets/29/peek gives /tickets/29. Anything else gives null. */
+export function ticketPageOf(path: string): string | null {
+  const m = /^\/tickets\/(\d{1,9})\/peek\/?$/.exec(path);
+  return m ? `/tickets/${m[1]}` : null;
 }
