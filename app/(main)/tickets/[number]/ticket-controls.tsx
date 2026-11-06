@@ -2,7 +2,7 @@
 
 import { startTransition, useActionState, useState } from "react";
 import { Menu } from "@base-ui/react/menu";
-import { ArrowRightLeftIcon, EllipsisIcon, PencilIcon, SendIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
+import { ArrowRightLeftIcon, ChevronDownIcon, EllipsisIcon, PencilIcon, SendIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
 import { Field, FormMessage } from "@/components/form-field";
 import { FormDialog } from "@/components/form-dialog";
 import { SelectField } from "@/components/select-field";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useTouchScreen } from "@/hooks/use-touch-screen";
 import { initialFormState, type FormState } from "@/lib/form";
+import { isRedMove, moveLayout } from "@/lib/tickets/moves";
 import { cn } from "@/lib/utils";
 import { CATEGORY_LABELS, NO_CATEGORY, STATUS_LABELS, TICKET_CATEGORIES, type TicketCategoryValue, type TicketStatus, type Transition } from "@/lib/tickets/workflow";
 import { addComment, assignTicket, categorizeTicket, deleteTicket, moveTicket } from "../actions";
@@ -22,30 +23,71 @@ import { AssigneeSelect, submitKeepingInput, TicketForm, type AreaOption, type A
 
 type Ref = { id: string; number: number };
 
-/** Moves that carry the ticket forward. The first of these is shown as the main button; side exits and moves back stay outlined. */
-const FORWARD: readonly TicketStatus[] = ["IN_PROGRESS", "FIXED", "VERIFIED"];
-const isMain = (m: Transition) => !m.back && (FORWARD.includes(m.to) || (m.to === "CLOSED" && m.label === "Close"));
-
-/** Moves that send a ticket back or end it against the reporter's wish, so they read as a warning. */
-const RED: readonly TicketStatus[] = ["REOPENED", "REJECTED"];
-
-/** The status buttons, the main one last. Each opens a short dialog for the note. */
+/**
+ * The ticket's moves for this person (lib/tickets/moves.ts): their next step as the main button, at most one equally
+ * common second button (Reopen while retesting), and everything else in a "More" menu, other outcomes first, then
+ * moves that undo a mistake. Each opens a short dialog for the note.
+ */
 export function StatusMoves({ ticket, status, moves }: { ticket: Ref; status: TicketStatus; moves: Transition[] }) {
+  const [picked, setPicked] = useState<Transition | null>(null);
   if (!moves.length) return null;
-  const main = moves.find(isMain);
-  const ordered = main ? [...moves.filter((m) => m !== main), main] : moves;
+  const { main, second, outcomes, undo } = moveLayout(moves);
+  const description = (m: Transition) => `${STATUS_LABELS[status]} → ${STATUS_LABELS[m.to]}`;
+  const button = (m: Transition, primary: boolean) => (
+    <FormDialog
+      key={m.to}
+      title={m.label}
+      description={description(m)}
+      trigger={<Button variant={primary ? "default" : isRedMove(m) ? "ghost-red" : "outline"}>{m.label}</Button>}
+    >
+      {(close) => <MoveForm ticket={ticket} move={m} onDone={close} />}
+    </FormDialog>
+  );
+  const item = "flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-sm outline-none data-highlighted:bg-row-hover";
+  const group = "px-3 pt-1.5 pb-1 text-[0.75rem] font-semibold tracking-[0.04em] text-muted-foreground uppercase";
+
   return (
-    <div className="flex flex-wrap gap-2">
-      {ordered.map((m) => (
-        <FormDialog
-          key={m.to}
-          title={m.label}
-          description={`${STATUS_LABELS[status]} → ${STATUS_LABELS[m.to]}`}
-          trigger={<Button variant={m === main ? "default" : RED.includes(m.to) ? "ghost-red" : "outline"}>{m.label}</Button>}
-        >
-          {(close) => <MoveForm ticket={ticket} move={m} onDone={close} />}
-        </FormDialog>
-      ))}
+    <div className="flex flex-wrap items-center gap-2">
+      {outcomes.length || undo.length ? (
+        <Menu.Root>
+          <Menu.Trigger render={<Button type="button" variant="outline" className="data-popup-open:bg-acc-t2" />}>
+            {main || second ? "More" : "Moves"} <ChevronDownIcon aria-hidden />
+          </Menu.Trigger>
+          <Menu.Portal>
+            <Menu.Positioner side="bottom" align="end" sideOffset={6} className="isolate z-50">
+              <Menu.Popup className="w-56 origin-(--transform-origin) rounded-xl bg-popover p-1.5 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-150 ease-(--ease-out) data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
+                {outcomes.length ? (
+                  <Menu.Group>
+                    <Menu.GroupLabel className={group}>Other outcomes</Menu.GroupLabel>
+                    {outcomes.map((m) => (
+                      <Menu.Item key={m.to} className={cn(item, isRedMove(m) && "text-destructive-text data-highlighted:bg-bad-w")} onClick={() => setPicked(m)}>
+                        {m.label}
+                      </Menu.Item>
+                    ))}
+                  </Menu.Group>
+                ) : null}
+                {outcomes.length && undo.length ? <Menu.Separator className="-mx-1.5 my-1 h-px bg-line2" /> : null}
+                {undo.length ? (
+                  <Menu.Group>
+                    <Menu.GroupLabel className={group}>Undo a mistake</Menu.GroupLabel>
+                    {undo.map((m) => (
+                      <Menu.Item key={m.to} className={item} onClick={() => setPicked(m)}>
+                        {m.label}
+                      </Menu.Item>
+                    ))}
+                  </Menu.Group>
+                ) : null}
+              </Menu.Popup>
+            </Menu.Positioner>
+          </Menu.Portal>
+        </Menu.Root>
+      ) : null}
+      {second ? button(second, false) : null}
+      {main ? button(main, true) : null}
+      {/* A move picked from the menu opens the same dialog as a button would. */}
+      <FormDialog title={picked?.label ?? ""} description={picked ? description(picked) : undefined} open={!!picked} onOpenChange={(o) => !o && setPicked(null)}>
+        {(close) => (picked ? <MoveForm ticket={ticket} move={picked} onDone={close} /> : null)}
+      </FormDialog>
     </div>
   );
 }
