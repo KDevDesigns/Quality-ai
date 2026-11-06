@@ -1,154 +1,169 @@
 # Graph Report - Quality-ai  (2026-11-06)
 
 ## Corpus Check
-- 315 files · ~213,971 words
+- 325 files · ~215,976 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 7 file(s) not represented in the graph (top: (none) 2, .css 2, .example 1)
 
 ## Summary
-- 2284 nodes · 7110 edges · 123 communities (99 shown, 24 thin omitted)
+- 2294 nodes · 6637 edges · 143 communities (114 shown, 29 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 180 edges (avg confidence: 0.88)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a250f9e7`
+- Built from commit: `4fd5a722`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- button.tsx
-- tickets/actions.ts
-- createClient
-- ticketStore
-- ticket-form.tsx
-- permissions.ts
-- Form Field Components
-- Database Tables and Migrations
-- Sidebar Navigation
 - lucide-react
+- login/page.tsx
+- lib/backup.ts
+- format.ts
+- draft.ts
 - (main)/page.tsx
+- requireAction
+- permissions.ts
+- sidebar.tsx
+- team/page.tsx
+- 20261030000000_init_postgres/migration.sql
 - vitest
 - tickets/store.ts
-- Topbar and Nav Rules
-- DAR Periods and Page
-- workflow.ts
-- DAR Store and Autofill
-- dar-editor.tsx
-- Operations and Setup Guide
-- ticket-controls.tsx
+- nav.ts
+- period.ts
+- board.tsx
+- dar/store.ts
+- dar-sheet.tsx
+- Environment variables
+- account/actions.ts
 - image-picker.tsx
-- Markup Editor Interaction
-- notifications-card.tsx
-- lib/backup.ts
-- (main)/layout.tsx
-- Ticket Board Page
-- db.ts
-- Theme and User Menu
-- Runtime Dependencies
-- Dev Dependencies
+- MarkupEditor
+- setup/page.tsx
+- template.ts
+- notifications-panel.tsx
+- tickets/page.tsx
+- uploads/storage.ts
+- user-menu.tsx
+- dependencies
+- devDependencies
 - dar/import.ts
-- Markup Geometry
-- shadcn Components Config
-- (main)/page.tsx
-- Settings Page and Sheets
+- shapes.ts
+- components.json
+- files.ts
+- settings-bits.tsx
 - markup-editor.tsx
 - date-picker.tsx
-- Device Notification Docs
+- Device notifications
+- notifications.ts
+- tickets/actions.ts
+- markup.test.ts
 - shapes.ts
-- video-picker.tsx
-- Markup Image Export
-- dar/actions.ts
-- board.tsx
-- push.test.ts
-- TypeScript Config
-- app-topbar.tsx
-- Root Layout and Splash
+- workflow.ts
 - users/page.tsx
-- Changelog Phases and Workflow
-- Markup View and Zoom
-- [number]/page.tsx
-- npm Scripts
-- format.ts
+- compilerOptions
 - shared-files.ts
-- login/page.tsx
-- ERP Billing API Pipeline
-- template.ts
-- QA Hub Roadmap Phases
-- Business Process Test Suites
+- app/layout.tsx
+- requireUser
+- QA Hub Changelog
+- view.ts
+- ticket-view.tsx
+- scripts
+- avatar-upload.tsx
+- ticketStore
+- package.json
+- dcwd_apps-csms-bca-api
+- dar-sheet.tsx
+- QA AI for In-House ERP Build Plan
+- Phase 6 Business-Process Suites
+- UI (Web) Rework: developer handoff
+- getCurrentUser
+- QA Hub product brief
+- Account management
+- ticket-peek.tsx
+- Billing and Collection Process
+- image-picker.tsx
+- Learning Log
+- device-push.ts
+- QA Hub project rules
+- Prisma 7 client via lib/db-client.ts
+- ticket-tabs.tsx
+- QA Hub moves to Vercel + Supabase
+- sw.js
+- interface
+- Notifications
+- tree.ts
+- PushPrompt
+- Web Push service worker and subscription
+- grilling skill (.claude)
+- Stack: Next.js 16, React 19, TypeScript, Tailwind 4
+- video-upload.test.ts
+- Hard rule: uploads use generated names and post-upload checks
+- Hard rule: ticket data never goes to an LLM
+- Grabber
+- My DAR (Daily Accomplishment Report)
+- ticket-form.tsx
+- next
+- interface
+- Hide tool (solid black box)
+- DCWD CSMS BCA API Process Flow
+- report.ts
+- Ticket with evidence and conversation
+- vercel.json
+- Phase 3.6b Record and Replay Regression
+- .mcp.json
+- CSS variables for themes
+- Forgot password request flow
+- Light/dark mode and theme colours
+- Risk-Based Testing (ISO/IEC 25010)
+- Brand commitments: DCWD seal and formal government tone
+- Davao City Water District (DCWD)
+- inbox/page.tsx
+- team/actions.ts
+- shell.js
+- account/page.tsx
+- users-filter.test.ts
+- user-menu.tsx
+- (main)/layout.tsx
+- signup-form.tsx
 - TicketStatus
 - session.ts
-- Product Brief and Access Rules
-- Account Administration Docs
-- useImageAttachments
-- Billing and Job Processes
-- requireAction
-- Learning Log
-- account/actions.ts
-- Project Rules and Hosting
-- Database Connection Rules
-- cron.ts
-- Changelog Early Phases
-- Service Worker
-- Grill-me Config (.claude)
-- Notifications and Markup Docs
-- ESLint Config
-- Install Prompt Hook
-- Installable App and Push
-- Grilling Skills
-- Stack and Agent Rules
-- ticket-tabs.tsx
-- Upload and Session Rules
-- Ticket Data Privacy Rule
-- package.json
-- My DAR Docs
-- Allowed Install Scripts
-- Env and Prisma Config
-- Grilling Config (.claude)
-- Markup and Inbox Docs
-- BCA API Operating Model
-- areas/import.ts
-- Ticket Evidence Principles
-- Vercel Config
-- Replay and Healer Phases
-- MCP Server Config
-- Theme Colour Lessons
-- Sign-up and Password Docs
-- UI Polish Docs
-- Risk-Based Test Selection
-- Brand Commitments
-- DCWD Seal (public)
-- SelectField
-- lucide-react
-- UI (Web) Rework: developer handoff
-- user.ts
-- shell.js
-- 6. Pages
-- react
-- notifications.ts
+- How tickets connect to Module progress
+- log.ts
+- lib/backup.ts
+- hitTest
+- tones.ts
+- notifications-card.tsx
+- holidays.ts
+- dar-migration.test.ts
+- reset-password.ts
+- allowScripts
+- badge.tsx
+- eslint.config.mjs
+- zod
 
 ## God Nodes (most connected - your core abstractions)
-1. `Button()` - 103 edges
-2. `react` - 85 edges
-3. `lucide-react` - 66 edges
-4. `MarkupEditor()` - 60 edges
-5. `next` - 57 edges
+1. `react` - 87 edges
+2. `lucide-react` - 67 edges
+3. `MarkupEditor()` - 59 edges
+4. `next` - 59 edges
+5. `Button()` - 58 edges
 6. `vitest` - 48 edges
-7. `requireAction()` - 46 edges
-8. `TicketView()` - 40 edges
-9. `TicketList()` - 38 edges
-10. `Input()` - 38 edges
+7. `requireAction()` - 45 edges
+8. `TicketView()` - 44 edges
+9. `TicketList()` - 39 edges
+10. `can()` - 37 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `10. States and interactions` --references--> `InlineAlert()`  [INFERRED]
   docs/design/ui-web-rework/HANDOFF.md → components/inline-alert.tsx
-- `2. Suggested build order` --references--> `createTicket()`  [INFERRED]
-  docs/design/ui-web-rework/HANDOFF.md → app/(main)/tickets/actions.ts
-- `9. Don't copy from the prototype` --references--> `SelectField()`  [INFERRED]
-  docs/design/ui-web-rework/HANDOFF.md → components/select-field.tsx
-- `App shell` --references--> `navGroups()`  [INFERRED]
-  docs/design/ui-web-rework/HANDOFF.md → components/nav.ts
+- `My DAR: `dar/`, `Dar.dc.html`` --references--> `periodDays()`  [INFERRED]
+  docs/design/ui-web-rework/HANDOFF.md → lib/dar/period.ts
 - `Screenshot markup: `tickets/markup/`, `Markup.dc.html`` --references--> `short()`  [INFERRED]
   docs/design/ui-web-rework/HANDOFF.md → lib/dar/period.ts
+- `App shell` --references--> `navGroups()`  [INFERRED]
+  docs/design/ui-web-rework/HANDOFF.md → components/nav.ts
+- `2. Suggested build order` --references--> `createTicket()`  [INFERRED]
+  docs/design/ui-web-rework/HANDOFF.md → app/(main)/tickets/actions.ts
 
 ## Import Cycles
 - None detected.
@@ -163,423 +178,483 @@
 - **Ticket status lifecycle surfaces** — docs_changelog_ticket_workflow, docs_changelog_move_back_step, docs_changelog_board_view, docs_changelog_progress_tracker [INFERRED 0.85]
 - **Validate, Approve, Post Controls** — docs_erp_bca_api_process_flow_bam_memos, docs_erp_bca_api_process_flow_mcr, docs_glossary_bam, docs_glossary_mcr [INFERRED 0.85]
 
-## Communities (123 total, 24 thin omitted)
+## Communities (143 total, 29 thin omitted)
 
-### Community 0 - "button.tsx"
-Cohesion: 0.17
-Nodes (40): claimTempPassword(), ClaimCard(), UserFormState, DeleteUserDialog(), ApprovalContext, ApprovalHost(), Open, SignUpRequest (+32 more)
+### Community 0 - "lucide-react"
+Cohesion: 0.22
+Nodes (19): copyText(), TempPassword(), UserValues, GalleryContext, useCloseGuard(), AlertTone, ICON, InlineAlert() (+11 more)
 
-### Community 1 - "tickets/actions.ts"
-Cohesion: 0.14
-Nodes (25): addComment(), assignTicket(), categorizeTicket(), createTicket(), deleteTicket(), editTicket(), fields(), moveTicket() (+17 more)
+### Community 1 - "login/page.tsx"
+Cohesion: 0.16
+Nodes (18): signupStatus(), AuthTabs(), ClaimCard(), ForgotForm(), LoginForm(), BrandPane(), BrandText(), CHIPS (+10 more)
 
-### Community 2 - "createClient"
-Cohesion: 0.13
-Nodes (20): manifest(), importAreas(), parseSnapshot(), snapshotFiles(), takeSnapshot(), createClient(), getClient(), globalForPrisma (+12 more)
+### Community 2 - "lib/backup.ts"
+Cohesion: 0.12
+Nodes (19): manifest(), AreaFile, code, importAreas(), ImportReport, Row, subArea, snapshotFiles() (+11 more)
 
-### Community 3 - "ticketStore"
-Cohesion: 0.24
-Nodes (12): manilaDay(), readWhere(), TicketError, ticketStore(), areaLabel(), assigneeName(), claimUploads(), filterWhere() (+4 more)
-
-### Community 4 - "ticket-form.tsx"
+### Community 3 - "format.ts"
 Cohesion: 0.10
-Nodes (31): EVIDENCE_BOX, EVIDENCE_INPUT, DraftCleanup(), AreaSelect(), DESCRIPTION_HINTS, ERROR_ORDER, SharedFiles, storage() (+23 more)
+Nodes (26): Attachments(), Evidence(), FileRow, Item, GalleryImage, show(), ImageThumb(), connectionType() (+18 more)
 
-### Community 5 - "permissions.ts"
+### Community 4 - "draft.ts"
+Cohesion: 0.17
+Nodes (18): DraftCleanup(), storage(), TicketForm(), clearDraft(), TicketFormFields(), DRAFT_FIELDS, DRAFT_MAX_AGE_MS, draftKey() (+10 more)
+
+### Community 5 - "(main)/page.tsx"
+Cohesion: 0.08
+Nodes (39): ModuleProgressSection(), adminHome(), Counts, DashboardPage(), firstName(), ICON_BOX, MainAndSide(), Me (+31 more)
+
+### Community 6 - "requireAction"
+Cohesion: 0.18
+Nodes (21): emailError(), requestPasswordReset(), signup(), changePassword(), PasswordForm(), createUser(), duplicateEmail(), updateUser() (+13 more)
+
+### Community 7 - "permissions.ts"
 Cohesion: 0.15
-Nodes (21): derive(), dummyPasswordHash(), hashPassword(), verifyPassword(), Action, ACTIONS, Flag, FLAG_GRANTS (+13 more)
+Nodes (20): derive(), dummyPasswordHash(), hashPassword(), verifyPassword(), Action, ACTIONS, Flag, FLAG_GRANTS (+12 more)
 
-### Community 6 - "Form Field Components"
-Cohesion: 0.24
-Nodes (18): ForgotForm(), LoginForm(), ROLE_CARDS, SignupForm(), PasswordForm(), UserForm(), MoveForm(), ResetSplash() (+10 more)
+### Community 8 - "sidebar.tsx"
+Cohesion: 0.08
+Nodes (25): brandText, fadeText, groupLabel, navButton, Separator(), Sidebar(), SidebarContent(), SidebarContext (+17 more)
 
-### Community 7 - "Database Tables and Migrations"
+### Community 9 - "team/page.tsx"
+Cohesion: 0.12
+Nodes (20): ModuleLink, ModuleList(), Member, metadata, SearchParams, TeamBody(), teamHref(), AreaDialog() (+12 more)
+
+### Community 10 - "20261030000000_init_postgres/migration.sql"
 Cohesion: 0.09
 Nodes (39): "AreaMember", AreaMember_areaId_idx, "Attachment", Attachment_storedName_key, Attachment_ticketId_idx, "DarProfile", "DarReport", DarReport_userId_periodStart_key (+31 more)
 
-### Community 8 - "Sidebar Navigation"
-Cohesion: 0.11
-Nodes (28): brandText, fadeText, groupLabel, navButton, SidebarView(), filterNavGroups(), navGroups(), Separator() (+20 more)
-
-### Community 9 - "lucide-react"
-Cohesion: 0.11
-Nodes (30): ModuleLink, ModuleList(), AreaRow(), Member, metadata, People(), SearchParams, TeamBody() (+22 more)
-
-### Community 10 - "(main)/page.tsx"
-Cohesion: 0.14
-Nodes (27): ThreadRow(), adminHome(), CardHead(), Counts, DashboardPage(), firstName(), ICON_BOX, MainAndSide() (+19 more)
-
 ### Community 11 - "vitest"
-Cohesion: 0.13
-Nodes (9): normalizeEmail(), UserDeleteError, userDeletion(), vitest, t, cleanups, createTestDb(), Store (+1 more)
+Cohesion: 0.12
+Nodes (16): GET(), GET(), createRateLimiter(), RATE_LIMIT_KEEP_MS, RateLimiter, cronAuthorized(), dailyCleanup(), getClient() (+8 more)
 
 ### Community 12 - "tickets/store.ts"
 Cohesion: 0.06
-Nodes (38): Tone, id, optionalText(), categoryInput, commentInput, emptyToNull, param, TICKET_GROUPS (+30 more)
+Nodes (33): categoryInput, commentInput, emptyToNull, param, TICKET_GROUPS, ticketCreate, TicketCreate, ticketEdit (+25 more)
 
-### Community 13 - "Topbar and Nav Rules"
+### Community 13 - "nav.ts"
 Cohesion: 0.11
-Nodes (31): focusSoon(), AppTopbar(), AppTopbarShell(), BackButton(), PhoneNav, TopbarView(), BottomNav(), ACCOUNT_SECTIONS (+23 more)
+Nodes (34): focusSoon(), SidebarView(), AppTopbar(), AppTopbarShell(), BackButton(), PhoneNav, TopbarView(), BottomNav() (+26 more)
 
-### Community 14 - "DAR Periods and Page"
-Cohesion: 0.11
-Nodes (46): FunctionsEditor(), dar, DarBody(), DarPage(), metadata, FirstPeriodField(), dar, DarSetupPage() (+38 more)
+### Community 14 - "period.ts"
+Cohesion: 0.14
+Nodes (35): dar, DarBody(), DarPage(), metadata, FirstPeriodField(), addDays(), DOWS, firstPeriodOf() (+27 more)
 
-### Community 15 - "workflow.ts"
-Cohesion: 0.10
-Nodes (36): Ticket detail: `tickets/[number]/page.tsx`, `Ticket.dc.html`, can(), BOARD_COLUMNS, movesInto(), allowedTransitions(), canAssign(), canAssignTicket(), canCategorize() (+28 more)
+### Community 15 - "board.tsx"
+Cohesion: 0.21
+Nodes (13): BoardColumnData, ColumnTabs(), Pending, stillPending(), Task, TaskDialog(), TicketBoard(), without() (+5 more)
 
-### Community 16 - "DAR Store and Autofill"
-Cohesion: 0.09
-Nodes (44): focusCell(), FONT, FunctionRows(), Activity, ActivityArea, areaLabel(), buildCells(), CELL_MAX (+36 more)
-
-### Community 17 - "dar-editor.tsx"
+### Community 16 - "dar/store.ts"
 Cohesion: 0.15
-Nodes (20): refillDar(), DarEditor(), download(), print(), refill(), save(), PeriodOption, DarSheet() (+12 more)
+Nodes (29): Activity, ActivityArea, areaLabel(), buildCells(), DarCells, dayEntries(), daysAttended(), defaultEntry() (+21 more)
 
-### Community 18 - "Operations and Setup Guide"
+### Community 17 - "dar-sheet.tsx"
+Cohesion: 0.16
+Nodes (16): DarEditor(), download(), print(), refill(), save(), br(), DAR_COLORS, darHtml() (+8 more)
+
+### Community 18 - "Environment variables"
 Cohesion: 0.12
 Nodes (24): Storage bucket attachments, BACKUP_DIR, CRON_SECRET, Daily clean-up cron (/api/cron/daily), DATABASE_URL, Deployment flow, DIRECT_URL, .env.example (+16 more)
 
-### Community 19 - "ticket-controls.tsx"
-Cohesion: 0.23
-Nodes (16): AttachMenu(), EvidenceBox(), cameraInputId(), ImagePicker(), AssignForm(), CommentForm(), NOTE_HINTS, Ref (+8 more)
+### Community 19 - "account/actions.ts"
+Cohesion: 0.08
+Nodes (38): avatars, push, savePushSubscription(), SIGNUP_COOKIE, signupCookieOptions, deviceLabel(), clip(), PushEvent (+30 more)
 
 ### Community 20 - "image-picker.tsx"
-Cohesion: 0.22
-Nodes (13): canCaptureScreen(), ImageAttachments, Item, Queued, useCanCapture(), VideoUpload, IMAGE_MAX_BYTES, IMAGE_TYPES (+5 more)
+Cohesion: 0.13
+Nodes (20): AttachMenu(), EVIDENCE_BOX, EVIDENCE_INPUT, EvidenceBox(), canCaptureScreen(), ImageAttachments, useCanCapture(), VideoUpload (+12 more)
 
-### Community 21 - "Markup Editor Interaction"
-Cohesion: 0.12
-Nodes (32): desktopStageHeight(), hasText(), MarkupEditor(), applyFont(), bumpSize(), commitEdit(), movePinch(), onDoubleClick() (+24 more)
+### Community 21 - "MarkupEditor"
+Cohesion: 0.13
+Nodes (29): hasText(), MarkupEditor(), applyFont(), bumpSize(), movePinch(), onFingerDown(), onFingerMove(), onKeyDown() (+21 more)
 
-### Community 22 - "notifications-card.tsx"
-Cohesion: 0.09
-Nodes (46): AccountTabs(), onKeyDown(), pick(), pushStatus(), saveTone(), currentSubscription(), DeviceState, deviceState() (+38 more)
+### Community 22 - "setup/page.tsx"
+Cohesion: 0.20
+Nodes (17): Device, InstallCard(), noChange(), importDar(), Fact(), ImportDar(), apply(), dar (+9 more)
 
-### Community 23 - "lib/backup.ts"
-Cohesion: 0.27
-Nodes (9): areaLevels(), ownDarDetails(), restoreSnapshot(), Snapshot, SNAPSHOT_TABLES, SNAPSHOT_VERSION, SnapshotTable, adoptLegacyTemplate() (+1 more)
+### Community 23 - "template.ts"
+Cohesion: 0.10
+Nodes (16): DEFAULT_SCHEME, PERIOD_SCHEMES, DarUser, adoptLegacyTemplate(), DarHeader, DarProfileInput, DarProfileRow, functionList (+8 more)
 
-### Community 24 - "(main)/layout.tsx"
-Cohesion: 0.11
-Nodes (31): playTone(), MainLayout(), SessionBottomNav(), SessionSidebar(), SessionTopbar(), sessionUser(), markAllTicketsRead(), ToneListener() (+23 more)
+### Community 24 - "notifications-panel.tsx"
+Cohesion: 0.14
+Nodes (20): markAllTicketsRead(), Message(), Ctx, Data, Item, LIVE(), NavCount(), noChange() (+12 more)
 
-### Community 25 - "Ticket Board Page"
-Cohesion: 0.11
-Nodes (24): reporterOptions(), hrefWith(), metadata, MORE, NewTicketButton(), notifications, Pager(), Quick (+16 more)
-
-### Community 26 - "db.ts"
+### Community 25 - "tickets/page.tsx"
 Cohesion: 0.06
-Nodes (65): GET(), GET(), GET(), DELETE(), POST(), tickets, fail(), uploader() (+57 more)
+Nodes (60): CardHead(), RecentTickets(), BoardCard, Card(), FilterSheet(), hrefWith(), metadata, MORE (+52 more)
 
-### Community 27 - "Theme and User Menu"
+### Community 26 - "uploads/storage.ts"
 Cohesion: 0.18
-Nodes (18): AccentDots(), SidebarUser, AppearancePicker(), MODES, listeners, readAccent(), setAccent(), useAccent() (+10 more)
+Nodes (19): GET(), DELETE(), POST(), tickets, fail(), uploader(), POST(), isStoredName() (+11 more)
 
-### Community 28 - "Runtime Dependencies"
-Cohesion: 0.08
-Nodes (25): dependencies, @base-ui/react@^1.9.0, cn@^0.5.0, lucide-react@^1.61.0, next@16.4.3, @prisma/adapter-pg@^7.10.1, @prisma/client@^7.10.1, react@19.3.0 (+17 more)
+### Community 27 - "user-menu.tsx"
+Cohesion: 0.22
+Nodes (15): AccentDots(), AppearancePicker(), listeners, readAccent(), setAccent(), useAccent(), useThemeSwitch(), Appearance() (+7 more)
 
-### Community 29 - "Dev Dependencies"
-Cohesion: 0.09
-Nodes (22): devDependencies, pglite-prisma-adapter@^0.7.2, @playwright/test@^1.64.1, tailwindcss@^4, @tailwindcss/turbopack@^4, tsx@^4.23.15, @types/node@^24.19.2, @types/pg@^8.23.1 (+14 more)
+### Community 28 - "dependencies"
+Cohesion: 0.10
+Nodes (20): dependencies, @base-ui/react, class-variance-authority, cn, lucide-react, next, next-themes, pg (+12 more)
+
+### Community 29 - "devDependencies"
+Cohesion: 0.11
+Nodes (19): devDependencies, dotenv, @electric-sql/pglite, eslint, eslint-config-next, fflate, pglite-prisma-adapter, @playwright/test (+11 more)
 
 ### Community 30 - "dar/import.ts"
-Cohesion: 0.12
-Nodes (33): attr(), cellsOf(), clean(), columnIndex(), DarImportError, decode(), detectScheme(), ENTITY (+25 more)
+Cohesion: 0.11
+Nodes (34): read(), attr(), cellsOf(), clean(), columnIndex(), DarImport, DarImportError, decode() (+26 more)
 
-### Community 31 - "Markup Geometry"
-Cohesion: 0.15
-Nodes (22): onPointerMove(), drawSelection(), bounds(), calloutBox(), distToSegment(), estimateWidth(), Handle, handlesOf() (+14 more)
+### Community 31 - "shapes.ts"
+Cohesion: 0.14
+Nodes (26): onPointerMove(), drawSelection(), drawShape(), bounds(), calloutBox(), estimateWidth(), Handle, handlesOf() (+18 more)
 
-### Community 32 - "shadcn Components Config"
+### Community 32 - "components.json"
 Cohesion: 0.09
 Nodes (21): aliases, components, hooks, lib, ui, utils, iconLibrary, menuAccent (+13 more)
 
-### Community 33 - "(main)/page.tsx"
-Cohesion: 0.08
-Nodes (53): metadata, NewTicket(), NewTicketPage(), GET(), tickets, AccountSkeleton(), Bone(), DarSkeleton() (+45 more)
+### Community 33 - "files.ts"
+Cohesion: 0.15
+Nodes (23): body, tickets, checkUploaded(), cleanOriginalName(), EXT, FileType, mb(), newStoredName() (+15 more)
 
-### Community 34 - "Settings Page and Sheets"
-Cohesion: 0.13
-Nodes (29): Group(), metadata, Row(), SettingsBody(), SettingsPage(), AppearanceRow(), RequestsCount(), SignOutRow() (+21 more)
+### Community 34 - "settings-bits.tsx"
+Cohesion: 0.28
+Nodes (6): MODES, Sheet(), SheetContent(), SheetDescription(), SheetHeader(), SheetTitle()
 
 ### Community 35 - "markup-editor.tsx"
-Cohesion: 0.16
-Nodes (22): Drag, exportImage(), MarkupResult, Pinch, TextEdit, CROP_DIM, CROP_LINE, DEFAULT_MARK_COLOR (+14 more)
+Cohesion: 0.13
+Nodes (25): desktopStageHeight(), Drag, Pinch, TextBox(), TextEdit, MarkupToolbar(), SHORTCUT_HELP, TOOL_BUTTONS (+17 more)
 
 ### Community 36 - "date-picker.tsx"
-Cohesion: 0.25
-Nodes (17): DatePicker(), moveTo(), onKeyDown(), pick(), addDays(), addMonths(), CalendarDay, isoDate() (+9 more)
+Cohesion: 0.32
+Nodes (14): DatePicker(), moveTo(), onKeyDown(), pick(), addDays(), addMonths(), CalendarDay, isoDate() (+6 more)
 
-### Community 37 - "Device Notification Docs"
+### Community 37 - "Device notifications"
 Cohesion: 0.13
 Nodes (19): Device notifications (web push), Install as an app (Phase 3.7c), User.offHoursPush outside-hours choice, Filing tickets from a phone (Phase 3.7b), Service worker (public/sw.js), Share to QA Hub (Android share target), Sign out all devices, New ticket drafts (+11 more)
 
-### Community 38 - "shapes.ts"
-Cohesion: 0.23
-Nodes (10): MarkupToolbar(), SHORTCUT_HELP, TOOL_BUTTONS, clampRect(), cropOf(), RectShape, TEXT_SIZES, TextSize (+2 more)
-
-### Community 39 - "video-picker.tsx"
-Cohesion: 0.20
-Nodes (19): connectionType(), probeDuration(), Upload, useVideoUpload(), send(), start(), toAvatarFile(), useAvatarUpload() (+11 more)
-
-### Community 40 - "Markup Image Export"
+### Community 38 - "notifications.ts"
 Cohesion: 0.15
-Nodes (24): encodeCanvas(), Encoded, shrinkImage(), toBlob(), baseName(), CONVERT_ABOVE_BYTES, convertedName(), JPEG (+16 more)
+Nodes (9): describeEvent(), inboxStore(), LastEvent, previewOf(), scopeSql(), UnreadItem, unreadSql(), scopeWhere() (+1 more)
 
-### Community 41 - "dar/actions.ts"
-Cohesion: 0.30
-Nodes (12): emailError(), requestPasswordReset(), signup(), dar, importPayload, saveDar(), saveDarProfile(), fromZodError() (+4 more)
+### Community 39 - "tickets/actions.ts"
+Cohesion: 0.31
+Nodes (15): addComment(), assignTicket(), categorizeTicket(), createTicket(), editTicket(), fields(), moveTicket(), notifications (+7 more)
 
-### Community 42 - "board.tsx"
-Cohesion: 0.09
-Nodes (41): BoardCard, BoardColumnData, Card(), CardMenu(), ColumnTabs(), Pending, Person(), stillPending() (+33 more)
+### Community 40 - "markup.test.ts"
+Cohesion: 0.20
+Nodes (17): exportImage(), saveImage(), encodeCanvas(), Encoded, shrinkImage(), toBlob(), baseName(), CONVERT_ABOVE_BYTES (+9 more)
 
-### Community 43 - "push.test.ts"
+### Community 41 - "shapes.ts"
+Cohesion: 0.22
+Nodes (8): arrowLine(), arrowHead(), DEFAULT_TEXT_SIZE, drawOrder(), drawOrderIndexes(), Rect, RectShape, TOOLS
+
+### Community 42 - "workflow.ts"
+Cohesion: 0.08
+Nodes (43): boardCard(), Tone, Ticket detail: `tickets/[number]/page.tsx`, `Ticket.dc.html`, can(), BOARD_COLUMNS, columnInView(), movesInto(), allowedTransitions() (+35 more)
+
+### Community 43 - "users/page.tsx"
 Cohesion: 0.10
-Nodes (34): clip(), PushEvent, PushMessage, pushMessage(), PushTicket, Candidate, Delivery, delivery() (+26 more)
+Nodes (29): approveSignUp(), deleteUser(), deletion, deletionPreview(), dismissResetRequest(), rejectSignUp(), resetPassword(), signOutAllDevices() (+21 more)
 
-### Community 44 - "TypeScript Config"
+### Community 44 - "compilerOptions"
 Cohesion: 0.11
 Nodes (18): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModules, jsx, lib, module (+10 more)
 
-### Community 45 - "app-topbar.tsx"
-Cohesion: 0.26
-Nodes (15): BAR, INK, ModuleProgressCard(), ModuleProgressSection(), scoreText(), ModuleScope(), ScoreDot(), StepTip() (+7 more)
+### Community 45 - "shared-files.ts"
+Cohesion: 0.18
+Nodes (13): SignOutRow(), PwaSetup(), showBadge(), removeAllDrafts(), dropAllSharedFiles(), dropOldSharedFiles(), SHARED_AT_HEADER, SHARED_CACHE (+5 more)
 
-### Community 46 - "Root Layout and Splash"
+### Community 46 - "app/layout.tsx"
 Cohesion: 0.15
-Nodes (14): geistMono, geistSans, metadata, RootLayout(), viewport, AppSplash(), STEPS, Preloader() (+6 more)
+Nodes (14): geistMono, geistSans, metadata, RootLayout(), viewport, AppSplash(), ResetSplash(), STEPS (+6 more)
 
-### Community 47 - "users/page.tsx"
-Cohesion: 0.13
-Nodes (23): metadata, one(), RequestList(), RequestRow, STATUS_TONE, Tab, TABS, UsersBody() (+15 more)
+### Community 47 - "requireUser"
+Cohesion: 0.19
+Nodes (15): myTone(), pushStatus(), savePreviews(), saveTone(), ToneCard(), save(), PushPrompt(), notNow() (+7 more)
 
-### Community 48 - "Changelog Phases and Workflow"
+### Community 48 - "QA Hub Changelog"
 Cohesion: 0.15
 Nodes (17): Phase 2 AI layer (removed workbench), Tickets Board view, QA Hub Changelog, DAR on long bond paper, My DAR for everyone, own details, My DAR first period and rolling periods, Phase 3.5a QA Hub foundation, Move a ticket back a step (+9 more)
 
-### Community 49 - "Markup View and Zoom"
-Cohesion: 0.15
-Nodes (15): FONT_MAX, FONT_MIN, isTiny(), Shape, MAX_CANVAS_PX, offset(), Size, Vec (+7 more)
+### Community 49 - "view.ts"
+Cohesion: 0.23
+Nodes (11): ImageGallery(), zoomTo(), clampViewerZoom(), MAX_CANVAS_PX, offset(), Size, stepZoom(), Vec (+3 more)
 
-### Community 50 - "[number]/page.tsx"
-Cohesion: 0.09
-Nodes (40): hrefWith(), inbox, Inbox(), InboxPage(), metadata, Params, parse(), tickets (+32 more)
+### Community 50 - "ticket-view.tsx"
+Cohesion: 0.07
+Nodes (49): RequestList(), ThreadRow(), galleryImages(), Thread(), StepTip(), AssignControl(), CategoryControl(), CommentForm() (+41 more)
 
-### Community 51 - "npm Scripts"
+### Community 51 - "scripts"
 Cohesion: 0.12
 Nodes (17): scripts, areas:import, backup, build, db:deploy, db:generate, db:migrate, db:seed (+9 more)
 
-### Community 52 - "format.ts"
-Cohesion: 0.08
-Nodes (45): Attachments(), EventIcon(), EventText(), Evidence(), FileRow, ImageList(), Item, Message() (+37 more)
+### Community 52 - "avatar-upload.tsx"
+Cohesion: 0.29
+Nodes (11): Person(), toAvatarFile(), UserAvatar(), AVATAR_COLORS, AVATAR_PX, AVATAR_SOURCE_MAX_BYTES, avatarColors(), AvatarPerson (+3 more)
 
-### Community 53 - "shared-files.ts"
-Cohesion: 0.20
-Nodes (12): PwaSetup(), showBadge(), removeAllDrafts(), dropAllSharedFiles(), dropOldSharedFiles(), SHARED_AT_HEADER, SHARED_CACHE, SHARED_MAX_AGE_MS (+4 more)
+### Community 53 - "ticketStore"
+Cohesion: 0.21
+Nodes (14): areaPath(), manilaDay(), readWhere(), TicketError, ticketStore(), areaLabel(), assigneeName(), claimUploads() (+6 more)
 
-### Community 54 - "login/page.tsx"
-Cohesion: 0.16
-Nodes (15): signupStatus(), AuthTabs(), TABS, BrandPane(), BrandText(), CHIPS, LoginBody(), LoginPage() (+7 more)
+### Community 54 - "package.json"
+Cohesion: 0.09
+Nodes (21): name, private, version, dotenv, pg, pglite-prisma-adapter, @playwright/test, prisma (+13 more)
 
-### Community 55 - "ERP Billing API Pipeline"
+### Community 55 - "dcwd_apps-csms-bca-api"
 Cohesion: 0.16
 Nodes (14): API.Cloud Host, API On-Premise Host, dcwd_apps-csms-bca-api, BCS, BCS Export Queue, CloudDataContext, DataContext, Meter-Reading Field-to-Bill Workflow (+6 more)
 
-### Community 56 - "template.ts"
-Cohesion: 0.09
-Nodes (24): dar, GET(), boxed(), darXlsx(), LINE, longBondOnOnePage(), row(), rowHeight() (+16 more)
+### Community 56 - "dar-sheet.tsx"
+Cohesion: 0.14
+Nodes (21): DarSheet(), focusCell(), FONT, FunctionRows(), SectionHead(), dar, GET(), CELL_MAX (+13 more)
 
-### Community 57 - "QA Hub Roadmap Phases"
+### Community 57 - "QA AI for In-House ERP Build Plan"
 Cohesion: 0.21
 Nodes (13): Cloud Move to Vercel + Supabase, My DAR (Daily Accomplishment Report), Phase 3.10 UI Polish, Phase 3.5 QA Ticket Hub, Phase 3.6a Test Library and Manual Runs, Phase 3.7 QA Hub on Phones, Phase 3.7a Mobile UI Rework, Phase 3.7b Filing from the Phone (+5 more)
 
-### Community 58 - "Business Process Test Suites"
+### Community 58 - "Phase 6 Business-Process Suites"
 Cohesion: 0.18
 Nodes (12): GL (General Ledger), Gross-to-Net, OR (Official Receipt), Oracle, Recon Check, 3-Way Match, Hire-to-Retire / Time-to-Pay Process, Meter-to-Cash Process (+4 more)
 
-### Community 59 - "TicketStatus"
-Cohesion: 0.09
-Nodes (26): Flow, FlowInput, FlowStep, FlowStepState, FlowTone, PATH, PathStatus, STEP_LABELS (+18 more)
+### Community 59 - "UI (Web) Rework: developer handoff"
+Cohesion: 0.07
+Nodes (26): 10. States and interactions, 11. Motion, 12. Edge cases and limits, 13. Done means, 2. Suggested build order, 3. Sizes and layout, 4. Design tokens, 6. Pages (+18 more)
 
-### Community 60 - "session.ts"
-Cohesion: 0.14
-Nodes (19): ClaimState, login(), logout(), SignupState, SESSION_COOKIE, SESSION_MAX_AGE_S, sessionCookieOptions(), safeNext() (+11 more)
+### Community 60 - "getCurrentUser"
+Cohesion: 0.24
+Nodes (8): GET(), notifications, AccountBody(), GET, missed(), POST, auth, getCurrentUser
 
-### Community 61 - "Product Brief and Access Rules"
+### Community 61 - "QA Hub product brief"
 Cohesion: 0.20
 Nodes (8): Own accounts with admin-approved sign-ups, Nightly npm run backup on the QA laptop, Permissions matrix in lib/auth/permissions.ts, proxy.ts optimistic redirect, Daily Accomplishment Report in 15-day periods, QA Hub product brief, Roles: Admin, QA tester, Developer, Who's-who directory of module owners
 
-### Community 62 - "Account Administration Docs"
+### Community 62 - "Account management"
 Cohesion: 0.20
 Nodes (8): Delete user, Designer tick-box (FLAG_GRANTS), Deleting an account, Account management, Design reviews, Designer flag, Failed sign-in lock-out, Password reset requests
 
-### Community 63 - "useImageAttachments"
-Cohesion: 0.36
-Nodes (9): captureFrame(), useImageAttachments(), add(), enqueue(), onPaste(), remove(), resolve(), send() (+1 more)
+### Community 63 - "ticket-peek.tsx"
+Cohesion: 0.21
+Nodes (13): PeekHeading(), PeekLink(), TicketPeek(), Check, CloseGuardContext, CloseGuardProvider, GuardRef, SheetClose() (+5 more)
 
-### Community 64 - "Billing and Job Processes"
+### Community 64 - "Billing and Collection Process"
 Cohesion: 0.22
 Nodes (10): BAM and Debit/Credit Memos, Billing and Collection Process, JMS Service-Job Workflow, MCR Control Flow, Order of Payment, BAM (Billing Adjustment Memo), JMS (Job Management System), MCR (Customer Record Change) (+2 more)
 
-### Community 65 - "requireAction"
-Cohesion: 0.23
-Nodes (17): approveSignUp(), createUser(), deleteUser(), deletion, deletionPreview(), dismissResetRequest(), duplicateEmail(), rejectSignUp() (+9 more)
+### Community 65 - "image-picker.tsx"
+Cohesion: 0.14
+Nodes (26): dropFile(), removeAvatar(), saveAvatar(), cameraInputId(), captureFrame(), ImagePicker(), Item, Queued (+18 more)
 
 ### Community 66 - "Learning Log"
 Cohesion: 0.25
 Nodes (8): Additive migration first, code second, Cron job and CRON_SECRET, Learning Log, Magic bytes file type detection, Signed URL, SSRF host allow-list, Vercel env vars are read at build time, Daily clean-up GET /api/cron/daily
 
-### Community 67 - "account/actions.ts"
+### Community 67 - "device-push.ts"
 Cohesion: 0.18
-Nodes (18): avatars, changePassword(), dropFile(), myTone(), push, removeAvatar(), removePushSubscription(), saveAvatar() (+10 more)
+Nodes (17): removePushSubscription(), sendTestPush(), currentSubscription(), deviceState, turnOffDevice(), turnOnDevice(), readDevice(), DeviceNotificationsCard() (+9 more)
 
-### Community 68 - "Project Rules and Hosting"
+### Community 68 - "QA Hub project rules"
 Cohesion: 0.25
 Nodes (6): Private attachments bucket, QA Hub project rules, Supabase Postgres and Storage (ap-southeast-1), Vercel hosting (sin1), Local setup steps, QA Hub README
 
-### Community 69 - "Database Connection Rules"
+### Community 69 - "Prisma 7 client via lib/db-client.ts"
 Cohesion: 0.38
 Nodes (5): Connection string and pooler, RLS with no policies denies the public API, DATABASE_URL transaction pooler, DIRECT_URL session pooler, Prisma 7 client via lib/db-client.ts
 
-### Community 70 - "cron.ts"
-Cohesion: 0.31
-Nodes (6): GET(), createRateLimiter(), RATE_LIMIT_KEEP_MS, RateLimiter, cronAuthorized(), dailyCleanup()
+### Community 70 - "ticket-tabs.tsx"
+Cohesion: 0.23
+Nodes (9): ActiveTab, tabId(), TABS, TicketTab, TicketTabs(), onKeyDown(), onTouchEnd(), pick() (+1 more)
 
-### Community 71 - "Changelog Early Phases"
+### Community 71 - "QA Hub moves to Vercel + Supabase"
 Cohesion: 0.29
 Nodes (4): lib/backup.ts backup and restore, QA Hub moves to Vercel + Supabase, Daily clean-up cron (changelog), Profile photo and per-person colours
 
-### Community 72 - "Service Worker"
+### Community 72 - "sw.js"
 Cohesion: 0.43
 Nodes (4): askToPlay(), playInATab(), qaHubTabs(), refreshTabs()
 
-### Community 73 - "Grill-me Config (.claude)"
+### Community 73 - "interface"
 Cohesion: 0.33
 Nodes (5): interface, display_name, short_description, policy, allow_implicit_invocation
 
-### Community 74 - "Notifications and Markup Docs"
+### Community 74 - "Notifications"
 Cohesion: 0.33
 Nodes (5): My inbox, Notification bell, Notifications, Mark up screenshot tools, Sidebar counts
 
-### Community 75 - "ESLint Config"
-Cohesion: 0.33
-Nodes (5): eslintConfig, eslint@^9, eslint-config-next@16.4.3, eslint, eslint-config-next
+### Community 75 - "tree.ts"
+Cohesion: 0.19
+Nodes (10): metadata, NewTicket(), reporterOptions(), ticketFormOptions(), AreaSelect(), AreaTree, buildTree(), byOrder() (+2 more)
 
-### Community 76 - "Install Prompt Hook"
+### Community 76 - "PushPrompt"
 Cohesion: 0.47
 Nodes (5): changed(), InstallEvent, listeners, subscribe(), useInstallPrompt()
 
-### Community 77 - "Installable App and Push"
+### Community 77 - "Web Push service worker and subscription"
 Cohesion: 0.40
 Nodes (3): VAPID keys, Web Push service worker and subscription, Installable app with push notifications
 
-### Community 78 - "Grilling Skills"
+### Community 78 - "grilling skill (.claude)"
 Cohesion: 0.40
 Nodes (4): grill-me skill (.claude), Design tree (.claude), Decision frontier (.claude), grilling skill (.claude)
 
-### Community 79 - "Stack and Agent Rules"
+### Community 79 - "Stack: Next.js 16, React 19, TypeScript, Tailwind 4"
 Cohesion: 0.40
 Nodes (4): Next.js agent feedback pass, Next.js agent rules, Stack: Next.js 16, React 19, TypeScript, Tailwind 4, Vitest on PGlite
 
-### Community 80 - "ticket-tabs.tsx"
-Cohesion: 0.24
-Nodes (10): ActiveTab, tabId(), TABS, TicketHeader(), TicketTab, TicketTabs(), onKeyDown(), onTouchEnd() (+2 more)
+### Community 80 - "video-upload.test.ts"
+Cohesion: 0.19
+Nodes (18): VIDEO_MAX_SECONDS, bufferReader(), mp4Duration(), mvhdDuration(), ReadAt, videoDuration(), vint(), walk() (+10 more)
 
-### Community 81 - "Upload and Session Rules"
+### Community 81 - "Hard rule: uploads use generated names and post-upload checks"
 Cohesion: 0.50
 Nodes (3): Avatar route app/(main)/files/avatar/[userId], File route app/(main)/files/[id], Session guards in lib/auth/session.ts
 
-### Community 83 - "package.json"
-Cohesion: 0.12
-Nodes (15): class-variance-authority@^0.7.1, next-themes@^0.4.6, pg@^8.23.1, @supabase/supabase-js@^2.118.0, @electric-sql/pglite@^0.4.3, @types/web-push@^3.6.4, name, private (+7 more)
+### Community 83 - "Grabber"
+Cohesion: 0.70
+Nodes (5): Grabber(), onPointerDown(), onPointerMove(), onPointerUp(), sheet()
 
-### Community 84 - "My DAR Docs"
+### Community 84 - "My DAR (Daily Accomplishment Report)"
 Cohesion: 0.40
 Nodes (4): My DAR set-up, Module codes, My DAR (Daily Accomplishment Report), Team & modules
 
-### Community 85 - "Allowed Install Scripts"
-Cohesion: 0.40
-Nodes (5): allowScripts, esbuild@0.28.2, prisma@7.10.1, @prisma/engines@7.10.1, unrs-resolver@1.12.2
+### Community 85 - "ticket-form.tsx"
+Cohesion: 0.12
+Nodes (32): FunctionsEditor(), DarSetupForm(), AssignForm(), DeleteTicketDialog(), MoveForm(), NOTE_HINTS, Ref, AreaOption (+24 more)
 
-### Community 86 - "Env and Prisma Config"
-Cohesion: 0.40
-Nodes (4): dotenv@^18.0.9, prisma@^7.10.1, dotenv, prisma
+### Community 86 - "next"
+Cohesion: 0.10
+Nodes (22): TABS, AccountTab, ALIASES, PeriodOption, BAR, INK, ModuleProgressCard(), scoreText() (+14 more)
 
-### Community 87 - "Grilling Config (.claude)"
+### Community 87 - "interface"
 Cohesion: 0.50
 Nodes (3): interface, display_name, short_description
 
-### Community 88 - "Markup and Inbox Docs"
+### Community 88 - "Hide tool (solid black box)"
 Cohesion: 0.50
 Nodes (3): My inbox, Messenger-style, Notification bell and TicketRead, Screenshot markup editor
 
-### Community 89 - "BCA API Operating Model"
+### Community 89 - "DCWD CSMS BCA API Process Flow"
 Cohesion: 0.67
 Nodes (3): Recommended Operating Model, DCWD CSMS BCA API Process Flow, ERP Glossary
 
-### Community 90 - "areas/import.ts"
-Cohesion: 0.29
-Nodes (6): areaFile, AreaFile, code, ImportReport, Row, subArea
+### Community 90 - "report.ts"
+Cohesion: 0.11
+Nodes (31): GET(), tickets, counts(), fairScore(), LEFT_OUT, memberModules(), moduleProgress, percent() (+23 more)
 
-### Community 92 - "Vercel Config"
+### Community 92 - "vercel.json"
 Cohesion: 0.50
 Nodes (3): crons, regions, $schema
 
-### Community 112 - "SelectField"
-Cohesion: 0.19
-Nodes (13): AccountTab, ALIASES, Option(), OptionLabel(), SelectField(), SelectOption, SelectOptionGroup, SelectContent() (+5 more)
+### Community 101 - "inbox/page.tsx"
+Cohesion: 0.16
+Nodes (14): hrefWith(), inbox, metadata, Params, parse(), tickets, markTicketRead(), closeDeviceNotifications() (+6 more)
 
-### Community 116 - "lucide-react"
-Cohesion: 0.27
-Nodes (9): ToneSelect(), PushPrompt(), notNow(), read(), write(), AlertTone, ICON, STYLE (+1 more)
+### Community 102 - "team/actions.ts"
+Cohesion: 0.23
+Nodes (13): deleteArea(), duplicateCode(), saveArea(), saveAreaMembers(), AreaForm(), MembersForm(), AreaNode, nextSortOrder() (+5 more)
 
-### Community 117 - "UI (Web) Rework: developer handoff"
-Cohesion: 0.12
-Nodes (15): 10. States and interactions, 11. Motion, 12. Edge cases and limits, 13. Done means, 1. Decisions, 2. Suggested build order, 3. Sizes and layout, 4. Design tokens (+7 more)
-
-### Community 118 - "user.ts"
-Cohesion: 0.11
-Nodes (23): duplicateCode(), saveArea(), AreaNode, nextSortOrder(), placementError(), areaInput, AreaInput, areaMembersInput (+15 more)
-
-### Community 119 - "shell.js"
+### Community 103 - "shell.js"
 Cohesion: 0.27
 Nodes (10): apply(), closeMenu(), fillPanel(), hideTip(), icon(), markAllRead(), openMenu(), setPanel() (+2 more)
 
-### Community 120 - "6. Pages"
+### Community 104 - "account/page.tsx"
 Cohesion: 0.11
-Nodes (22): 6. Pages, Dashboard: `app/(main)/page.tsx`, `Main.dc.html`, My account: `account/`, `Account.dc.html`, My DAR: `dar/`, `Dar.dc.html`, My DAR set-up: `dar/setup/`, `DarSetup.dc.html`, My inbox: `inbox/page.tsx`, `Inbox.dc.html`, New ticket: `tickets/new/page.tsx`, `ticket-form.tsx`, `NewTicket.dc.html`, Screenshot markup: `tickets/markup/`, `Markup.dc.html` (+14 more)
+Nodes (16): AccountTabs(), onKeyDown(), pick(), metadata, WAVES, metadata, AppearanceRow(), RequestsCount() (+8 more)
 
-### Community 123 - "react"
-Cohesion: 0.12
-Nodes (5): Badge(), badgeVariants, @base-ui/react, cn, react
+### Community 105 - "users-filter.test.ts"
+Cohesion: 0.24
+Nodes (9): one(), UsersBody(), FilterableUser, filterUsers(), STATUS_LABELS, UserFilters, userStatus, names() (+1 more)
 
-### Community 127 - "notifications.ts"
-Cohesion: 0.12
-Nodes (14): notifications, ticketCreate, TicketCreate, describeEvent(), inboxStore(), LastEvent, previewOf(), scopeSql() (+6 more)
+### Community 106 - "user-menu.tsx"
+Cohesion: 0.58
+Nodes (5): logout(), Tooltip(), TooltipContent(), TooltipTrigger(), UserMenu()
+
+### Community 107 - "(main)/layout.tsx"
+Cohesion: 0.15
+Nodes (13): SessionBottomNav(), SessionSidebar(), SessionTopbar(), sessionUser(), AppSidebar(), AppSidebarShell(), SidebarUser, NotificationsPanelProvider() (+5 more)
+
+### Community 108 - "signup-form.tsx"
+Cohesion: 0.17
+Nodes (12): ROLE_CARDS, email, EMAIL_DOMAIN, forgotInput, loginInput, nickname, NICKNAME_MAX, PASSWORD_MIN (+4 more)
+
+### Community 110 - "TicketStatus"
+Cohesion: 0.22
+Nodes (12): StatusMoves(), FORWARD, isForward(), isRedMove(), MoveLayout, moveLayout(), RED, TicketStatus (+4 more)
+
+### Community 111 - "session.ts"
+Cohesion: 0.17
+Nodes (16): ClaimState, login(), SignupState, SESSION_COOKIE, SESSION_MAX_AGE_S, sessionCookieOptions(), safeNext(), loginLimiter (+8 more)
+
+### Community 112 - "How tickets connect to Module progress"
+Cohesion: 0.20
+Nodes (9): Boards, Build rules, How tickets connect to Module progress, New features, Still to check, The calculation, UI (Web) Rework: design notes, What changes the numbers (+1 more)
+
+### Community 117 - "log.ts"
+Cohesion: 0.23
+Nodes (11): buildActivityLog(), describeFiles(), LogEntry, LogInput, plural(), status(), STATUS_LABELS, ana (+3 more)
+
+### Community 118 - "lib/backup.ts"
+Cohesion: 0.26
+Nodes (10): areaLevels(), ownDarDetails(), parseSnapshot(), restoreSnapshot(), Snapshot, SNAPSHOT_TABLES, SNAPSHOT_VERSION, SnapshotTable (+2 more)
+
+### Community 119 - "hitTest"
+Cohesion: 0.24
+Nodes (11): commitEdit(), onDoubleClick(), onPointerDown(), onPointerUp(), placeText(), retype(), distToSegment(), handleAt() (+3 more)
+
+### Community 120 - "tones.ts"
+Cohesion: 0.29
+Nodes (7): playTone(), ToneSelect(), ToneListener(), DEFAULT_TONE, PRESET_TONES, ToneId, toneSrc()
+
+### Community 121 - "notifications-card.tsx"
+Cohesion: 0.47
+Nodes (7): saveWorkHours(), DAYS, OFF_HOURS, WorkHoursCard(), ampm(), hhmm(), timeOptions()
+
+### Community 122 - "holidays.ts"
+Cohesion: 0.52
+Nodes (6): easter(), FIXED, holidayOn(), iso(), moving(), pad()
+
+### Community 123 - "dar-migration.test.ts"
+Cohesion: 0.29
+Nodes (4): LEGACY_TEMPLATE, @electric-sql/pglite, dir, Row
+
+### Community 124 - "reset-password.ts"
+Cohesion: 0.47
+Nodes (5): claimTempPassword(), generateTempPassword(), normalizeEmail(), main(), { values }
+
+### Community 125 - "allowScripts"
+Cohesion: 0.40
+Nodes (5): allowScripts, esbuild@0.28.2, prisma@7.10.1, @prisma/engines@7.10.1, unrs-resolver@1.12.2
+
+### Community 126 - "badge.tsx"
+Cohesion: 0.67
+Nodes (3): Badge(), badgeVariants, class-variance-authority
+
+### Community 127 - "eslint.config.mjs"
+Cohesion: 0.50
+Nodes (3): eslintConfig, eslint, eslint-config-next
+
+### Community 128 - "zod"
+Cohesion: 0.50
+Nodes (3): id, optionalText(), zod
 
 ## Knowledge Gaps
-- **62 isolated node(s):** `Davao City Water District (DCWD)`, `DCWD Seal (Davao City Water District logo, circular navy seal with water faucet, est. 1973)`, `DATABASE_URL`, `Promote to Production rollback`, `Task Scheduler job QA Hub backup` (+57 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 574 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **24 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **76 isolated node(s):** `pg`, `@playwright/test`, `@prisma/client`, `shadcn`, `tailwindcss` (+71 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 658 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **29 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `react` connect `react` to `button.tsx`, `ticket-form.tsx`, `Form Field Components`, `Sidebar Navigation`, `lucide-react`, `(main)/page.tsx`, `Topbar and Nav Rules`, `DAR Periods and Page`, `DAR Store and Autofill`, `dar-editor.tsx`, `ticket-controls.tsx`, `image-picker.tsx`, `notifications-card.tsx`, `(main)/layout.tsx`, `Ticket Board Page`, `Theme and User Menu`, `Runtime Dependencies`, `(main)/page.tsx`, `Settings Page and Sheets`, `markup-editor.tsx`, `date-picker.tsx`, `video-picker.tsx`, `board.tsx`, `app-topbar.tsx`, `Root Layout and Splash`, `users/page.tsx`, `[number]/page.tsx`, `format.ts`, `shared-files.ts`, `login/page.tsx`, `session.ts`, `Install Prompt Hook`, `ticket-tabs.tsx`, `package.json`, `SelectField`, `lucide-react`?**
-  _High betweenness centrality (0.095) - this node is a cross-community bridge._
+- **Why does `Account management` connect `Account management` to `Environment variables`, `reset-password.ts`, `Device notifications`?**
+  _High betweenness centrality (0.116) - this node is a cross-community bridge._
 - **Are the 3 inferred relationships involving `MarkupEditor()` (e.g. with `zoomTo()` and `redo()`) actually correct?**
   _`MarkupEditor()` has 3 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `Davao City Water District (DCWD)`, `DCWD Seal (Davao City Water District logo, circular navy seal with water faucet, est. 1973)`, `DATABASE_URL` to the rest of the system?**
-  _62 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `tickets/actions.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.1396011396011396 - nodes in this community are weakly interconnected._
-- **Why does `vitest` connect `vitest` to `createClient`, `ticket-form.tsx`, `permissions.ts`, `lucide-react`, `tickets/store.ts`, `Topbar and Nav Rules`, `DAR Periods and Page`, `workflow.ts`, `DAR Store and Autofill`, `notifications-card.tsx`, `Ticket Board Page`, `db.ts`, `Theme and User Menu`, `Dev Dependencies`, `dar/import.ts`, `(main)/page.tsx`, `date-picker.tsx`, `Markup Image Export`, `push.test.ts`, `users/page.tsx`, `Markup View and Zoom`, `[number]/page.tsx`, `format.ts`, `shared-files.ts`, `template.ts`, `TicketStatus`, `ticket-tabs.tsx`, `package.json`, `user.ts`, `6. Pages`, `notifications.ts`?**
-  _High betweenness centrality (0.079) - this node is a cross-community bridge._
-- **Should `createClient` be split into smaller, more focused modules?**
-  _Cohesion score 0.1265597147950089 - nodes in this community are weakly interconnected._
-- **Why does `next` connect `login/page.tsx` to `button.tsx`, `tickets/actions.ts`, `ticket-form.tsx`, `Form Field Components`, `Sidebar Navigation`, `lucide-react`, `(main)/page.tsx`, `Topbar and Nav Rules`, `DAR Periods and Page`, `dar-editor.tsx`, `image-picker.tsx`, `notifications-card.tsx`, `(main)/layout.tsx`, `Ticket Board Page`, `db.ts`, `Theme and User Menu`, `Runtime Dependencies`, `(main)/page.tsx`, `Settings Page and Sheets`, `dar/actions.ts`, `board.tsx`, `app-topbar.tsx`, `Root Layout and Splash`, `users/page.tsx`, `[number]/page.tsx`, `template.ts`, `session.ts`, `requireAction`, `account/actions.ts`, `cron.ts`, `ticket-tabs.tsx`, `package.json`, `SelectField`, `lucide-react`, `user.ts`?**
-  _High betweenness centrality (0.055) - this node is a cross-community bridge._
+- **What connects `pg`, `@playwright/test`, `@prisma/client` to the rest of the system?**
+  _76 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `lib/backup.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.12477718360071301 - nodes in this community are weakly interconnected._
+- **Why does `react` connect `lucide-react` to `login/page.tsx`, `format.ts`, `draft.ts`, `(main)/page.tsx`, `sidebar.tsx`, `team/page.tsx`, `nav.ts`, `period.ts`, `board.tsx`, `image-picker.tsx`, `setup/page.tsx`, `notifications-panel.tsx`, `tickets/page.tsx`, `user-menu.tsx`, `settings-bits.tsx`, `markup-editor.tsx`, `date-picker.tsx`, `users/page.tsx`, `shared-files.ts`, `app/layout.tsx`, `requireUser`, `ticket-view.tsx`, `avatar-upload.tsx`, `package.json`, `dar-sheet.tsx`, `ticket-peek.tsx`, `image-picker.tsx`, `ticket-tabs.tsx`, `tree.ts`, `PushPrompt`, `ticket-form.tsx`, `next`, `inbox/page.tsx`, `account/page.tsx`, `user-menu.tsx`, `(main)/layout.tsx`, `signup-form.tsx`, `table.tsx`, `session.ts`, `tones.ts`, `notifications-card.tsx`?**
+  _High betweenness centrality (0.111) - this node is a cross-community bridge._
+- **Should `format.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.10483870967741936 - nodes in this community are weakly interconnected._
+- **Why does `Lost phone procedure` connect `Device notifications` to `Account management`?**
+  _High betweenness centrality (0.098) - this node is a cross-community bridge._
