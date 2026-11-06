@@ -1,5 +1,30 @@
 # Changelog
 
+## My DAR fills itself from tickets, with day statuses and pasted attendance (2026-11-06)
+
+One database change: `DarReport.days` and `DarReport.autoCells` (migration `20261106000500_dar_days`). Run `npm run db:deploy`.
+
+- **One entry per ticket**, for QA testers and developers: "Filed & replied on #123 PDS layout; verified and closed #118
+  NSC form", three tickets then "+2 more". It replaces "QA - BCA / CRM".
+- **Rows linked to modules (My details):** a row ticked "Fill this row's days from my ticket work" picks the modules whose
+  tickets fill it, at any level, everything inside a module included. Work goes to the row linked to the nearest module
+  (Purchase Requisition before Procurement); a fill row with no modules takes the rest. Old set-ups keep working.
+- **Never over what you typed:** new ticket work is merged in each time My DAR opens. A "-" cell gets the entry, a REST DAY
+  cell becomes "REST DAY · …", and a cell with your own text gets the entry after it. QA Hub's own earlier entry is
+  updated in place, never added twice. "Add latest ticket work" does the same and saves.
+- **After hours:** ticket work outside your work hours and days (My account → Notifications) is written as "After hours:
+  …", on screen, in the print and in the Excel file.
+- **Day statuses:** under each date on the sheet: Present, Remote (crisis), Leave, Absent, Rest day, Holiday. They start
+  from your work days and the holiday calendar; days still to come are "Not yet". "Actual No. of Days Attended" counts
+  Present days only. Turning a day into a day off swaps its untouched "-" cells for REST DAY, and back. On screen only:
+  the paper form has no row for them.
+- **Paste attendance:** copy your rows from the ERP's attendance log inquiry (linked in the window) and paste. QA Hub reads
+  each day's first time-in and last time-out and where, repeated taps once, and shows a preview. Apply sets those days
+  Present; a work day with no time-in becomes Absent, to change to Leave or Remote. Read in the browser; only the
+  statuses and times are kept. Names, employee numbers and device codes aren't.
+- Code: `lib/dar/attendance.ts`, `autoCells` / `describe` / `mergeCell` / `verbFor` in `lib/dar/autofill.ts` (tested),
+  `app/(main)/dar/paste-attendance.tsx`.
+
 ## Fewer ticket moves, Won't fix reasons, no admins as assignees (2026-11-06)
 
 No database changes. Tickets already Verified or Rejected keep their status.

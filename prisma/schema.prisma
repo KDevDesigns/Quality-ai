@@ -356,6 +356,8 @@ model DarReport {
   periodEnd     String
   cells         Json // { core: string[][], support: string[][] }, one string per day per function row
   dateSubmitted String? // "2026-10-31"
+  days          Json? // { "2026-11-03": { status, in?, out?, where? } }: Present, Rest day, Leave… (lib/dar/attendance.ts)
+  autoCells     Json? // what QA Hub last wrote in each cell from ticket work, so a refill replaces it instead of adding it twice
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
