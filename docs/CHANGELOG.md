@@ -1,5 +1,70 @@
 # Changelog
 
+## Tickets: open a ticket in a panel (2026-11-06)
+
+No database changes.
+
+- **On a laptop, a ticket opens in a panel over the board or the list**, so you keep your place: the column you were
+  scrolling, the view and the filters. Esc, the ✕, a click outside or the browser's Back closes it; Forward opens it
+  again.
+- Everything on the ticket page works in the panel: replying, moving, assigning, editing, deleting and the screenshots.
+  What you change shows on the board behind it straight away, and an unread ticket stops being bold once you close it.
+- **Open full page** at the top of the panel, and in each card's ⋯ menu, goes to the ticket page. Ctrl/Cmd-click or a
+  middle click opens the ticket page in a new tab, as before.
+- Closing the panel with a reply you haven't sent asks first.
+- **Phones** keep opening the ticket page, as before.
+- While the panel is open the address is `/tickets/N/peek`. Loaded on its own (a refresh, a pasted link) it goes to the
+  ticket page. To share a ticket, use its page's address, `/tickets/N`, as before.
+- Code: `lib/tickets/peek.ts` (tested), `app/(main)/tickets/ticket-peek.tsx`, the `@peek` slot in
+  `app/(main)/tickets/layout.tsx`. The ticket itself moved to `tickets/[number]/ticket-view.tsx`, shared by the page and
+  the panel. It's `/tickets/N/peek` and not `/tickets/N` because Next intercepts a route before its normal routing:
+  intercepting `/tickets/N` would also catch New ticket and the links between ticket pages.
+
+## Tickets: move a ticket back a step (2026-11-04)
+
+A move made by mistake can now be taken back on the same ticket, instead of filing a new one. Each asks for a note,
+which shows in the history and in the notification, so the other side knows why.
+
+| Button            | From → to                                      | Who                        |
+| ----------------- | ---------------------------------------------- | -------------------------- |
+| **Stop work**     | In progress → New (To do)                      | the assigned developer     |
+| **Not fixed yet** | Fixed → In progress (before QA verifies it)    | the assigned developer     |
+| **Undo verify**   | Verified → Fixed                               | the QA tester who filed it |
+| **Take back**     | Rejected, Won't fix or Duplicate → In progress | the assigned developer     |
+
+- Admins can make all of them, as with every other move. **Reopen** (QA, back to To do) is unchanged.
+- On the board, drag the card back a column (In progress to To do, Fixed to In progress…); the ⋯ menu and the ticket
+  page have them as buttons, never as the main one.
+- Taking back a duplicate clears its "Duplicate of #…" link.
+- Each move's note box now says what to write; **Withdraw** no longer shows "Optional." on a required note.
+- Code: the rules in `lib/tickets/workflow.ts` (tested); `Transition` has `back` and `hint`.
+
+## Tickets: Board view (2026-11-04)
+
+- **List or Board:** a switch beside **New ticket** shows the tickets as the usual list or as a board, like ClickUp or
+  Planner. Each browser remembers the last choice, so Tickets opens the same way next time.
+- **Same views and filters as the list:** Open, Assigned to me, Reported by me, Needs info, Waiting for retest, Done
+  and All, plus search, type, module and developer. Switching between List and Board keeps them. Columns the view
+  leaves empty (Done under Open) stay on the board as places to drop a card.
+- **Columns** follow the workflow: **To do** (new and reopened), **In progress**, **Needs info**, **Fixed**,
+  **Verified** and **Done** (closed, rejected, duplicate, won't fix), each with its count. A column shows its 50 most
+  recently active tickets and links to the rest in the list.
+- **Cards** show the number, module, title, type, severity, P1/P2 priority, a reopened or rejected status, replies,
+  last activity, and the developer (on a developer's board, who filed it). Unread tickets are bold with the red dot.
+  Click a card to open the ticket (on a laptop, in a panel over the board: see 2026-11-06).
+- **Drag a card to another column to move it.** Only the columns you may move it to light up; the rest fade.
+  - A move without a note (Start work, Info added, Mark fixed, Verified, Close) happens at once, with **Undo** for 5
+    seconds. It is saved, and people are notified, only when that message closes. Closing the tab before then asks
+    first.
+  - A move that needs a note (Ask for info, Reopen, Reject, Won't fix, Withdraw, Duplicate) asks for it, as the ticket
+    page does. Done asks how it ends when there's more than one way.
+- **The ⋯ menu on each card** opens its full page, makes any move it allows (through the note dialog, so you can add one), and
+  assigns or reassigns the developer (QA testers and admins). On a phone, where there's no dragging, the columns swipe
+  sideways with tabs to jump between them.
+- Code: `lib/tickets/board.ts` (columns, which move lands where, which columns a view fills; tested),
+  `ticketStore.board()`, `app/(main)/tickets/board.tsx`, `view-switch.tsx`. The ticket page's move and assign forms are
+  shared with the board. Toasts (sonner) are now mounted in `app/(main)/layout.tsx`.
+
 ## Install as an app (Phase 3.7c, 2026-11-03)
 
 No database changes. It keeps no copy of pages or tickets, so offline it shows the browser's normal "no connection" page.
@@ -59,51 +124,6 @@ reference, while the user designs the new UI in the Claude Design canvas.
   reply starts a new line, and the conversation scrolls with the page. Unread counts no longer make a page rebuild as
   it loads.
 
-## Tickets: move a ticket back a step (2026-11-04)
-
-A move made by mistake can now be taken back on the same ticket, instead of filing a new one. Each asks for a note,
-which shows in the history and in the notification, so the other side knows why.
-
-| Button | From → to | Who |
-|---|---|---|
-| **Stop work** | In progress → New (To do) | the assigned developer |
-| **Not fixed yet** | Fixed → In progress (before QA verifies it) | the assigned developer |
-| **Undo verify** | Verified → Fixed | the QA tester who filed it |
-| **Take back** | Rejected, Won't fix or Duplicate → In progress | the assigned developer |
-
-- Admins can make all of them, as with every other move. **Reopen** (QA, back to To do) is unchanged.
-- On the board, drag the card back a column (In progress to To do, Fixed to In progress…); the ⋯ menu and the ticket
-  page have them as buttons, never as the main one.
-- Taking back a duplicate clears its "Duplicate of #…" link.
-- Each move's note box now says what to write; **Withdraw** no longer shows "Optional." on a required note.
-- Code: the rules in `lib/tickets/workflow.ts` (tested); `Transition` has `back` and `hint`.
-
-## Tickets: Board view (2026-11-04)
-
-- **List or Board:** a switch beside **New ticket** shows the tickets as the usual list or as a board, like ClickUp or
-  Planner. Each browser remembers the last choice, so Tickets opens the same way next time.
-- **Same views and filters as the list:** Open, Assigned to me, Reported by me, Needs info, Waiting for retest, Done
-  and All, plus search, type, module and developer. Switching between List and Board keeps them. Columns the view
-  leaves empty (Done under Open) stay on the board as places to drop a card.
-- **Columns** follow the workflow: **To do** (new and reopened), **In progress**, **Needs info**, **Fixed**,
-  **Verified** and **Done** (closed, rejected, duplicate, won't fix), each with its count. A column shows its 50 most
-  recently active tickets and links to the rest in the list.
-- **Cards** show the number, module, title, type, severity, P1/P2 priority, a reopened or rejected status, replies,
-  last activity, and the developer (on a developer's board, who filed it). Unread tickets are bold with the red dot.
-  Click a card to open the ticket.
-- **Drag a card to another column to move it.** Only the columns you may move it to light up; the rest fade.
-  - A move without a note (Start work, Info added, Mark fixed, Verified, Close) happens at once, with **Undo** for 5
-    seconds. It is saved, and people are notified, only when that message closes. Closing the tab before then asks
-    first.
-  - A move that needs a note (Ask for info, Reopen, Reject, Won't fix, Withdraw, Duplicate) asks for it, as the ticket
-    page does. Done asks how it ends when there's more than one way.
-- **The ⋯ menu on each card** opens it, makes any move it allows (through the note dialog, so you can add one), and
-  assigns or reassigns the developer (QA testers and admins). On a phone, where there's no dragging, the columns swipe
-  sideways with tabs to jump between them.
-- Code: `lib/tickets/board.ts` (columns, which move lands where, which columns a view fills; tested),
-  `ticketStore.board()`, `app/(main)/tickets/board.tsx`, `view-switch.tsx`. The ticket page's move and assign forms are
-  shared with the board. Toasts (sonner) are now mounted in `app/(main)/layout.tsx`.
-
 ## Delete user and the Designer tick-box (2026-11-01)
 
 - **Delete user** (Admin → Users, red bin): deletes the account and everything it made: tickets they filed with every
@@ -123,10 +143,10 @@ which shows in the history and in the notification, so the other side knows why.
   ticket clears all of them.
 - **Missed notifications wait up to 3 days** (was 12 hours) for a device that's off or offline, so changes from the
   evening or a weekend are there in the morning.
-- **Outside my work hours and days** (My account → Work hours) replaces *Only notify me during work hours*: **Notify
+- **Outside my work hours and days** (My account → Work hours) replaces _Only notify me during work hours_: **Notify
   me with sound** (default), **Notify me silently** (no sound or vibration, still in the list; iPhones still ring), or
-  **Don't notify me**. The hours and days can always be edited. People who had the old switch on get *Don't notify
-  me*, so nothing changes for them.
+  **Don't notify me**. The hours and days can always be edited. People who had the old switch on get _Don't notify
+  me_, so nothing changes for them.
 - Database: `User.offHoursPush` (`SOUND`/`SILENT`/`NONE`) replaces `pushWorkHoursOnly`
   (migration `20261101000400_off_hours_push`).
 
@@ -198,6 +218,7 @@ which shows in the history and in the notification, so the other side knows why.
 
 Supabase's logs showed about 945 MB of file downloads in one day, almost all from one video loaded again on every
 visit. The free plan allows 5 GB a month.
+
 - **Videos load only when someone presses Play.** Before, browsers fetched most of a phone recording each time a
   ticket opened.
 - **Screenshots are saved smaller before upload:** same size (2560×1440 stays 2560×1440, so ERP text stays readable),
@@ -246,7 +267,7 @@ visit. The free plan allows 5 GB a month.
   - **Show message previews** (on by default, My account → Sound and previews): off gives only
     `#12 · Bug / New reply from Ana / Module: Billing`, with no ticket text or photo. The guide shows how to hide
     previews on locked phones and PCs. Migration `push_previews`.
-  - **Work hours:** *Only notify me during work hours* keeps devices quiet outside the chosen hours and days
+  - **Work hours:** _Only notify me during work hours_ keeps devices quiet outside the chosen hours and days
     (Philippine time). The bell and My inbox still show everything.
   - iPhone and iPad: iOS 16.4+ and QA Hub added to the Home Screen first. Windows and Mac: the browser must be running.
     Details and the firewall list for IT: `docs/OPERATIONS.md` §5b.
@@ -290,7 +311,7 @@ visit. The free plan allows 5 GB a month.
 ## QA Hub moves to Vercel + Supabase (2026-10-31)
 
 - **Hosting:** QA Hub now runs on Vercel (HTTPS, region `sin1`) with a Supabase database and Storage in Singapore, so it no longer depends on the QA laptop being on. IT/DPO approved putting ticket data in the cloud.
-- **Removed:** the paused AI workbench (pages, `lib/ai` and the other workbench code, its tables and packages), the DAR **PDF** download (Print and Excel stay; *Save as PDF* in the print dialog still makes a PDF), the LAN scripts and the old SQLite database (`prisma/dev.db`). We started fresh in Supabase; no old data was copied.
+- **Removed:** the paused AI workbench (pages, `lib/ai` and the other workbench code, its tables and packages), the DAR **PDF** download (Print and Excel stay; _Save as PDF_ in the print dialog still makes a PDF), the LAN scripts and the old SQLite database (`prisma/dev.db`). We started fresh in Supabase; no old data was copied.
 - **Database:** Postgres through Prisma's `adapter-pg` (`lib/db-client.ts`). Row Level Security is on for every table with no policies, so Supabase's public API reads nothing. Sign-in limits are counted in the database (`RateLimitHit`), because serverless functions share no memory. Tests run on PGlite, an in-memory Postgres.
 - **Uploads:** the browser uploads straight to the private `attachments` bucket with a signed URL (Vercel caps requests at 4.5 MB). The server then checks the real type, size and video length before a ticket can use the file. Files open through `/files/[id]`, which checks access and redirects to a 1-hour signed URL. Videos: up to 3 min / **50 MB** on the free plan.
 - **Daily clean-up:** `/api/cron/daily` (02:00 Manila, protected by `CRON_SECRET`) removes unsent uploads, expired sessions and old sign-in counters.
@@ -314,7 +335,7 @@ visit. The free plan allows 5 GB a month.
 
 ## My DAR looks like the paper form, and prints (2026-10-29)
 
-- **My DAR is now the form itself:** a white sheet laid out like the DCWD *Project-Based Employee Daily Accomplishment Report*.
+- **My DAR is now the form itself:** a white sheet laid out like the DCWD _Project-Based Employee Daily Accomplishment Report_.
   - It has the seal and agency banner, the orange-labelled header table, the date submitted and days attended, and the DAYS grid with core and support functions and MFOs. The signatories are at the bottom.
   - **Editing:** click any day cell to type in it. Click the date submitted to pick another date.
   - The DAR page uses the full width of the screen (other pages keep the 1320px cap). The sheet keeps its paper proportions and zooms to fill it, shrinking on small screens and growing on wide ones. The separate preview is gone, since the page is the preview.
@@ -322,7 +343,7 @@ visit. The free plan allows 5 GB a month.
 
 ## My DAR: Daily Accomplishment Report generator (2026-10-29)
 
-- **My DAR** (QA testers only) builds the DCWD *Project-Based Employee Daily Accomplishment Report* for a half-month period (1–15, or 16 to the end of the month).
+- **My DAR** (QA testers only) builds the DCWD _Project-Based Employee Daily Accomplishment Report_ for a half-month period (1–15, or 16 to the end of the month).
   - **Days filled from ticket work:** each day lists the modules of the tickets the tester filed, replied on or moved that day, by their **Code** from Team & modules, e.g. "QA - BCA / CRM".
   - A day with nothing is **REST DAY**, and every cell can be edited.
   - Days attended are counted live.

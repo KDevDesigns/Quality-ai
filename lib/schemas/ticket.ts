@@ -1,6 +1,15 @@
 import { z } from "zod";
 import { TICKET_VIEWS, type TicketView } from "@/lib/tickets/board";
-import { DEVICE_TYPES, PRIORITIES, SEVERITIES, TICKET_CATEGORIES, TICKET_STATUSES, TICKET_TYPES, TO_START, type TicketCategoryValue } from "@/lib/tickets/workflow";
+import {
+  DEVICE_TYPES,
+  PRIORITIES,
+  SEVERITIES,
+  TICKET_CATEGORIES,
+  TICKET_STATUSES,
+  TICKET_TYPES,
+  TO_START,
+  type TicketCategoryValue,
+} from "@/lib/tickets/workflow";
 import { optionalText } from "./common";
 
 const emptyToNull = z
@@ -11,17 +20,35 @@ const emptyToNull = z
 
 const ticketFields = z.object({
   type: z.enum(TICKET_TYPES, "Pick a type"),
-  title: z.string().trim().min(5, "At least 5 characters").max(150, "At most 150 characters"),
+  title: z
+    .string()
+    .trim()
+    .min(5, "At least 5 characters")
+    .max(150, "At most 150 characters"),
   description: z.string().trim().max(20000, "At most 20,000 characters"),
   areaId: emptyToNull,
-  severity: z.union([z.enum(SEVERITIES), z.literal("")]).optional().transform((v) => (v ? v : null)),
+  severity: z
+    .union([z.enum(SEVERITIES), z.literal("")])
+    .optional()
+    .transform((v) => (v ? v : null)),
   priority: z.enum(PRIORITIES).default("P3"),
   foundIn: optionalText(100),
-  deviceType: z.union([z.enum(DEVICE_TYPES), z.literal("")]).nullish().transform((v) => (v ? v : null)),
+  deviceType: z
+    .union([z.enum(DEVICE_TYPES), z.literal("")])
+    .nullish()
+    .transform((v) => (v ? v : null)),
 });
 
 /** Severity and device type only apply to bugs, so they are dropped for suggestions and improvements. */
-const bugOnly = <T extends { type: string; severity: string | null; deviceType: string | null }>(v: T): T => (v.type === "BUG" ? v : { ...v, severity: null, deviceType: null });
+const bugOnly = <
+  T extends {
+    type: string;
+    severity: string | null;
+    deviceType: string | null;
+  },
+>(
+  v: T,
+): T => (v.type === "BUG" ? v : { ...v, severity: null, deviceType: null });
 
 /** Filing a ticket: it must say where in the ERP, what kind of work, and show the problem. Editing stays free of these, for older tickets. */
 export const ticketCreate = ticketFields
@@ -29,19 +56,26 @@ export const ticketCreate = ticketFields
     assigneeId: emptyToNull,
     areaId: z.string().trim().min(1, "Choose a module"),
     category: z.enum(TICKET_CATEGORIES, "Choose a category"),
-    uploadIds: z.array(z.string()).min(1, "Add at least one screenshot or video."),
+    uploadIds: z
+      .array(z.string())
+      .min(1, "Add at least one screenshot or video."),
   })
   .transform(bugOnly);
 
 /** What the store saves. The columns stay optional in the database, for tickets filed before these were required. */
-export type TicketCreate = Omit<z.infer<typeof ticketCreate>, "areaId" | "category" | "uploadIds"> & { areaId: string | null; category?: TicketCategoryValue | null };
+export type TicketCreate = Omit<
+  z.infer<typeof ticketCreate>,
+  "areaId" | "category" | "uploadIds"
+> & { areaId: string | null; category?: TicketCategoryValue | null };
 
 export const categoryInput = z.enum(TICKET_CATEGORIES, "Choose a category");
 
 export const ticketEdit = ticketFields.transform(bugOnly);
 export type TicketEdit = z.infer<typeof ticketEdit>;
 
-export const commentInput = z.object({ body: z.string().trim().max(20000, "At most 20,000 characters") });
+export const commentInput = z.object({
+  body: z.string().trim().max(20000, "At most 20,000 characters"),
+});
 
 export const transitionInput = z.object({
   to: z.enum(TICKET_STATUSES),
@@ -51,7 +85,10 @@ export const transitionInput = z.object({
     .trim()
     .optional()
     .transform((v) => v?.replace(/^#/, "") ?? "")
-    .refine((v) => v === "" || /^\d{1,9}$/.test(v), "Enter a ticket number, e.g. 12")
+    .refine(
+      (v) => v === "" || /^\d{1,9}$/.test(v),
+      "Enter a ticket number, e.g. 12",
+    )
     .transform((v) => (v ? Number(v) : null)),
 });
 export type TransitionInput = z.infer<typeof transitionInput>;
@@ -66,20 +103,40 @@ const param = z
 
 /** The ticket list's URL filters. Unknown or bad values fall back to the default instead of failing. */
 export const ticketFilters = z.object({
-  group: param.transform((v) => ((TICKET_GROUPS as readonly string[]).includes(v) ? (v as TicketGroup) : "open")),
+  group: param.transform((v) =>
+    (TICKET_GROUPS as readonly string[]).includes(v)
+      ? (v as TicketGroup)
+      : "open",
+  ),
   /** One status, or "TO_START" for tickets not started yet (new or reopened). */
-  status: param.transform((v) => (v === TO_START || (TICKET_STATUSES as readonly string[]).includes(v) ? (v as (typeof TICKET_STATUSES)[number] | typeof TO_START) : null)),
-  type: param.transform((v) => ((TICKET_TYPES as readonly string[]).includes(v) ? (v as (typeof TICKET_TYPES)[number]) : null)),
+  status: param.transform((v) =>
+    v === TO_START || (TICKET_STATUSES as readonly string[]).includes(v)
+      ? (v as (typeof TICKET_STATUSES)[number] | typeof TO_START)
+      : null,
+  ),
+  type: param.transform((v) =>
+    (TICKET_TYPES as readonly string[]).includes(v)
+      ? (v as (typeof TICKET_TYPES)[number])
+      : null,
+  ),
   area: param.transform((v) => v || null),
   /** A category, or "none" for tickets not tagged yet. */
-  category: param.transform((v) => (v === "none" || (TICKET_CATEGORIES as readonly string[]).includes(v) ? (v as TicketCategoryValue | "none") : null)),
+  category: param.transform((v) =>
+    v === "none" || (TICKET_CATEGORIES as readonly string[]).includes(v)
+      ? (v as TicketCategoryValue | "none")
+      : null,
+  ),
   /** A user id, "me" or "none". */
   assignee: param.transform((v) => v || null),
   /** A user id or "me". */
   reporter: param.transform((v) => v || null),
   q: param.transform((v) => v.slice(0, 100)),
-  page: param.transform((v) => Math.max(1, Math.min(10000, Number.parseInt(v, 10) || 1))),
+  page: param.transform((v) =>
+    Math.max(1, Math.min(10000, Number.parseInt(v, 10) || 1)),
+  ),
   /** "list" or "board" when the address picks one; otherwise the page uses the one last picked (see lib/tickets/board). */
-  view: param.transform((v) => ((TICKET_VIEWS as readonly string[]).includes(v) ? (v as TicketView) : null)),
+  view: param.transform((v) =>
+    (TICKET_VIEWS as readonly string[]).includes(v) ? (v as TicketView) : null,
+  ),
 });
 export type TicketFilters = z.infer<typeof ticketFilters>;

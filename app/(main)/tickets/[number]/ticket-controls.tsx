@@ -1,25 +1,63 @@
 "use client";
 
-import { startTransition, useActionState, useState } from "react";
+import { startTransition, useActionState, useCallback, useState } from "react";
 import { Menu } from "@base-ui/react/menu";
-import { ArrowRightLeftIcon, ChevronDownIcon, EllipsisIcon, PencilIcon, SendIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
+import {
+  ArrowRightLeftIcon,
+  ChevronDownIcon,
+  EllipsisIcon,
+  PencilIcon,
+  SendIcon,
+  Trash2Icon,
+  TriangleAlertIcon,
+} from "lucide-react";
+import { useCloseGuard } from "@/components/close-guard";
 import { Field, FormMessage } from "@/components/form-field";
 import { FormDialog } from "@/components/form-dialog";
 import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useTouchScreen } from "@/hooks/use-touch-screen";
 import { initialFormState, type FormState } from "@/lib/form";
 import { isRedMove, moveLayout } from "@/lib/tickets/moves";
 import { cn } from "@/lib/utils";
-import { CATEGORY_LABELS, NO_CATEGORY, STATUS_LABELS, TICKET_CATEGORIES, type TicketCategoryValue, type TicketStatus, type Transition } from "@/lib/tickets/workflow";
-import { addComment, assignTicket, categorizeTicket, deleteTicket, moveTicket } from "../actions";
+import {
+  CATEGORY_LABELS,
+  NO_CATEGORY,
+  STATUS_LABELS,
+  TICKET_CATEGORIES,
+  type TicketCategoryValue,
+  type TicketStatus,
+  type Transition,
+} from "@/lib/tickets/workflow";
+import {
+  addComment,
+  assignTicket,
+  categorizeTicket,
+  deleteTicket,
+  moveTicket,
+} from "../actions";
 import { AttachMenu } from "../attach-menu";
 import { ImagePicker, useImageAttachments } from "../image-picker";
 import { useVideoUpload, VideoPicker } from "../video-picker";
-import { AssigneeSelect, submitKeepingInput, TicketForm, type AreaOption, type AssigneeOption, type TicketValues } from "../ticket-form";
+import {
+  AssigneeSelect,
+  submitKeepingInput,
+  TicketForm,
+  type AreaOption,
+  type AssigneeOption,
+  type TicketValues,
+} from "../ticket-form";
 
 type Ref = { id: string; number: number };
 
@@ -28,50 +66,98 @@ type Ref = { id: string; number: number };
  * common second button (Reopen while retesting), and everything else in a "More" menu, other outcomes first, then
  * moves that undo a mistake. Each opens a short dialog for the note.
  */
-export function StatusMoves({ ticket, status, moves }: { ticket: Ref; status: TicketStatus; moves: Transition[] }) {
+export function StatusMoves({
+  ticket,
+  status,
+  moves,
+}: {
+  ticket: Ref;
+  status: TicketStatus;
+  moves: Transition[];
+}) {
   const [picked, setPicked] = useState<Transition | null>(null);
   if (!moves.length) return null;
   const { main, second, outcomes, undo } = moveLayout(moves);
-  const description = (m: Transition) => `${STATUS_LABELS[status]} → ${STATUS_LABELS[m.to]}`;
+  const description = (m: Transition) =>
+    `${STATUS_LABELS[status]} → ${STATUS_LABELS[m.to]}`;
   const button = (m: Transition, primary: boolean) => (
     <FormDialog
       key={m.to}
       title={m.label}
       description={description(m)}
-      trigger={<Button variant={primary ? "default" : isRedMove(m) ? "ghost-red" : "outline"}>{m.label}</Button>}
+      trigger={
+        <Button
+          variant={primary ? "default" : isRedMove(m) ? "ghost-red" : "outline"}
+        >
+          {m.label}
+        </Button>
+      }
     >
       {(close) => <MoveForm ticket={ticket} move={m} onDone={close} />}
     </FormDialog>
   );
-  const item = "flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-sm outline-none data-highlighted:bg-row-hover";
-  const group = "px-3 pt-1.5 pb-1 text-[0.75rem] font-semibold tracking-[0.04em] text-muted-foreground uppercase";
+  const item =
+    "flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-sm outline-none data-highlighted:bg-row-hover";
+  const group =
+    "px-3 pt-1.5 pb-1 text-[0.75rem] font-semibold tracking-[0.04em] text-muted-foreground uppercase";
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       {outcomes.length || undo.length ? (
         <Menu.Root>
-          <Menu.Trigger render={<Button type="button" variant="outline" className="data-popup-open:bg-acc-t2" />}>
+          <Menu.Trigger
+            render={
+              <Button
+                type="button"
+                variant="outline"
+                className="data-popup-open:bg-acc-t2"
+              />
+            }
+          >
             {main || second ? "More" : "Moves"} <ChevronDownIcon aria-hidden />
           </Menu.Trigger>
           <Menu.Portal>
-            <Menu.Positioner side="bottom" align="end" sideOffset={6} className="isolate z-50">
+            <Menu.Positioner
+              side="bottom"
+              align="end"
+              sideOffset={6}
+              className="isolate z-50"
+            >
               <Menu.Popup className="w-56 origin-(--transform-origin) rounded-xl bg-popover p-1.5 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-150 ease-(--ease-out) data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
                 {outcomes.length ? (
                   <Menu.Group>
-                    <Menu.GroupLabel className={group}>Other outcomes</Menu.GroupLabel>
+                    <Menu.GroupLabel className={group}>
+                      Other outcomes
+                    </Menu.GroupLabel>
                     {outcomes.map((m) => (
-                      <Menu.Item key={m.to} className={cn(item, isRedMove(m) && "text-destructive-text data-highlighted:bg-bad-w")} onClick={() => setPicked(m)}>
+                      <Menu.Item
+                        key={m.to}
+                        className={cn(
+                          item,
+                          isRedMove(m) &&
+                            "text-destructive-text data-highlighted:bg-bad-w",
+                        )}
+                        onClick={() => setPicked(m)}
+                      >
                         {m.label}
                       </Menu.Item>
                     ))}
                   </Menu.Group>
                 ) : null}
-                {outcomes.length && undo.length ? <Menu.Separator className="-mx-1.5 my-1 h-px bg-line2" /> : null}
+                {outcomes.length && undo.length ? (
+                  <Menu.Separator className="-mx-1.5 my-1 h-px bg-line2" />
+                ) : null}
                 {undo.length ? (
                   <Menu.Group>
-                    <Menu.GroupLabel className={group}>Undo a mistake</Menu.GroupLabel>
+                    <Menu.GroupLabel className={group}>
+                      Undo a mistake
+                    </Menu.GroupLabel>
                     {undo.map((m) => (
-                      <Menu.Item key={m.to} className={item} onClick={() => setPicked(m)}>
+                      <Menu.Item
+                        key={m.to}
+                        className={item}
+                        onClick={() => setPicked(m)}
+                      >
                         {m.label}
                       </Menu.Item>
                     ))}
@@ -85,8 +171,17 @@ export function StatusMoves({ ticket, status, moves }: { ticket: Ref; status: Ti
       {second ? button(second, false) : null}
       {main ? button(main, true) : null}
       {/* A move picked from the menu opens the same dialog as a button would. */}
-      <FormDialog title={picked?.label ?? ""} description={picked ? description(picked) : undefined} open={!!picked} onOpenChange={(o) => !o && setPicked(null)}>
-        {(close) => (picked ? <MoveForm ticket={ticket} move={picked} onDone={close} /> : null)}
+      <FormDialog
+        title={picked?.label ?? ""}
+        description={picked ? description(picked) : undefined}
+        open={!!picked}
+        onOpenChange={(o) => !o && setPicked(null)}
+      >
+        {(close) =>
+          picked ? (
+            <MoveForm ticket={ticket} move={picked} onDone={close} />
+          ) : null
+        }
       </FormDialog>
     </div>
   );
@@ -94,19 +189,31 @@ export function StatusMoves({ ticket, status, moves }: { ticket: Ref; status: Ti
 
 const NOTE_HINTS: Partial<Record<TicketStatus, string>> = {
   NEED_INFO: "What do you need from QA? They'll see this in the thread.",
-  FIXED: "Optional: what changed and in which build, so QA knows what to retest.",
+  FIXED:
+    "Optional: what changed and in which build, so QA knows what to retest.",
   REOPENED: "What is still wrong? Add a screenshot in a comment if it helps.",
   REJECTED: "Why this isn't a bug, e.g. it works as the business rule says.",
   WONT_FIX: "Why it won't be fixed.",
 };
 
 /** One status move with its note (and the duplicate's number). Also the dialog for a card dropped on the board. */
-export function MoveForm({ ticket, move, onDone }: { ticket: Ref; move: Transition; onDone: () => void }) {
-  const [state, action, pending] = useActionState(async (prev: FormState, fd: FormData) => {
-    const r = await moveTicket(prev, fd);
-    if (r.ok) onDone();
-    return r;
-  }, initialFormState);
+export function MoveForm({
+  ticket,
+  move,
+  onDone,
+}: {
+  ticket: Ref;
+  move: Transition;
+  onDone: () => void;
+}) {
+  const [state, action, pending] = useActionState(
+    async (prev: FormState, fd: FormData) => {
+      const r = await moveTicket(prev, fd);
+      if (r.ok) onDone();
+      return r;
+    },
+    initialFormState,
+  );
   const err = state.fieldErrors ?? {};
   return (
     <form onSubmit={submitKeepingInput(action)} className="grid gap-4">
@@ -114,16 +221,47 @@ export function MoveForm({ ticket, move, onDone }: { ticket: Ref; move: Transiti
       <input type="hidden" name="number" value={ticket.number} />
       <input type="hidden" name="to" value={move.to} />
       {move.needsDuplicate ? (
-        <Field label="Duplicate of ticket #" htmlFor="duplicateOf" error={err.duplicateOf} required>
-          <Input id="duplicateOf" name="duplicateOf" inputMode="numeric" required placeholder="e.g. 12" className="w-32 font-mono" />
+        <Field
+          label="Duplicate of ticket #"
+          htmlFor="duplicateOf"
+          error={err.duplicateOf}
+          required
+        >
+          <Input
+            id="duplicateOf"
+            name="duplicateOf"
+            inputMode="numeric"
+            required
+            placeholder="e.g. 12"
+            className="w-32 font-mono"
+          />
         </Field>
       ) : null}
-      <Field label="Note" htmlFor="note" error={err.note} required={move.needsNote} hint={move.hint ?? NOTE_HINTS[move.to] ?? (move.needsNote ? undefined : "Optional.")}>
-        <Textarea id="note" name="note" rows={3} maxLength={5000} required={move.needsNote} autoFocus />
+      <Field
+        label="Note"
+        htmlFor="note"
+        error={err.note}
+        required={move.needsNote}
+        hint={
+          move.hint ??
+          NOTE_HINTS[move.to] ??
+          (move.needsNote ? undefined : "Optional.")
+        }
+      >
+        <Textarea
+          id="note"
+          name="note"
+          rows={3}
+          maxLength={5000}
+          required={move.needsNote}
+          autoFocus
+        />
       </Field>
       <FormMessage state={state} />
       <div className="flex justify-end">
-        <Button type="submit" disabled={pending}>{pending ? "Saving…" : move.label}</Button>
+        <Button type="submit" disabled={pending}>
+          {pending ? "Saving…" : move.label}
+        </Button>
       </div>
     </form>
   );
@@ -154,20 +292,47 @@ export function AssignControl({
     return (
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="font-medium">{assigneeName ?? "Not assigned"}</span>
-        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setOpen(true)}
+        >
           <ArrowRightLeftIcon /> Reassign
         </Button>
       </div>
     );
   }
   const close = () => setOpen(false);
-  return <AssignForm ticket={ticket} areas={areas} people={people} areaId={areaId} assigneeId={assigneeId} onDone={close} onCancel={assigneeId ? close : undefined} />;
+  return (
+    <AssignForm
+      ticket={ticket}
+      areas={areas}
+      people={people}
+      areaId={areaId}
+      assigneeId={assigneeId}
+      onDone={close}
+      onCancel={assigneeId ? close : undefined}
+    />
+  );
 }
 
 /** The Category row for those allowed to change it (canCategorize). A choice saves straight away, with a line in the activity log. */
-export function CategoryControl({ ticket, category }: { ticket: Ref; category: TicketCategoryValue | null }) {
-  const [state, action, pending] = useActionState(categorizeTicket, initialFormState);
-  const options = TICKET_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABELS[c] }));
+export function CategoryControl({
+  ticket,
+  category,
+}: {
+  ticket: Ref;
+  category: TicketCategoryValue | null;
+}) {
+  const [state, action, pending] = useActionState(
+    categorizeTicket,
+    initialFormState,
+  );
+  const options = TICKET_CATEGORIES.map((c) => ({
+    value: c,
+    label: CATEGORY_LABELS[c],
+  }));
   return (
     <div className="grid justify-items-start gap-1.5">
       <SelectField
@@ -177,7 +342,9 @@ export function CategoryControl({ ticket, category }: { ticket: Ref; category: T
         className="w-full max-w-[12rem]"
         disabled={pending}
         defaultValue={category ?? ""}
-        options={category ? options : [{ value: "", label: NO_CATEGORY }, ...options]}
+        options={
+          category ? options : [{ value: "", label: NO_CATEGORY }, ...options]
+        }
         onValueChange={(next) => {
           if (!next) return;
           const fd = new FormData();
@@ -211,20 +378,40 @@ export function AssignForm({
   onCancel?: () => void;
 }) {
   const [chosen, setChosen] = useState(assigneeId);
-  const [state, action, pending] = useActionState(async (prev: FormState, fd: FormData) => {
-    const r = await assignTicket(prev, fd);
-    if (r.ok) onDone();
-    return r;
-  }, initialFormState);
+  const [state, action, pending] = useActionState(
+    async (prev: FormState, fd: FormData) => {
+      const r = await assignTicket(prev, fd);
+      if (r.ok) onDone();
+      return r;
+    },
+    initialFormState,
+  );
 
   const changed = chosen !== assigneeId;
   return (
-    <form onSubmit={submitKeepingInput(action)} className="panel-in grid gap-2.5">
+    <form
+      onSubmit={submitKeepingInput(action)}
+      className="panel-in grid gap-2.5"
+    >
       <input type="hidden" name="id" value={ticket.id} />
       <input type="hidden" name="number" value={ticket.number} />
-      <AssigneeSelect areas={areas} people={people} areaId={areaId} defaultValue={assigneeId} id="assign" onValueChange={setChosen} />
+      <AssigneeSelect
+        areas={areas}
+        people={people}
+        areaId={areaId}
+        defaultValue={assigneeId}
+        id="assign"
+        onValueChange={setChosen}
+      />
       {assigneeId ? (
-        <Textarea name="note" rows={2} maxLength={500} placeholder="Reason (optional), e.g. Ben is on leave" aria-label="Reason for reassigning" className="min-h-0 text-[0.875rem]" />
+        <Textarea
+          name="note"
+          rows={2}
+          maxLength={500}
+          placeholder="Reason (optional), e.g. Ben is on leave"
+          aria-label="Reason for reassigning"
+          className="min-h-0 text-[0.875rem]"
+        />
       ) : null}
       <div className="flex flex-wrap gap-2">
         <Button type="submit" size="sm" disabled={pending || !changed}>
@@ -242,24 +429,48 @@ export function AssignForm({
 }
 
 /** `replyTo`: on the ticket page, the other person's name (or "" if there is none yet), for a visible label and the fuller buttons. */
-export function CommentForm({ ticket, replyTo }: { ticket: Ref; replyTo?: string }) {
+export function CommentForm({
+  ticket,
+  replyTo,
+}: {
+  ticket: Ref;
+  replyTo?: string;
+}) {
   const full = replyTo !== undefined;
   const asking = replyTo ? `Write a reply to ${replyTo}` : "Write a reply";
   const images = useImageAttachments();
   const video = useVideoUpload();
   const touch = useTouchScreen();
   const [body, setBody] = useState("");
-  const [state, action, pending] = useActionState(async (prev: FormState, fd: FormData) => {
-    const r = await addComment(prev, fd);
-    if (r.ok) {
-      setBody("");
-      images.clear();
-      video.clear();
-    }
-    return r;
-  }, initialFormState);
+  const [state, action, pending] = useActionState(
+    async (prev: FormState, fd: FormData) => {
+      const r = await addComment(prev, fd);
+      if (r.ok) {
+        setBody("");
+        images.clear();
+        video.clear();
+      }
+      return r;
+    },
+    initialFormState,
+  );
   const busy = pending || video.busy || images.busy;
-  const canSend = !busy && !images.failed && !video.blocked && (!!body.trim() || images.items.length > 0 || video.upload.status === "done");
+  const canSend =
+    !busy &&
+    !images.failed &&
+    !video.blocked &&
+    (!!body.trim() ||
+      images.items.length > 0 ||
+      video.upload.status === "done");
+  // In the ticket panel over the board, Esc or a click outside would throw an unsent reply away: ask first. (The ticket
+  // page has no guard to register with, so there this does nothing.)
+  const unsent =
+    !!body.trim() || images.items.length > 0 || video.upload.status !== "idle";
+  const closeCheck = useCallback(
+    () => !unsent || window.confirm("Discard the reply you haven't sent?"),
+    [unsent],
+  );
+  useCloseGuard(closeCheck);
 
   return (
     <form
@@ -282,7 +493,12 @@ export function CommentForm({ ticket, replyTo }: { ticket: Ref; replyTo?: string
     >
       <input type="hidden" name="id" value={ticket.id} />
       <input type="hidden" name="number" value={ticket.number} />
-      <label htmlFor="body" className={full ? "text-[0.9063rem] font-medium" : "sr-only"}>{full ? "Reply" : "Your message"}</label>
+      <label
+        htmlFor="body"
+        className={full ? "text-[0.9063rem] font-medium" : "sr-only"}
+      >
+        {full ? "Reply" : "Your message"}
+      </label>
       <Textarea
         id="body"
         name="body"
@@ -295,19 +511,51 @@ export function CommentForm({ ticket, replyTo }: { ticket: Ref; replyTo?: string
           // Enter sends, like a chat; Shift+Enter starts a new line. Not while an IME is composing a word, and not
           // while files are still uploading (the message would go without them). A phone keyboard has no Shift+Enter, so
           // there Enter starts a new line and the Send button sends.
-          if (touch || e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+          if (
+            touch ||
+            e.key !== "Enter" ||
+            e.shiftKey ||
+            e.nativeEvent.isComposing
+          )
+            return;
           e.preventDefault();
           if (canSend) e.currentTarget.form?.requestSubmit();
         }}
-        placeholder={touch ? `${asking}…` : `${asking}… (Enter to send, Shift+Enter for a new line, Ctrl+V to paste a screenshot)`}
+        placeholder={
+          touch
+            ? `${asking}…`
+            : `${asking}… (Enter to send, Shift+Enter for a new line, Ctrl+V to paste a screenshot)`
+        }
       />
       <ImagePicker state={images} id="comment-images" compact />
       <VideoPicker state={video} id="comment-video" compact />
       <FormMessage state={state} />
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <AttachMenu images={images} video={video} imagesId="comment-images" videoId="comment-video" long={full} />
-        <Button type="submit" disabled={!canSend} variant={full ? "soft" : "default"} size={full ? "sm" : "default"}>
-          <SendIcon /> {video.busy ? "Uploading video…" : images.busy ? "Uploading…" : images.failed || video.blocked ? "Finish the files above" : pending ? "Sending…" : full ? "Send reply" : "Send"}
+        <AttachMenu
+          images={images}
+          video={video}
+          imagesId="comment-images"
+          videoId="comment-video"
+          long={full}
+        />
+        <Button
+          type="submit"
+          disabled={!canSend}
+          variant={full ? "soft" : "default"}
+          size={full ? "sm" : "default"}
+        >
+          <SendIcon />{" "}
+          {video.busy
+            ? "Uploading video…"
+            : images.busy
+              ? "Uploading…"
+              : images.failed || video.blocked
+                ? "Finish the files above"
+                : pending
+                  ? "Sending…"
+                  : full
+                    ? "Send reply"
+                    : "Send"}
         </Button>
       </div>
     </form>
@@ -335,11 +583,16 @@ export function DeleteTicketDialog({
   const [openState, setOpenState] = useState(false);
   const controlled = openProp !== undefined;
   const open = openProp ?? openState;
-  const setOpen = (next: boolean) => (onOpenChange ? onOpenChange(next) : setOpenState(next));
+  const setOpen = (next: boolean) =>
+    onOpenChange ? onOpenChange(next) : setOpenState(next);
   const [typed, setTyped] = useState("");
-  const [state, action, pending] = useActionState(deleteTicket, initialFormState);
+  const [state, action, pending] = useActionState(
+    deleteTicket,
+    initialFormState,
+  );
   const matches = typed.trim() === ticket.title;
-  const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+  const plural = (n: number, one: string, many = `${one}s`) =>
+    `${n} ${n === 1 ? one : many}`;
 
   return (
     <Dialog
@@ -361,32 +614,55 @@ export function DeleteTicketDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-bad">
-            <TriangleAlertIcon className="size-5" aria-hidden /> Delete ticket #{ticket.number}?
+            <TriangleAlertIcon className="size-5" aria-hidden /> Delete ticket #
+            {ticket.number}?
           </DialogTitle>
           <DialogDescription>This can&apos;t be undone.</DialogDescription>
         </DialogHeader>
         <form onSubmit={submitKeepingInput(action)} className="grid gap-4">
           <input type="hidden" name="id" value={ticket.id} />
           <div className="rounded-[0.625rem] border border-bad-b bg-bad-t px-4 py-3 text-[0.8438rem] leading-relaxed text-bad">
-            <p className="font-semibold">This permanently deletes, for everyone:</p>
+            <p className="font-semibold">
+              This permanently deletes, for everyone:
+            </p>
             <ul className="mt-1 list-disc pl-5">
               <li>the ticket and its description</li>
               <li>the conversation ({plural(replies, "reply", "replies")})</li>
               <li>the activity log</li>
-              <li>{plural(files, "attached file")} (screenshots and videos) from the server</li>
+              <li>
+                {plural(files, "attached file")} (screenshots and videos) from
+                the server
+              </li>
             </ul>
           </div>
           <div className="grid gap-2">
             <label htmlFor="confirm-title" className="text-sm">
               To confirm, type the ticket&apos;s title exactly:
-              <span className="mt-1.5 block rounded-md bg-surface3 px-2.5 py-1.5 font-mono text-[0.8125rem] font-semibold break-words select-all">{ticket.title}</span>
+              <span className="mt-1.5 block rounded-md bg-surface3 px-2.5 py-1.5 font-mono text-[0.8125rem] font-semibold break-words select-all">
+                {ticket.title}
+              </span>
             </label>
-            <Input id="confirm-title" name="confirm" value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" spellCheck={false} autoFocus aria-invalid={!!state.message} />
+            <Input
+              id="confirm-title"
+              name="confirm"
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              autoComplete="off"
+              spellCheck={false}
+              autoFocus
+              aria-invalid={!!state.message}
+            />
           </div>
           <FormMessage state={state} />
           <div className="flex justify-end gap-2">
-            <DialogClose render={<Button type="button" variant="outline" />}>Cancel</DialogClose>
-            <Button type="submit" variant="destructive" disabled={!matches || pending}>
+            <DialogClose render={<Button type="button" variant="outline" />}>
+              Cancel
+            </DialogClose>
+            <Button
+              type="submit"
+              variant="destructive"
+              disabled={!matches || pending}
+            >
               <Trash2Icon /> {pending ? "Deleting…" : "Delete this ticket"}
             </Button>
           </div>
@@ -424,7 +700,15 @@ export function EditTicketDialog({
         ) : undefined
       }
     >
-      {(close) => <TicketForm areas={areas} people={people} canAssign={false} ticket={ticket} onDone={close} />}
+      {(close) => (
+        <TicketForm
+          areas={areas}
+          people={people}
+          canAssign={false}
+          ticket={ticket}
+          onDone={close}
+        />
+      )}
     </FormDialog>
   );
 }
@@ -437,22 +721,45 @@ export function TicketMoreMenu({
   edit,
   del,
 }: {
-  edit: { ticket: TicketValues; areas: AreaOption[]; people: AssigneeOption[] } | null;
-  del: { ticket: { id: string; number: number; title: string }; replies: number; files: number } | null;
+  edit: {
+    ticket: TicketValues;
+    areas: AreaOption[];
+    people: AssigneeOption[];
+  } | null;
+  del: {
+    ticket: { id: string; number: number; title: string };
+    replies: number;
+    files: number;
+  } | null;
 }) {
   const [dialog, setDialog] = useState<"edit" | "delete" | null>(null);
   if (!edit && !del) return null;
-  const item = "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm outline-none data-highlighted:bg-row-hover [&_svg]:size-4";
+  const item =
+    "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm outline-none data-highlighted:bg-row-hover [&_svg]:size-4";
   return (
     <>
       <Menu.Root>
         <Menu.Trigger
-          render={<Button type="button" variant="outline" size="icon" aria-label="More actions" title="More actions" className="data-popup-open:bg-acc-t2" />}
+          render={
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="More actions"
+              title="More actions"
+              className="data-popup-open:bg-acc-t2"
+            />
+          }
         >
           <EllipsisIcon aria-hidden />
         </Menu.Trigger>
         <Menu.Portal>
-          <Menu.Positioner side="bottom" align="end" sideOffset={6} className="isolate z-50">
+          <Menu.Positioner
+            side="bottom"
+            align="end"
+            sideOffset={6}
+            className="isolate z-50"
+          >
             <Menu.Popup className="w-48 origin-(--transform-origin) rounded-xl bg-popover p-1.5 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-150 ease-(--ease-out) data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
               {edit ? (
                 <Menu.Item className={item} onClick={() => setDialog("edit")}>
@@ -460,7 +767,13 @@ export function TicketMoreMenu({
                 </Menu.Item>
               ) : null}
               {del ? (
-                <Menu.Item className={cn(item, "text-destructive-text data-highlighted:bg-bad-w")} onClick={() => setDialog("delete")}>
+                <Menu.Item
+                  className={cn(
+                    item,
+                    "text-destructive-text data-highlighted:bg-bad-w",
+                  )}
+                  onClick={() => setDialog("delete")}
+                >
                   <Trash2Icon aria-hidden /> Delete ticket
                 </Menu.Item>
               ) : null}
@@ -468,8 +781,20 @@ export function TicketMoreMenu({
           </Menu.Positioner>
         </Menu.Portal>
       </Menu.Root>
-      {edit ? <EditTicketDialog {...edit} open={dialog === "edit"} onOpenChange={(o) => setDialog(o ? "edit" : null)} /> : null}
-      {del ? <DeleteTicketDialog {...del} open={dialog === "delete"} onOpenChange={(o) => setDialog(o ? "delete" : null)} /> : null}
+      {edit ? (
+        <EditTicketDialog
+          {...edit}
+          open={dialog === "edit"}
+          onOpenChange={(o) => setDialog(o ? "edit" : null)}
+        />
+      ) : null}
+      {del ? (
+        <DeleteTicketDialog
+          {...del}
+          open={dialog === "delete"}
+          onOpenChange={(o) => setDialog(o ? "delete" : null)}
+        />
+      ) : null}
     </>
   );
 }
