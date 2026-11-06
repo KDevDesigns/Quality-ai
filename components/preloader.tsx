@@ -3,18 +3,30 @@ import { cn } from "@/lib/utils";
 
 // The QA Hub preloader, after the DCWD ERP's Module preloader: QA Hub's emblem (a lab flask for the QA workshop, with a check) in a
 // white ring that fills with water as loading goes on, inside slowly rippling rings, with waves along the bottom. The
-// rings, ripples, float and waves reuse the sign-in brand pane's styles and colours (.auth-brand in globals.css).
+// rings, ripples, float and waves reuse the sign-in brand pane's styles and colours (.auth-brand in globals.css). With a
+// theme colour other than the default indigo picked, the preloader takes its colours from it (.qa-splash in globals.css);
+// the colour is on <html> before the first paint (ACCENT_SCRIPT), so it never shows indigo first.
+
+/** How long a wave is drawn, in px, and how often it repeats. auth-drift slides it one repeat, so the loop is seamless. */
+const WAVE_LONG = 4000;
+const WAVE_REPEAT = 400;
 
 /**
- * A wave 2000 units long that repeats every 400. Drawn 4000 px wide (.auth-brand .wave), one repeat is 800 px: exactly
- * how far auth-drift slides it, so the loop is seamless and still covers a 3200 px-wide screen.
+ * A wave WAVE_LONG units long that rises and falls every WAVE_REPEAT, drawn at true scale (viewBox and width both 4000,
+ * .auth-brand .wave), so a crest is 400 px wide and the sign-in panel shows two of them. Sliding 400 px still leaves a
+ * 3600 px-wide screen covered (the preloader fills the window).
  */
-const wave = (y: number, crest: number) => `M0 ${y} Q 200 ${crest} 400 ${y}${[800, 1200, 1600, 2000].map((x) => ` T ${x} ${y}`).join("")} V220 H0 Z`;
+export const wavePath = (y: number, crest: number) => {
+  const tail = Array.from({ length: WAVE_LONG / WAVE_REPEAT - 1 }, (_, i) => ` T ${(i + 2) * WAVE_REPEAT} ${y}`).join("");
+  return `M0 ${y} Q ${WAVE_REPEAT / 2} ${crest} ${WAVE_REPEAT} ${y}${tail} V220 H0 Z`;
+};
+export const WAVE_VIEWBOX = `0 0 ${WAVE_LONG} 220`;
 
-const WAVES = [
-  { cls: "w1", d: wave(104, 54), fill: "var(--ab-wave-1)" },
-  { cls: "w2", d: wave(146, 112), fill: "var(--ab-wave-2)" },
-  { cls: "w3", d: wave(184, 164), fill: "var(--ab-wave-3)" },
+/** Back to front: a slow tall swell, a middle one, and a quick low one in front. */
+export const WAVES = [
+  { cls: "w1", d: wavePath(104, 54), fill: "var(--ab-wave-1)" },
+  { cls: "w2", d: wavePath(146, 112), fill: "var(--ab-wave-2)" },
+  { cls: "w3", d: wavePath(184, 160), fill: "var(--ab-wave-3)" },
 ];
 
 /** A wavy water surface, twice as wide as the ring so it can slide sideways forever. */
@@ -54,17 +66,17 @@ export function Preloader({ progress, status, done, className }: { progress: num
             <div className="absolute inset-0 overflow-hidden rounded-full bg-white shadow-(--ab-seal-shadow)">
               <div className="water" style={{ transform: `translate3d(0, ${94 - pct * 0.86}%, 0)` }} aria-hidden>
                 <svg className="slosh s2" viewBox="0 0 560 320" preserveAspectRatio="none">
-                  <path d={SLOSH} fill="#4f56d3" fillOpacity={0.14} />
+                  <path d={SLOSH} style={{ fill: "var(--ab-emblem)" }} fillOpacity={0.14} />
                 </svg>
                 <svg className="slosh s1" viewBox="0 0 560 320" preserveAspectRatio="none">
-                  <path d={SLOSH.replaceAll(" 12", " 10").replace("Q 35 2", "Q 35 20")} fill="#4f56d3" fillOpacity={0.22} />
+                  <path d={SLOSH.replaceAll(" 12", " 10").replace("Q 35 2", "Q 35 20")} style={{ fill: "var(--ab-emblem)" }} fillOpacity={0.22} />
                 </svg>
               </div>
               <div className="absolute inset-0 rounded-full shadow-[inset_0_0_0_0.375rem_rgba(30,42,120,0.08)]" />
             </div>
-            {/* The emblem: indigo disc, a lab flask (the QA workshop), and a green check for "verified". */}
+            {/* The emblem: a disc in the theme colour, a lab flask (the QA workshop), and a green check for "verified". */}
             <div className="absolute top-1/2 left-1/2 z-[2] flex size-[7.75rem] -translate-1/2 items-center justify-center rounded-full bg-white shadow-[0_0_0_0.1875rem_#fff,0_0.375rem_1.125rem_rgba(30,42,120,0.18)]">
-              <div className="flex size-[7rem] items-center justify-center rounded-full bg-[linear-gradient(135deg,#4f56d3,#1e2a78)] ring-4 ring-[#4f56d3]/25 ring-inset">
+              <div className="flex size-[7rem] items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--ab-emblem),var(--ab-emblem-deep))] ring-4 ring-[color-mix(in_srgb,var(--ab-emblem)_25%,transparent)] ring-inset">
                 <FlaskConicalIcon className="size-12 text-white" strokeWidth={1.6} aria-hidden />
               </div>
               <span className="absolute right-0.5 bottom-1.5 flex size-8 items-center justify-center rounded-full bg-[#0f9f6e] text-white shadow-[0_0_0_0.1875rem_#fff]">
@@ -86,7 +98,7 @@ export function Preloader({ progress, status, done, className }: { progress: num
 
       {WAVES.map((w) => (
         <div key={w.cls} className="absolute inset-x-0 bottom-0 h-[13.75rem] overflow-hidden" aria-hidden>
-          <svg className={`wave ${w.cls}`} viewBox="0 0 2000 220" preserveAspectRatio="none">
+          <svg className={`wave ${w.cls}`} viewBox={WAVE_VIEWBOX} preserveAspectRatio="none">
             <path d={w.d} style={{ fill: w.fill }} />
           </svg>
         </div>

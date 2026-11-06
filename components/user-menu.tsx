@@ -3,11 +3,9 @@
 import Link from "next/link";
 import { useTransition } from "react";
 import { Menu } from "@base-ui/react/menu";
-import { useTheme } from "next-themes";
 import { CheckIcon, ChevronsUpDownIcon, LogOutIcon, UserRoundCogIcon } from "lucide-react";
 import { logout } from "@/app/login/actions";
 import { signOutHere } from "@/lib/tickets/sign-out";
-import { MODES } from "@/components/appearance-picker";
 import { useSidebar } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -21,7 +19,7 @@ import { UserAvatar } from "./user-avatar";
 const item =
   "flex h-11 cursor-default items-center gap-2.5 rounded-[0.625rem] px-3 text-[0.9375rem] font-medium outline-hidden select-none data-highlighted:bg-row-hover [&_svg]:size-4 [&_svg]:text-ink2";
 
-/** The signed-in person at the bottom of the sidebar. Opens Appearance, My account and Sign out above it. */
+/** The signed-in person at the bottom of the sidebar. Opens the theme colour, My account and Sign out above it. */
 export function UserMenu({ user, active }: { user: SidebarUser; active: boolean }) {
   const [signingOut, startTransition] = useTransition();
   const mobile = useIsMobile();
@@ -74,27 +72,11 @@ export function UserMenu({ user, active }: { user: SidebarUser; active: boolean 
   );
 }
 
-/** Light / dark / follow Windows, and the theme colour. Both are remembered in this browser only. */
+/** The theme colour, remembered in this browser only. Light and dark are the toggle beside the bell (ThemeToggle). */
 function Appearance() {
-  const { theme, setTheme } = useTheme();
   const accent = useAccent();
   return (
     <div className="grid gap-2.5 px-1 pt-1 pb-2">
-      <Menu.Group className="grid gap-1.5">
-        <Menu.GroupLabel className="text-xs font-semibold tracking-[0.06em] text-body2 uppercase">Mode</Menu.GroupLabel>
-        <Menu.RadioGroup value={theme ?? "system"} onValueChange={(v) => setTheme(v)} className="grid grid-cols-3 gap-1 rounded-lg bg-surface3 p-1">
-          {MODES.map(({ value, label, icon: Icon }) => (
-            <Menu.RadioItem
-              key={value}
-              value={value}
-              closeOnClick={false}
-              className="flex h-8 cursor-default items-center justify-center gap-1 rounded-md text-[0.8125rem] text-muted-foreground outline-hidden select-none data-checked:bg-card data-checked:font-semibold data-checked:text-foreground data-checked:shadow-[0_0.0625rem_0.1875rem_rgba(20,20,40,0.12)] data-highlighted:text-foreground data-highlighted:ring-2 data-highlighted:ring-acc/40"
-            >
-              <Icon className="size-3.5" aria-hidden /> {label}
-            </Menu.RadioItem>
-          ))}
-        </Menu.RadioGroup>
-      </Menu.Group>
       <Menu.Group className="grid gap-1.5">
         <Menu.GroupLabel className="text-xs font-semibold tracking-[0.06em] text-body2 uppercase">Theme colour</Menu.GroupLabel>
         <Menu.RadioGroup value={accent} onValueChange={(v) => isAccent(v) && setAccent(v)} className="flex gap-2">

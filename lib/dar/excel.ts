@@ -5,7 +5,7 @@ import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import writeXlsxFile, { type Cell, type Row } from "write-excel-file/node";
 import { longDate, periodLabel } from "./period";
 import type { DarReportData } from "./store";
-import type { DarFunction } from "./template";
+import { dutyLayout, type DarFunction } from "./template";
 
 // The DCWD workbook's own fills and colours (see DAR_COLORS in ./html).
 const ORANGE = "#FFCC99";
@@ -19,8 +19,11 @@ type Spec = Exclude<Cell, null>;
 function row(width: number, placed: [number, Spec][], height?: number): Row {
   const r: Row = Array.from({ length: width }, () => null);
   for (const [col, cell] of placed) r[col] = cell;
-  if (height && r[0] === null) r[0] = { value: "", type: String, height };
-  else if (height && r[0]) r[0] = { ...r[0], height } as Spec;
+  if (!height) return r;
+  // The height rides on the row's first cell. A row under a merged duty cell must keep those columns null, so it uses
+  // its first placed cell instead.
+  const at = r[0] !== null || !placed.length ? 0 : Math.min(...placed.map(([c]) => c));
+  r[at] = r[at] ? ({ ...r[at], height } as Spec) : { value: "", type: String, height };
   return r;
 }
 
@@ -31,11 +34,14 @@ function boxed(_width: number, from: number, span: number, cell: Spec): [number,
   return [[from, { ...cell, ...LINE, ...(span > 1 ? { columnSpan: span } : {}) } as Spec]];
 }
 
-/** Excel doesn't grow a row to fit wrapped text it didn't type itself, so estimate the height from the text. */
-function rowHeight(f: DarFunction): number {
+/**
+ * Excel doesn't grow a row to fit wrapped text it didn't type itself, so estimate the height from the text.
+ * `dutyRows`: how many rows the duty cell spans; a duty spread over several MFO rows only needs its share of the height.
+ */
+function rowHeight(f: DarFunction, dutyRows = 1): number {
   // About this many 8 pt characters fit on a line of the duty (34 wide) and MFO (32 wide) columns.
   const lines = (s: string, perLine: number) => s.split("\n").reduce((n, l) => n + Math.max(1, Math.ceil(l.length / perLine)), 0);
-  return Math.max(30, Math.max(lines(f.duty, 38), lines(f.mfo, 36)) * 11 + 8);
+  return Math.max(30, Math.max(Math.ceil(lines(f.duty, 38) / dutyRows), lines(f.mfo, 36)) * 11 + 8);
 }
 
 /** `seal` is the DCWD seal PNG, placed left of the agency name. */
@@ -84,14 +90,22 @@ export async function darXlsx(r: DarReportData, seal?: Buffer): Promise<Buffer> 
 
   const section = (title: string, fns: DarFunction[], cells: string[][], titleFill = ORANGE) => {
     rows.push(row(W, [...boxed(W, 0, 2, text(title, { ...head, backgroundColor: titleFill })), [2, text("MAJOR FINAL OUTPUT (MFOs)", head)], ...days], 36));
+    // A duty with several MFOs: its number and duty cells span its rows (the cells they cover stay null).
+    const layout = dutyLayout(fns);
     fns.forEach((f, i) => {
+      const { number, span } = layout[i];
+      const merged = span > 1 ? { rowSpan: span } : {};
       rows.push(
         row(W, [
-          [0, text(String(i + 1), { ...center, fontSize: 8, ...LINE })],
-          [1, text(f.duty, { wrap: true, alignVertical: "center", fontSize: 8, ...LINE })],
+          ...(span
+            ? ([
+                [0, text(String(number), { ...center, fontSize: 8, ...LINE, ...merged })],
+                [1, text(f.duty, { wrap: true, alignVertical: "center", fontSize: 8, ...LINE, ...merged })],
+              ] as [number, Spec][])
+            : []),
           [2, text(f.mfo, { wrap: true, alignVertical: "center", fontSize: 8, ...LINE })],
           ...(cells[i] ?? []).map((c, j): [number, Spec] => [3 + j, text(c, { ...center, fontSize: 7.5, ...LINE })]),
-        ], rowHeight(f)),
+        ], rowHeight(f, Math.max(1, span))),
       );
     });
   };

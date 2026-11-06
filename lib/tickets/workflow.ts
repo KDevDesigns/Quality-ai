@@ -81,8 +81,9 @@ export type Actor = { id: string; role: Role };
 export type TicketRef = { status: TicketStatus; reporterId: string; assigneeId: string | null };
 
 /**
- * Which tickets a person sees: admins every ticket, QA testers the tickets they filed, developers the tickets
- * assigned to them. Applied to the list, the ticket page, the dashboard, attachments and every change.
+ * A person's own tickets (their "work"): admins every ticket, QA testers the tickets they filed, developers the tickets
+ * assigned to them. Applied to the list's own tabs, the dashboard, the inbox, notifications and every change.
+ * Reading is wider: see canReadTicket.
  */
 export type TicketScope = "all" | { reporterId: string } | { assigneeId: string };
 
@@ -96,6 +97,12 @@ export function canSeeTicket(t: TicketRef, u: Actor): boolean {
   if (s === "all") return true;
   return "reporterId" in s ? t.reporterId === s.reporterId : t.assigneeId === s.assigneeId;
 }
+
+/**
+ * Whether a person may open any ticket (the All tab): everyone who may view tickets. They can read it, see its files and
+ * reply; changing it still needs canSeeTicket plus the per-ticket rules below.
+ */
+export const canReadTicket = (u: Actor) => can(u, "tickets.view");
 
 /** The assigned developer, or an admin. */
 const devSide = (t: TicketRef, u: Actor) => can(u, "tickets.resolve") && (u.role === "ADMIN" || t.assigneeId === u.id);
@@ -166,5 +173,7 @@ export const canEditTicket = (t: TicketRef, u: Actor) => can(u, "tickets.create"
 /** Deleting is permanent, so the same people as editing. */
 export const canDeleteTicket = (t: TicketRef, u: Actor) => can(u, "tickets.delete") && reporter(t, u);
 export const canAssign = (u: Actor) => can(u, "tickets.assign");
+/** Assigning this ticket: the QA tester who filed it, or an admin. Another tester only reads it from the All tab. */
+export const canAssignTicket = (t: TicketRef, u: Actor) => canAssign(u) && reporter(t, u);
 /** Correcting the category: the assigned developer once they've identified the problem, or an admin. */
 export const canCategorize = (t: TicketRef, u: Actor) => can(u, "tickets.categorize") && (u.role === "ADMIN" || t.assigneeId === u.id);

@@ -20,7 +20,7 @@ import { buildActivityLog, type LogEntry } from "@/lib/tickets/log";
 import { ticketStore } from "@/lib/tickets/store";
 import {
   allowedTransitions,
-  canAssign,
+  canAssignTicket,
   canCategorize,
   CATEGORY_LABELS,
   NO_CATEGORY,
@@ -55,7 +55,7 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
   await connection();
   const me = await requireAction("tickets.view");
   const number = /^\d{1,9}$/.test(raw) ? Number(raw) : NaN;
-  // Someone else's ticket is a 404, the same as a missing one.
+  // Anyone may read any ticket (the All tab); the buttons below only show what this person may change.
   const t = Number.isFinite(number) ? await tickets.get(number, me) : null;
   if (!t) notFound();
 
@@ -64,7 +64,7 @@ async function TicketView({ params }: { params: Promise<{ number: string }> }) {
   const editable = canEditTicket(t, me);
   const deletable = canDeleteTicket(t, me);
   const log = buildActivityLog(t);
-  const assignable = canAssign(me) && !isDone(t.status);
+  const assignable = canAssignTicket(t, me) && !isDone(t.status);
   const options = editable || assignable ? await ticketFormOptions() : null;
   const now = new Date();
 

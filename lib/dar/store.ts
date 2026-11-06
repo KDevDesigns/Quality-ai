@@ -1,5 +1,5 @@
 import { Prisma, type PrismaClient } from "@/lib/generated/prisma/client";
-import { buildCells, dayEntries, daysAttended, fitCells, refillCells, type Activity, type DarCells } from "./autofill";
+import { buildCells, dayEntries, daysAttended, fillDefaults, fitCells, refillCells, type Activity, type DarCells } from "./autofill";
 import { manilaDay, periodDays, periodRange, type Period, type PeriodDay } from "./period";
 import { prefixFor } from "./autofill";
 import { resolveHeader, type DarHeader, type DarProfileInput } from "./template";
@@ -45,7 +45,7 @@ export function darStore(db: PrismaClient, now: () => Date = () => new Date()) {
   }
 
   async function fresh(user: DarUser, p: Period, h: DarHeader, days: PeriodDay[]): Promise<DarCells> {
-    return buildCells(h, dayEntries(await activity(user.id, p), days, prefixFor(user.role)));
+    return buildCells(h, dayEntries(await activity(user.id, p), days, prefixFor(user.role)), days);
   }
 
   async function write(user: DarUser, p: Period, cells: DarCells, dateSubmitted: string) {
@@ -81,6 +81,8 @@ export function darStore(db: PrismaClient, now: () => Date = () => new Date()) {
         supportFunctions: fns(input.supportFunctions),
         // Left as it is when not given: once set, it can be changed but not emptied.
         firstPeriodStart: input.firstPeriodStart || undefined,
+        // Left as it is when not given.
+        periodScheme: input.periodScheme ?? undefined,
       };
       await db.darProfile.upsert({ where: { userId }, update: data, create: { userId, ...data } });
     },
@@ -111,6 +113,21 @@ export function darStore(db: PrismaClient, now: () => Date = () => new Date()) {
       const cells = refillCells(current, auto, h);
       await write(user, p, cells, row?.dateSubmitted ?? manilaDay(now()));
       return cells;
+    },
+
+    /**
+     * Saves imported day entries as the person's DARs for those periods, replacing any saved ones. Cells are shaped to
+     * their current duty rows, as a save from the page is. Returns how many periods were written.
+     */
+    async importReports(user: DarUser, reports: { period: Period; cells: unknown; dateSubmitted: string | null }[]): Promise<number> {
+      const h = await header(user);
+      for (const r of reports) {
+        const days = periodDays(r.period);
+        const shape = buildCells(h, days.map(() => ""));
+        // Days the sheet left blank or dashed take the defaults: REST DAY on weekends and holidays, "-" on work days.
+        await write(user, r.period, fillDefaults(fitCells(r.cells, shape), days), r.dateSubmitted ?? manilaDay(now()));
+      }
+      return reports.length;
     },
 
     /** The periods this person has saved, newest first. */

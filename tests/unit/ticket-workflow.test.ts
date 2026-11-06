@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   allowedTransitions,
   canAssign,
+  canAssignTicket,
+  canReadTicket,
   canDeleteTicket,
   canEditTicket,
   canSeeTicket,
@@ -124,6 +126,15 @@ describe("ticket workflow", () => {
     expect(canEditTicket(ticket("NEW"), admin)).toBe(true);
     expect(canAssign(qa)).toBe(true);
     expect(canAssign(dev)).toBe(false);
+    // Per ticket: only its reporter or an admin; another tester reads it from the All tab but can't reassign it.
+    expect(canAssignTicket(ticket("NEW"), qa)).toBe(true);
+    expect(canAssignTicket(ticket("NEW"), otherQa)).toBe(false);
+    expect(canAssignTicket(ticket("NEW"), admin)).toBe(true);
+    expect(canAssignTicket(ticket("NEW"), dev)).toBe(false);
+  });
+
+  it("lets everyone who may view tickets read any of them", () => {
+    for (const u of [qa, otherQa, dev, otherDev, admin]) expect(canReadTicket(u)).toBe(true);
   });
 
   it("scopes tickets: QA their own, developers their assignments, admins everything", () => {

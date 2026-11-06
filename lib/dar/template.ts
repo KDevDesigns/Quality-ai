@@ -3,19 +3,48 @@
 // longer matches falls back to empty instead of breaking the page.
 
 import { z } from "zod";
-import { parsePeriod } from "./period";
+import { DEFAULT_SCHEME, PERIOD_SCHEMES, parsePeriod, schemeOfStart } from "./period";
 
 const line = (max: number) => z.string().trim().max(max);
 
-export const darFunction = z.object({
-  duty: line(1000).min(1, "Describe the duty."),
-  mfo: line(1000).default(""),
-  /** This row gets the day-by-day entries filled from ticket activity. */
-  autofill: z.boolean().default(false),
-});
+/**
+ * One row of the duties grid: a duty, one MFO and a day-by-day row. A duty with several MFOs takes several rows; the
+ * ones after the first are marked `continues` and leave the duty empty, and the report merges the duty cell down them.
+ */
+export const darFunction = z
+  .object({
+    duty: line(1000).default(""),
+    mfo: line(1000).default(""),
+    /** This row gets the day-by-day entries filled from ticket activity. */
+    autofill: z.boolean().default(false),
+    /** Another MFO of the duty in the row above. */
+    continues: z.boolean().optional(),
+  })
+  .refine((f) => f.continues || f.duty.length > 0, { message: "Describe the duty.", path: ["duty"] });
 export type DarFunction = z.infer<typeof darFunction>;
 
-const functionList = z.array(darFunction).max(10);
+/** Up to 20 rows per section: a duty with several MFOs takes one row per MFO. */
+export const MAX_FUNCTION_ROWS = 20;
+const functionList = z
+  .array(darFunction)
+  .max(MAX_FUNCTION_ROWS)
+  // The first row can't continue anything; a continuing row has no duty of its own.
+  .transform((rows) => rows.map((f, i) => (i === 0 && f.continues ? { ...f, continues: false } : f.continues ? { ...f, duty: "" } : f)))
+  .refine((rows) => !rows.length || rows[0].duty.length > 0, { message: "Describe the duty." });
+
+/** A row's place in its duty group, for drawing: its item number and how many rows its duty cell spans (0 = merged into the row above). */
+export function dutyLayout(fns: DarFunction[]): { number: number; span: number }[] {
+  const out: { number: number; span: number }[] = [];
+  let n = 0;
+  fns.forEach((f, i) => {
+    if (f.continues && i > 0) {
+      out.push({ number: n, span: 0 });
+      // Grow the span of the group's first row.
+      for (let j = i - 1; j >= 0; j--) if (out[j].span > 0) { out[j].span++; break; }
+    } else out.push({ number: ++n, span: 1 });
+  });
+  return out;
+}
 const signatory = z.object({ name: line(120).default(""), title: line(160).default("") });
 export type Signatory = z.infer<typeof signatory>;
 
@@ -32,6 +61,11 @@ export const darProfileInput = z.object({
   supportFunctions: functionList,
   /** The start of their first period, which their list of periods starts from. */
   firstPeriodStart: z.string().refine((v) => v === "" || !!parsePeriod(v), "Pick the month and period of your first DAR.").optional(),
+  /** The days their periods start on (see lib/dar/period.ts). */
+  periodScheme: z.enum(PERIOD_SCHEMES).optional(),
+}).refine((v) => !v.firstPeriodStart || schemeOfStart(v.firstPeriodStart) === (v.periodScheme ?? DEFAULT_SCHEME), {
+  message: "Pick your first period again: it doesn't match the period days you chose.",
+  path: ["firstPeriodStart"],
 });
 export type DarProfileInput = z.infer<typeof darProfileInput>;
 

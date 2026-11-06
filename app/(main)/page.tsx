@@ -16,6 +16,7 @@ import {
 import { InfoTip } from "@/components/info-tip";
 import { InlineAlert } from "@/components/inline-alert";
 import { NotificationBell } from "@/components/notifications-panel";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { DashboardSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -72,7 +73,10 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
           <p className="text-sm text-muted-foreground">{formatLongDate(now)}</p>
           <h1 className="truncate text-[2rem] leading-tight font-bold tracking-[-0.025em]">Hi, {firstName(me.name)}</h1>
         </div>
-        <NotificationBell />
+        <div className="flex items-center gap-2.5">
+          <ThemeToggle />
+          <NotificationBell />
+        </div>
       </div>
       <div className="flex flex-wrap items-end justify-between gap-4 max-md:hidden">
         <div className="min-w-0">

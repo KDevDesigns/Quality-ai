@@ -3,7 +3,7 @@
 
 import { longDate, periodLabel } from "./period";
 import type { DarReportData } from "./store";
-import type { DarFunction } from "./template";
+import { dutyLayout, type DarFunction } from "./template";
 import { isRestDay } from "./autofill";
 
 /** The paper margin on every side, in inches. */
@@ -64,10 +64,15 @@ function dayHeads(r: DarReportData): string {
 }
 
 function rows(fns: DarFunction[], cells: string[][]): string {
+  // A duty with several MFOs: its number and duty cells span its rows.
+  const layout = dutyLayout(fns);
   return fns
     .map((f, i) => {
       const days = (cells[i] ?? []).map((c) => `<td class="day${isRestDay(c) ? " rest" : ""}">${br(c)}</td>`).join("");
-      return `<tr><td class="n">${i + 1}</td><td class="duty">${br(f.duty)}</td><td class="mfo">${br(f.mfo)}</td>${days}</tr>`;
+      const { number, span } = layout[i];
+      const rs = span > 1 ? ` rowspan="${span}"` : "";
+      const lead = span ? `<td class="n"${rs}>${number}</td><td class="duty"${rs}>${br(f.duty)}</td>` : "";
+      return `<tr>${lead}<td class="mfo">${br(f.mfo)}</td>${days}</tr>`;
     })
     .join("");
 }

@@ -1,5 +1,58 @@
 # Changelog
 
+## DAR import from Excel, period days, markup fit, softer dark mode (2026-11-06)
+
+One database change: `DarProfile.periodScheme` (migration `20261106000200_dar_period_scheme`). Run `npm run db:deploy`.
+
+- **Import your DAR from Excel:** My DAR → My details → **Import from Excel** (also a button on My DAR). Pick the workbook
+  you already keep (one DAR sheet per period). QA Hub reads your name, position, office, signatories, duties and MFOs,
+  your period days, and what you wrote on each day, and shows it to check. Tick the periods to bring in (ones you already
+  saved here stay unticked) and Import. It opens the newest period in My DAR, editable, to add tasks you didn't write down.
+  The file is read in the browser and never uploaded or stored; only what was read is saved.
+- **Your period days:** My details has a choice of **1st–15th and 16th–end** (as before) or **3rd–17th and 18th–2nd of the
+  next month**, as on Job Order DARs. The list, the sheet, the printout and the Excel file follow it. The import sets it.
+- **Several MFOs per duty:** a row can be "another MFO of the duty above", with its own days. The sheet, printout and
+  Excel file merge the duty and its number down those rows, like the paper form. Up to 20 rows per section, and a day's
+  entry can be up to 500 characters.
+- **Markup:** on laptops the image area is sized to the room the window has left, so **Use image**, **Use original** and
+  **Remove** always stay on screen (short windows, browser zoom, tools on two lines). If the window is very short, the
+  dialog scrolls instead.
+- **DAR defaults:** an empty day now starts as **-** on work days and **REST DAY** on Saturdays, Sundays and holidays
+  (Philippine national holidays, Holy Week and Araw ng Dabaw; holidays proclaimed each year, like Eid, aren't known in
+  advance). Every cell can still be typed over. "-" doesn't count as a day attended. Imported blank days get the same defaults.
+- **Light/dark toggle:** one button left of the bell (laptops in the top bar, phones on Home) switches light and dark. The
+  new look grows out of the button in a circle, like Magic UI's animated theme toggler (instant for people who turn motion
+  off, and in browsers without View Transitions). Settings → Appearance keeps Light / Dark / System; the profile menu now
+  only has the theme colour.
+- **Dark mode colours:** a softer slate instead of near-black, with each layer a step apart and a breath of your theme
+  colour; text slightly off-white to cut glare. Lines are lighter.
+- **Preloader in your theme colour:** the loading screen after sign-in (background, rings, waves, water, emblem and chip)
+  takes the theme colour picked in the profile menu, in light and dark, from the very first frame. The default indigo looks
+  as before.
+- **Sign-in page:** the brand panel follows the theme colour too, and the page has its own colour dots and light/dark
+  toggle (top right), remembered in the browser and kept after signing in.
+- **Fixed:** the sign-in panel's and preloader's waves were stretched to twice their width, so a crest was wider than the
+  panel and they showed as a flat slope. They're drawn at true scale now (a crest every 400 px), at about the same speed.
+- **Cards:** a quiet border with a touch of the theme colour and a faint highlight along the top edge, in both modes.
+- Code: `lib/dar/import.ts` (tested), `lib/dar/period.ts` (schemes), `dutyLayout` in `lib/dar/template.ts`,
+  `app/(main)/dar/setup/import-dar.tsx`, `useThemeSwitch` in `components/theme.tsx`, `--card-border` / `--card-highlight`
+  in `app/globals.css`.
+
+## All tickets for everyone, more filters, module report (2026-11-06)
+
+No database changes.
+
+- **All tab = every ticket:** QA testers and developers now see every ticket from every QA tester, with its developer, on the
+  Tickets page's **All** tab (list and board). Their other tabs and the dashboard stay their own tickets. Anyone can open any
+  ticket, see its files and reply; status moves, edit, assign, category and delete stay with its reporter, its developer or an
+  admin. Notifications and unread dots still come only from your own tickets.
+- **More filters:** Status, QA tester, Severity, Priority and Filed from / to (Manila days), next to Type, Module, Category and
+  Developer. Testers and developers pick a QA tester or developer on the All tab; admins everywhere.
+- **Module report:** a button on the Tickets page opens every module's score, closed % per category and tickets per stage as a
+  page to print or **Save as PDF**. Numbers and module names only, for everyone signed in.
+- Code: `canReadTicket` / `canAssignTicket` in `lib/tickets/workflow.ts`, `readWhere` in `lib/tickets/store.ts`,
+  `lib/tickets/report.ts` (tested), `app/(main)/tickets/report/route.ts`, `components/filter-date.tsx`.
+
 ## Install as an app (Phase 3.7c, 2026-11-03)
 
 No database changes. It keeps no copy of pages or tickets, so offline it shows the browser's normal "no connection" page.

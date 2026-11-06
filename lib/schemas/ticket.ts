@@ -64,6 +64,13 @@ const param = z
   .optional()
   .transform((v) => (Array.isArray(v) ? v[0] : v)?.trim() ?? "");
 
+/** A real calendar day as YYYY-MM-DD, or null. */
+function dayParam(v: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+  const d = new Date(`${v}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v ? v : null;
+}
+
 /** The ticket list's URL filters. Unknown or bad values fall back to the default instead of failing. */
 export const ticketFilters = z.object({
   group: param.transform((v) => ((TICKET_GROUPS as readonly string[]).includes(v) ? (v as TicketGroup) : "open")),
@@ -77,6 +84,12 @@ export const ticketFilters = z.object({
   assignee: param.transform((v) => v || null),
   /** A user id or "me". */
   reporter: param.transform((v) => v || null),
+  severity: param.transform((v) => ((SEVERITIES as readonly string[]).includes(v) ? (v as (typeof SEVERITIES)[number]) : null)),
+  priority: param.transform((v) => ((PRIORITIES as readonly string[]).includes(v) ? (v as (typeof PRIORITIES)[number]) : null)),
+  /** Filed on or after this day, YYYY-MM-DD in Manila time. */
+  from: param.transform(dayParam),
+  /** Filed on or before this day, YYYY-MM-DD in Manila time. */
+  to: param.transform(dayParam),
   q: param.transform((v) => v.slice(0, 100)),
   page: param.transform((v) => Math.max(1, Math.min(10000, Number.parseInt(v, 10) || 1))),
   /** "list" or "board" when the address picks one; otherwise the page uses the one last picked (see lib/tickets/board). */

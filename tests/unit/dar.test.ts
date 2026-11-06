@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { areaLabel, buildCells, dayEntries, daysAttended, fitCells, prefixFor, refillCells, REST_DAY } from "@/lib/dar/autofill";
+import { areaLabel, buildCells, dayEntries, daysAttended, defaultEntry, fillDefaults, fitCells, NO_ENTRY, prefixFor, refillCells, REST_DAY } from "@/lib/dar/autofill";
+import { easter, holidayOn, isDayOff } from "@/lib/dar/holidays";
 import { darHtml } from "@/lib/dar/html";
 import {
   longDate,
@@ -37,7 +38,9 @@ describe("DAR periods", () => {
 
   it("accepts only real period starts", () => {
     expect(parsePeriod("2026-10-16")).toEqual({ start: "2026-10-16", end: "2026-10-31" });
-    expect(parsePeriod("2026-10-03")).toBeNull();
+    // The 3rd and 18th start the other period days (3rd–17th / 18th–2nd); other days start nothing.
+    expect(parsePeriod("2026-10-03")).toEqual({ start: "2026-10-03", end: "2026-10-17" });
+    expect(parsePeriod("2026-10-05")).toBeNull();
     expect(parsePeriod("2026-13-01")).toBeNull();
     expect(parsePeriod("../etc")).toBeNull();
   });
@@ -73,7 +76,7 @@ describe("DAR auto-fill", () => {
     expect(areaLabel(noCode)).toBe("Payroll");
   });
 
-  it("writes each day's modules once, in order, and rest days where nothing happened", () => {
+  it("writes each day's modules once, in order; otherwise REST DAY on weekends and \"-\" on work days", () => {
     const entries = dayEntries(
       [
         { at: at(1, 9), area: bca },
@@ -89,7 +92,31 @@ describe("DAR auto-fill", () => {
     expect(entries[1]).toBe("QA");
     expect(entries[2]).toBe(REST_DAY);
     expect(entries[4]).toBe("QA - CRM / HR-RSP");
-    expect(entries.filter((e) => e === REST_DAY)).toHaveLength(12);
+    // Oct 1–15, 2026: Oct 3, 4, 10 and 11 are the weekend; Oct 1, 2 and 5 had activity.
+    expect(entries.filter((e) => e === REST_DAY)).toHaveLength(4);
+    expect(entries.filter((e) => e === NO_ENTRY)).toHaveLength(8);
+    expect(entries[5]).toBe(NO_ENTRY); // Tuesday Oct 6
+  });
+
+  it("knows weekends and Philippine holidays, Holy Week included", () => {
+    expect(easter(2026)).toBe("2026-04-05");
+    expect(easter(2027)).toBe("2027-03-28");
+    expect(holidayOn("2026-04-02")).toBe("Maundy Thursday");
+    expect(holidayOn("2026-04-03")).toBe("Good Friday");
+    expect(holidayOn("2026-08-31")).toBe("National Heroes Day"); // the last Monday of August 2026
+    expect(holidayOn("2026-03-16")).toBe("Araw ng Dabaw");
+    expect(holidayOn("2026-12-25")).toBe("Christmas Day");
+    expect(holidayOn("2026-10-06")).toBeNull();
+    expect(isDayOff("2026-10-03")).toBe(true); // Saturday
+    expect(isDayOff("2026-11-30")).toBe(true); // Monday, Bonifacio Day
+    expect(isDayOff("2026-10-06")).toBe(false);
+    expect(defaultEntry({ date: "2026-11-01" })).toBe(REST_DAY);
+    expect(defaultEntry({ date: "2026-11-03" })).toBe(NO_ENTRY);
+  });
+
+  it("fills an import's blank days with the defaults, keeping what was written", () => {
+    const d = [{ date: "2026-10-02" }, { date: "2026-10-03" }, { date: "2026-10-05" }];
+    expect(fillDefaults({ core: [["", " ", "Tested BCA"]], support: [] }, d)).toEqual({ core: [[NO_ENTRY, REST_DAY, "Tested BCA"]], support: [] });
   });
 
   it("counts a late-evening action on the Manila day", () => {
@@ -121,6 +148,13 @@ describe("DAR auto-fill", () => {
     cells.support[0][1] = "HR201";
     expect(daysAttended(cells)).toBe(3);
     expect(daysAttended({ core: [["rest day", " Rest Day "]], support: [] })).toBe(0);
+    // A dash means nothing was done.
+    expect(daysAttended({ core: [["-", " – ", "Tested"]], support: [] })).toBe(1);
+  });
+
+  it("starts the other rows with each day's default", () => {
+    const d = periodDays({ start: "2026-10-01", end: "2026-10-04" });
+    expect(buildCells(fns, ["QA - BCA", NO_ENTRY, REST_DAY, REST_DAY], d).support[0]).toEqual([NO_ENTRY, NO_ENTRY, REST_DAY, REST_DAY]);
   });
 
   it("fits saved cells to the current rows and days, and refills only auto-fill rows", () => {
@@ -191,6 +225,23 @@ describe("DAR details", () => {
 });
 
 describe("darHtml", () => {
+  it("merges a duty's number and cell down its MFO rows", () => {
+    const period = { start: "2026-10-18", end: "2026-11-02" };
+    const days = periodDays(period);
+    const coreFunctions = [
+      { duty: "Design ERP screens", mfo: "Billing UI", autofill: false },
+      { duty: "", mfo: "HRM UI", autofill: false, continues: true },
+      { duty: "QA testing", mfo: "Reports", autofill: false },
+    ];
+    const header = resolveHeader(profile({ coreFunctions }), { name: "x" });
+    const r: DarReportData = { period, days, header, cells: buildCells(header, days.map(() => "")), dateSubmitted: "2026-11-04", daysAttended: 0, saved: false };
+    const html = darHtml(r);
+    expect(html).toContain('<td class="n" rowspan="2">1</td><td class="duty" rowspan="2">Design ERP screens</td><td class="mfo">Billing UI</td>');
+    expect(html).toContain('<tr><td class="mfo">HRM UI</td>');
+    expect(html).toContain('<td class="n">2</td><td class="duty">QA testing</td>');
+    expect(html).toContain("Oct 18, 2026 to Nov 02, 2026");
+  });
+
   it("escapes everything typed", () => {
     const period = { start: "2026-10-01", end: "2026-10-15" };
     const days = periodDays(period);
