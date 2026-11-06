@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { BugIcon, MessagesSquareIcon, PenToolIcon } from "lucide-react";
 import { LoadingBlock } from "@/components/page-header";
 import { WAVE_VIEWBOX, WAVES } from "@/components/preloader";
-import { AccentDots } from "@/components/accent-dots";
+import { AccentPicker } from "@/components/accent-picker";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getCurrentUser } from "@/lib/auth/session";
 import { signupStatus } from "./actions";
@@ -33,8 +33,8 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
       <BrandPane />
       <div className="relative flex h-dvh min-w-0 flex-1 flex-col">
         {/* The look, before signing in: theme colour and light or dark, remembered in this browser like inside the app. */}
-        <div className="absolute top-4 right-4 z-10 flex items-center gap-3 md:top-6 md:right-6">
-          <AccentDots />
+        <div className="absolute top-4 right-4 z-10 flex items-center gap-2.5 md:top-6 md:right-6">
+          <AccentPicker />
           <ThemeToggle />
         </div>
         <div className="flex min-h-0 flex-1 overflow-y-auto px-4 pt-20 pb-8 md:pt-12">

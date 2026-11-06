@@ -741,12 +741,12 @@ html.dark[data-accent] .auth-brand {
 .auth-brand .rip:nth-child(3) { animation-delay: 3.6s; }
 .auth-brand .rip:nth-child(4) { animation-delay: 5.4s; }
 .auth-brand .seal { animation: auth-float 6.4s ease-in-out infinite; }
-/* 4000 px wide at true scale, one wave every 400 px: exactly how far auth-drift slides it, so the loop is seamless
-   (wavePath in components/preloader.tsx). */
+/* 4000 px wide at true scale; the shape repeats every 800 px (a rise and a fall, wavePath in components/preloader.tsx),
+   exactly how far auth-drift slides it, so the loop has no jump. */
 .auth-brand .wave { position: absolute; left: 0; bottom: 0; width: 4000px; max-width: none; height: 220px; }
-.auth-brand .w1 { animation: auth-drift 13s linear infinite; }
-.auth-brand .w2 { animation: auth-drift 9s linear infinite reverse; }
-.auth-brand .w3 { animation: auth-drift 6s linear infinite; }
+.auth-brand .w1 { animation: auth-drift 26s linear infinite; }
+.auth-brand .w2 { animation: auth-drift 18s linear infinite reverse; }
+.auth-brand .w3 { animation: auth-drift 12s linear infinite; }
 .auth-enter > * { animation: auth-rise 560ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 .auth-enter > *:nth-child(2) { animation-delay: 60ms; }
 .auth-enter > *:nth-child(3) { animation-delay: 110ms; }
@@ -755,7 +755,7 @@ html.dark[data-accent] .auth-brand {
 .auth-enter > *:nth-child(n + 6) { animation-delay: 260ms; }
 @keyframes auth-ripple { 0% { transform: scale(0.72); opacity: 0; } 8% { opacity: 0.85; } 100% { transform: scale(2.6); opacity: 0; } }
 @keyframes auth-float { 0%, 100% { transform: translate3d(0, 0, 0); } 50% { transform: translate3d(0, -8px, 0); } }
-@keyframes auth-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-400px, 0, 0); } }
+@keyframes auth-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-800px, 0, 0); } }
 @keyframes auth-rise { from { opacity: 0; transform: translate3d(0, 14px, 0); } to { opacity: 1; transform: none; } }
 /* The active Sign in / Sign up pill pops in when you switch tabs. */
 .auth-tab-on { animation: auth-tab-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }

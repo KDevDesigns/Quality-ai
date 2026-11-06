@@ -29,10 +29,11 @@ One database change: `DarProfile.periodScheme` (migration `20261106000200_dar_pe
 - **Preloader in your theme colour:** the loading screen after sign-in (background, rings, waves, water, emblem and chip)
   takes the theme colour picked in the profile menu, in light and dark, from the very first frame. The default indigo looks
   as before.
-- **Sign-in page:** the brand panel follows the theme colour too, and the page has its own colour dots and light/dark
-  toggle (top right), remembered in the browser and kept after signing in.
+- **Sign-in page:** the brand panel follows the theme colour too, and the page has a palette button (the colours open in
+  a small pop-up) and the light/dark toggle, top right, remembered in the browser and kept after signing in.
 - **Fixed:** the sign-in panel's and preloader's waves were stretched to twice their width, so a crest was wider than the
-  panel and they showed as a flat slope. They're drawn at true scale now (a crest every 400 px), at about the same speed.
+  panel and they showed as a flat slope, and each loop jumped: the wave's shape repeats every rise and fall, but the
+  animation slid only half that before starting over. They're drawn at true scale now and slide one full repeat (800 px).
 - **Cards:** a quiet border with a touch of the theme colour and a faint highlight along the top edge, in both modes.
 - Code: `lib/dar/import.ts` (tested), `lib/dar/period.ts` (schemes), `dutyLayout` in `lib/dar/template.ts`,
   `app/(main)/dar/setup/import-dar.tsx`, `useThemeSwitch` in `components/theme.tsx`, `--card-border` / `--card-highlight`

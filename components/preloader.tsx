@@ -7,14 +7,15 @@ import { cn } from "@/lib/utils";
 // theme colour other than the default indigo picked, the preloader takes its colours from it (.qa-splash in globals.css);
 // the colour is on <html> before the first paint (ACCENT_SCRIPT), so it never shows indigo first.
 
-/** How long a wave is drawn, in px, and how often it repeats. auth-drift slides it one repeat, so the loop is seamless. */
+/** How long a wave is drawn, in px, and the length of one rise or one fall. */
 const WAVE_LONG = 4000;
 const WAVE_REPEAT = 400;
 
 /**
- * A wave WAVE_LONG units long that rises and falls every WAVE_REPEAT, drawn at true scale (viewBox and width both 4000,
- * .auth-brand .wave), so a crest is 400 px wide and the sign-in panel shows two of them. Sliding 400 px still leaves a
- * 3600 px-wide screen covered (the preloader fills the window).
+ * A wave WAVE_LONG units long, drawn at true scale (viewBox and width both 4000, .auth-brand .wave). Each curve is
+ * WAVE_REPEAT long and every `T` mirrors the one before, so it goes rise, fall, rise: the shape only repeats every
+ * 2 × WAVE_REPEAT = 800 px. auth-drift must slide exactly that far, or each loop jumps a crest into a trough. Sliding 800 px
+ * still leaves a 3200 px-wide screen covered (the preloader fills the window).
  */
 export const wavePath = (y: number, crest: number) => {
   const tail = Array.from({ length: WAVE_LONG / WAVE_REPEAT - 1 }, (_, i) => ` T ${(i + 2) * WAVE_REPEAT} ${y}`).join("");
