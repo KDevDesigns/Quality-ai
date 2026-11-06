@@ -1,5 +1,36 @@
 # Changelog
 
+## Team Leads and a UI/UX column (2026-11-06)
+
+Two database changes: `User.teamLead` (migration `20261106000300_user_team_lead`) and `AreaMember.asDesigner`
+(`20261106000400_area_member_designer`). Run `npm run db:deploy`.
+
+- **Team Lead tick-box:** in Users, next to Designer. A QA tester or developer with it manages Team & modules like an
+  admin: add, edit, hide and delete modules and sub-modules at every level, and set each area's members and lead. Users
+  (accounts, roles, sign-ups, passwords) stays admin-only. Shown as a "Team Lead" pill in Users and in the "Show
+  modules for" list. One rule in `lib/auth/permissions.ts` (`FLAG_GRANTS`: `areas.manage` ← `teamLead`, tested).
+- **UI/UX per module:** in a module's Members window, anyone with the Designer tick-box has a **UI/UX** option next to
+  their name. Ticked, they work on that module as its UI/UX designer and are listed in the new **UI/UX** column instead of
+  Developers or QA; in other modules they stay under their role. A lead who designs for it stays in Lead with a UI/UX tag.
+  Saving checks that only people with the Designer tick-box are marked UI/UX.
+
+## Modules three levels deep (2026-11-06)
+
+No database changes (an area already pointed at its parent; only the two-level rule was in the code).
+
+- **A sub-module can have its own sub-modules:** Procurement › Purchase Requisition › Approval. On Team & modules, each
+  sub-module row has an add button for the level under it; the "Inside" picker lists modules and sub-modules by their
+  full path. Three levels at most (`MAX_DEPTH` in `lib/areas/tree.ts`); moving an area somewhere that would go deeper, or
+  inside its own sub-module, is refused with a reason. Adding, renaming, hiding and deleting work at every level, as before.
+- **Everywhere a module shows:** dropdowns list the third level indented under its sub-module; tickets, the inbox, the
+  dashboard and Users name an area by its whole path.
+- **Filtering by a module or sub-module** includes everything inside it, at every level. Module progress, the module
+  report and "my modules" count a third-level area towards its top-level module. Assigning suggests the developers of the
+  area and of every module it sits inside.
+- **DAR:** an area with no Code takes the nearest Code above it.
+- Code: `buildTree`, `flatten`, `pathTo`, `depthOf`, `rootOf`, `descendantIds`, `AREA_PATH_SELECT` in `lib/areas/tree.ts`
+  (tested). The module import file (`lib/areas/import.ts`) still reads two levels.
+
 ## DAR import from Excel, period days, markup fit, softer dark mode (2026-11-06)
 
 One database change: `DarProfile.periodScheme` (migration `20261106000200_dar_period_scheme`). Run `npm run db:deploy`.

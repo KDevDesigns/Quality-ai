@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from "@/lib/generated/prisma/client";
-import { areaPath } from "@/lib/areas/tree";
+import { AREA_PATH_SELECT, areaPath, descendantIds } from "@/lib/areas/tree";
 import { can } from "@/lib/auth/permissions";
 import type { TicketCreate, TicketEdit, TicketFilters, TransitionInput } from "@/lib/schemas/ticket";
 import { MAX_IMAGES_PER_POST, MAX_PENDING_PER_USER, MAX_VIDEOS_PER_POST, type UploadKind } from "@/lib/uploads/limits";
@@ -79,7 +79,7 @@ const listSelect = {
   createdAt: true,
   lastActivityAt: true,
   areaId: true,
-  area: { select: { name: true, parent: { select: { name: true } } } },
+  area: { select: AREA_PATH_SELECT },
   assignee: { select: { id: true, name: true } },
   reporter: { select: { id: true, name: true } },
   _count: { select: { comments: true } },
@@ -112,7 +112,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
 
   async function areaLabel(areaId: string | null): Promise<string | null> {
     if (!areaId) return null;
-    const a = await db.erpArea.findUnique({ where: { id: areaId }, select: { name: true, parent: { select: { name: true } } } });
+    const a = await db.erpArea.findUnique({ where: { id: areaId }, select: AREA_PATH_SELECT });
     if (!a) throw new TicketError("That module no longer exists. Refresh the page.");
     return areaPath(a);
   }
@@ -152,10 +152,10 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
     await tx.pendingUpload.deleteMany({ where: { id: { in: ids } } });
   }
 
-  /** A module and its sub-modules, for the module filter. */
+  /** A module and everything inside it, at every level, for the module filter. */
   async function withSubModules(areaId: string): Promise<string[]> {
-    const subs = await db.erpArea.findMany({ where: { parentId: areaId }, select: { id: true } });
-    return [areaId, ...subs.map((s) => s.id)];
+    const all = await db.erpArea.findMany({ select: { id: true, parentId: true } });
+    return descendantIds(all, areaId);
   }
 
   /** The list (and board) filters, within what `actor` may see. `areaIds`: the module filter, already looked up. */
@@ -511,7 +511,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
           priority: true,
           createdAt: true,
           lastActivityAt: true,
-          area: { select: { name: true, parent: { select: { name: true } } } },
+          area: { select: AREA_PATH_SELECT },
           assignee: { select: { name: true } },
           reporter: { select: { name: true } },
         },
@@ -533,7 +533,7 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
       return db.ticket.findFirst({
         where: { number, ...readWhere(actor) },
         include: {
-          area: { select: { id: true, name: true, parent: { select: { name: true } } } },
+          area: { select: { id: true, ...AREA_PATH_SELECT } },
           reporter: person,
           assignee: person,
           duplicateOf: { select: { number: true, title: true } },

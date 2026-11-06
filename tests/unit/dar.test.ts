@@ -74,6 +74,9 @@ describe("DAR auto-fill", () => {
     expect(areaLabel(bca)).toBe("BCA");
     expect(areaLabel(rsp)).toBe("HR-RSP");
     expect(areaLabel(noCode)).toBe("Payroll");
+    // A third level with no code of its own takes the nearest code above it.
+    expect(areaLabel({ name: "Approval", code: null, parent: { name: "Purchase Requisition", code: null, parent: { name: "Procurement", code: "PROC" } } })).toBe("PROC");
+    expect(areaLabel({ name: "Approval", code: null, parent: { name: "Purchase Requisition", code: "PR", parent: { name: "Procurement", code: "PROC" } } })).toBe("PR");
   });
 
   it("writes each day's modules once, in order; otherwise REST DAY on weekends and \"-\" on work days", () => {

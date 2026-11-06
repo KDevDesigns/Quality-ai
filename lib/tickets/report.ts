@@ -1,3 +1,4 @@
+import { rootOf } from "@/lib/areas/tree";
 import { formatDateTime } from "@/lib/format";
 import { moduleProgress, progressTone, type ModuleProgress, type ProgressArea, type ProgressTicket } from "./progress";
 import { CATEGORY_LABELS, TICKET_CATEGORIES, type TicketStatus } from "./workflow";
@@ -39,7 +40,7 @@ function add(c: StageCounts, s: TicketStatus) {
 
 export function moduleReport(areas: ProgressArea[], tickets: ProgressTicket[]): ModuleReport {
   const cards = moduleProgress(areas, tickets);
-  const topOf = new Map(areas.map((a) => [a.id, a.parentId ?? a.id]));
+  const topOf = new Map(areas.map((a) => [a.id, rootOf(areas, a.id)]));
   const stages = new Map(cards.map((c) => [c.id, emptyStages()]));
   const elsewhere = emptyStages();
   const all = emptyStages();

@@ -16,15 +16,18 @@ export const defaultEntry = (day: { date: string }) => (isDayOff(day.date) ? RES
 /** What a day's entry starts with: developers write "DEV - BCA", QA testers and admins "QA - BCA". */
 export const prefixFor = (role: string) => (role === "DEV" ? "DEV" : "QA");
 
-export type ActivityArea = { name: string; code: string | null; parent: { name: string; code: string | null } | null } | null;
+/** The area of a ticket, with the modules it sits inside (up to the top). */
+export type AreaWithCode = { name: string; code: string | null; parent?: AreaWithCode | null };
+export type ActivityArea = AreaWithCode | null;
 export type Activity = { at: Date; area: ActivityArea };
 
 /** One string per day per function row. */
 export type DarCells = { core: string[][]; support: string[][] };
 
-/** The module as written in a cell: its Code, else its module's Code, else its name. */
-export function areaLabel(area: NonNullable<ActivityArea>): string {
-  return area.code?.trim() || area.parent?.code?.trim() || area.name;
+/** The module as written in a cell: its Code, else the nearest Code of a module it sits inside, else its name. */
+export function areaLabel(area: AreaWithCode): string {
+  for (let at: AreaWithCode | null | undefined = area; at; at = at.parent) if (at.code?.trim()) return at.code.trim();
+  return area.name;
 }
 
 /** What to write for each day: "QA - BCA / CRM", "QA" (tickets without a module), or the default (REST DAY or "-"). */

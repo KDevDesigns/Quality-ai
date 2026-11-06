@@ -20,7 +20,8 @@ export type DarReportData = {
   saved: boolean;
 };
 
-const AREA = { select: { name: true, code: true, parent: { select: { name: true, code: true } } } } as const;
+// The ticket's area and the modules above it (up to three levels), for the nearest module Code.
+const AREA = { select: { name: true, code: true, parent: { select: { name: true, code: true, parent: { select: { name: true, code: true } } } } } } as const;
 
 export function darStore(db: PrismaClient, now: () => Date = () => new Date()) {
   async function header(user: DarUser): Promise<DarHeader> {

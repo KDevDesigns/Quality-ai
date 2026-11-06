@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { PrismaClient } from "@/lib/generated/prisma/client";
 import { ticketFilters, type TicketCreate } from "@/lib/schemas/ticket";
+import { areaPath } from "@/lib/areas/tree";
 import { TicketError, ticketStore } from "@/lib/tickets/store";
 import type { Actor } from "@/lib/tickets/workflow";
 import { createTestDb } from "./helpers/test-db";
@@ -360,6 +361,22 @@ describe("ticketStore", () => {
     expect(await s.attachmentFor(dev2, att.id)).not.toBeNull();
     expect(await s.attachmentFor(admin, att.id)).not.toBeNull();
     expect(await s.attachmentFor(admin, "missing")).toBeNull();
+  });
+
+  it("filters by a module or sub-module with everything inside it, three levels deep", async () => {
+    const s = ticketStore(db, now);
+    const upload = (await db.erpArea.create({ data: { name: "Reading Upload", parentId: meterReading } })).id;
+    await s.create(qa, input({ title: "On the module", areaId: billing }));
+    await s.create(qa, input({ title: "On the sub-module", areaId: meterReading }));
+    await s.create(qa, input({ title: "On the third level", areaId: upload }));
+    await s.create(qa, input({ title: "No module" }));
+    const list = async (area: string) => (await s.list(filters({ group: "all", area }), admin)).rows.map((r) => r.title).sort();
+    expect(await list(billing)).toEqual(["On the module", "On the sub-module", "On the third level"]);
+    expect(await list(meterReading)).toEqual(["On the sub-module", "On the third level"]);
+    expect(await list(upload)).toEqual(["On the third level"]);
+    // The list names it by its whole path.
+    const row = (await s.list(filters({ group: "all", area: upload }), admin)).rows[0];
+    expect(areaPath(row.area!)).toBe("Billing › Meter Reading › Reading Upload");
   });
 
   it("filters by severity, priority, QA tester and the day filed (Manila time)", async () => {
