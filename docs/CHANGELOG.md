@@ -63,8 +63,9 @@ No database changes.
   again.
 - Everything on the ticket page works in the panel: replying, moving, assigning, editing, deleting and the screenshots.
   What you change shows on the board behind it straight away, and an unread ticket stops being bold once you close it.
-- **Open full page** at the top of the panel, and in each card's ⋯ menu, goes to the ticket page. Ctrl/Cmd-click or a
-  middle click opens the ticket page in a new tab, as before.
+- **Double-click** a card or a row to go straight to the ticket page instead; Back returns to the board. **Open full
+  page** at the top of the panel, and in each card's ⋯ menu, goes there too. Ctrl/Cmd-click or a middle click opens the
+  ticket page in a new tab, as before.
 - Closing the panel with a reply you haven't sent asks first.
 - **Phones** keep opening the ticket page, as before.
 - While the panel is open the address is `/tickets/N/peek`. Loaded on its own (a refresh, a pasted link) it goes to the
