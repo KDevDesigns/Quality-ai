@@ -4,6 +4,11 @@ import type { Role } from "@/lib/auth/permissions";
 import { db } from "@/lib/db";
 import type { AreaOption, AssigneeOption } from "./ticket-form";
 
+/** Everyone who files tickets (QA testers and admins), for the QA tester filter. Inactive people keep their tickets, so they are listed too. */
+export async function reporterOptions(): Promise<{ id: string; name: string; active: boolean }[]> {
+  return db.user.findMany({ where: { role: { in: ["QA", "ADMIN"] } }, orderBy: [{ active: "desc" }, { name: "asc" }], select: { id: true, name: true, active: true } });
+}
+
 /** Active modules and sub-modules, plus the developers and admins who can be assigned, with their areas. */
 export async function ticketFormOptions(): Promise<{ areas: AreaOption[]; people: AssigneeOption[] }> {
   const [areas, users] = await Promise.all([

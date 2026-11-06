@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { focusSoon, type SidebarUser } from "./app-sidebar";
 import { backTarget, breadcrumbs, isTabRoot, mobileTitle } from "./nav";
 import { NotificationBell } from "./notifications-panel";
+import { ThemeToggle } from "./theme-toggle";
 
 /** Pages seen in this tab since QA Hub loaded. More than one means Back can return inside QA Hub. */
 let pagesSeen = 0;
@@ -35,7 +36,7 @@ export function AppTopbarShell() {
 }
 
 /**
- * Laptops: minimize button, breadcrumb and bell. The person's profile is at the bottom of the sidebar. Phones: a tab's own
+ * Laptops: minimize button, breadcrumb, the light/dark toggle and the bell. The person's profile is at the bottom of the sidebar. Phones: a tab's own
  * page has no top bar (the page's large title and the bottom tab bar do the job); an inner page gets a slim bar with
  * "‹ Tickets" and a short title.
  */
@@ -85,7 +86,12 @@ function TopbarView({ pathname, user, phone }: { pathname: string | null; user: 
             </ol>
           </nav>
         </div>
-        {user ? <NotificationBell /> : null}
+        {user ? (
+          <div className="flex items-center gap-2.5">
+            <ThemeToggle />
+            <NotificationBell />
+          </div>
+        ) : null}
       </header>
       {phone ? (
         <header className="sticky top-0 z-10 grid h-[calc(3.25rem+env(safe-area-inset-top))] shrink-0 grid-cols-[1fr_auto_1fr] items-center bg-grouped/85 px-1.5 pt-[env(safe-area-inset-top)] backdrop-blur-xl backdrop-saturate-150 md:hidden">

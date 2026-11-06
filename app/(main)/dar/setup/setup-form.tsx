@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Field, FormMessage, FormSection } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PERIOD_SCHEMES, SCHEME_LABELS, type PeriodScheme } from "@/lib/dar/period";
 import type { DarHeader } from "@/lib/dar/template";
 import { initialFormState } from "@/lib/form";
 import { cn } from "@/lib/utils";
@@ -14,14 +15,39 @@ import { FirstPeriodField } from "./first-period-field";
 
 // The person's own DAR set-up, laid out like the old shared DAR template page. Empty fields stay empty on the report.
 
-export function DarSetupForm({ header: h, hasFullName, firstPeriodStart, today }: { header: DarHeader; hasFullName: boolean; firstPeriodStart: string; today: string }) {
+export function DarSetupForm({
+  header: h,
+  hasFullName,
+  firstPeriodStart,
+  scheme: initialScheme,
+  today,
+}: {
+  header: DarHeader;
+  hasFullName: boolean;
+  firstPeriodStart: string;
+  scheme: PeriodScheme;
+  today: string;
+}) {
   const [state, action, pending] = useActionState(saveDarProfile, initialFormState);
+  const [scheme, setScheme] = useState<PeriodScheme>(initialScheme);
   const err = state.fieldErrors ?? {};
 
   return (
     <form onSubmit={submitKeepingInput(action)} className="grid gap-5">
-      <FormSection>First period</FormSection>
-      <FirstPeriodField initial={firstPeriodStart} today={today} error={err.firstPeriodStart} />
+      <FormSection>Periods</FormSection>
+      <fieldset className="grid gap-2">
+        <legend className="mb-2 text-sm font-medium">Your DAR periods run from</legend>
+        <input type="hidden" name="periodScheme" value={scheme} />
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          {PERIOD_SCHEMES.map((s) => (
+            <label key={s} className="flex cursor-pointer items-center gap-2.5 rounded-[0.625rem] border border-line p-3 text-sm transition-colors has-checked:border-acc has-checked:bg-acc-t2 has-focus-visible:ring-3 has-focus-visible:ring-acc/25">
+              <input type="radio" name="schemeChoice" checked={scheme === s} onChange={() => setScheme(s)} />
+              <span>{SCHEME_LABELS[s]}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <FirstPeriodField initial={firstPeriodStart} today={today} scheme={scheme} error={err.firstPeriodStart} />
 
       <FormSection>Header</FormSection>
       <div className="grid gap-4 md:grid-cols-2">
@@ -58,7 +84,9 @@ export function DarSetupForm({ header: h, hasFullName, firstPeriodStart, today }
       <FormSection>Duties and MFOs</FormSection>
       <FunctionsEditor name="coreFunctions" label="A.) Core functions" initial={h.core} />
       <FunctionsEditor name="supportFunctions" label="B.) Support functions" initial={h.support} />
-      {err.coreFunctions || err.supportFunctions ? <p className="text-[0.7813rem] font-medium text-destructive-text">Every row needs a duty.</p> : null}
+      {err.coreFunctions || err.supportFunctions ? (
+        <p className="text-[0.7813rem] font-medium text-destructive-text">Every row needs a duty, unless it is another MFO of the duty above.</p>
+      ) : null}
 
       <FormMessage state={state} />
       <div className="flex items-center justify-end gap-3">

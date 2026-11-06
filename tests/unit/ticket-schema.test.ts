@@ -56,7 +56,7 @@ describe("ticket schemas", () => {
   });
 
   it("reads list filters from the URL with safe defaults", () => {
-    expect(ticketFilters.parse({})).toEqual({ group: "open", status: null, type: null, area: null, category: null, assignee: null, reporter: null, q: "", page: 1, view: null });
+    expect(ticketFilters.parse({})).toEqual({ group: "open", status: null, type: null, area: null, category: null, assignee: null, reporter: null, severity: null, priority: null, from: null, to: null, q: "", page: 1, view: null });
     expect(ticketFilters.parse({ group: "done", status: "FIXED", type: "BUG", assignee: "me", page: "3", q: ["#4", "x"] })).toMatchObject({
       group: "done",
       status: "FIXED",
@@ -72,5 +72,10 @@ describe("ticket schemas", () => {
     expect(ticketFilters.parse({ view: "board" }).view).toBe("board");
     expect(ticketFilters.parse({ view: "gantt" }).view).toBeNull();
     expect(ticketFilters.parse({ status: "TO_START" }).status).toBe("TO_START");
+    expect(ticketFilters.parse({ severity: "S1", priority: "P4" })).toMatchObject({ severity: "S1", priority: "P4" });
+    expect(ticketFilters.parse({ severity: "S9", priority: "high" })).toMatchObject({ severity: null, priority: null });
+    expect(ticketFilters.parse({ from: "2026-10-01", to: "2026-10-31" })).toMatchObject({ from: "2026-10-01", to: "2026-10-31" });
+    // Not a real day, or not YYYY-MM-DD: ignored.
+    expect(ticketFilters.parse({ from: "2026-02-30", to: "10/31/2026" })).toMatchObject({ from: null, to: null });
   });
 });

@@ -80,6 +80,18 @@ const hasText = (s: Shape | undefined): s is Extract<Shape, { kind: "text" | "st
 /** How close a click must be to a line or a handle, in screen pixels. */
 const GRAB_PX = 8;
 
+/**
+ * The stage height on laptops: about 62% of the window as before, but never more than the window has left after the
+ * rest of the dialog (title, tools, notices, the Use image row and the dialog's padding), so those always stay in view.
+ */
+function desktopStageHeight(stageEl: HTMLElement): number {
+  const dialog = stageEl.closest<HTMLElement>("[data-markup-dialog]");
+  const chrome = dialog ? dialog.scrollHeight - stageEl.offsetHeight : 0;
+  // The dialog may be the window's height minus 1rem (its max-height); keep a little more for the browser's rounding.
+  const room = window.innerHeight - 16 - 4 - chrome;
+  return Math.round(Math.max(160, Math.min(window.innerHeight * 0.62, room)));
+}
+
 export function MarkupEditor({
   file,
   position,
@@ -163,7 +175,9 @@ export function MarkupEditor({
     const el = stage.current;
     if (!el || !img) return;
     // Phones: the editor fills the screen and the stage takes all the height the tools leave.
-    const h = mobile ? el.clientHeight : Math.round(Math.max(240, window.innerHeight * 0.62));
+    // Laptops: the stage takes what the window has left once the title, tools, notices and the Use image row fit, so
+    // those buttons are never pushed below the window (a short window, browser zoom, or tools wrapping onto two lines).
+    const h = mobile ? el.clientHeight : desktopStageHeight(el);
     if (!h) return;
     const f = Math.min(1, el.clientWidth / img.naturalWidth, h / img.naturalHeight);
     setStageH(h);
@@ -176,10 +190,17 @@ export function MarkupEditor({
   useEffect(() => {
     if (!img) return;
     const el = stage.current;
-    // The dialog animates in; measure once it has a size, and again whenever it changes.
+    // The dialog animates in; measure once it has a size, and again whenever it changes: the stage, the dialog (tools
+    // wrapping, a notice appearing) or the window.
     const ro = el ? new ResizeObserver(measureFit) : null;
     if (el) ro?.observe(el);
-    return () => ro?.disconnect();
+    const box = el?.closest<HTMLElement>("[data-markup-dialog]");
+    if (box) ro?.observe(box);
+    window.addEventListener("resize", measureFit);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("resize", measureFit);
+    };
   }, [img, measureFit]);
 
   // After a zoom, scroll so the point under the cursor stays put (see zoomAt).
@@ -619,7 +640,10 @@ export function MarkupEditor({
       {open ? (
         // Our own corner X (not the dialog's), so leaving asks first instead of silently dropping the image.
         <DialogContent
-          className="sm:max-w-[73.75rem] max-md:inset-0 max-md:flex max-md:h-dvh max-md:max-h-none max-md:max-w-none max-md:flex-col max-md:gap-2 max-md:overflow-hidden max-md:rounded-none max-md:px-3 max-md:pt-[calc(0.75rem+env(safe-area-inset-top))] max-md:pb-[calc(0.75rem+env(safe-area-inset-bottom))] max-md:short:grid max-md:short:grid-cols-[minmax(0,1fr)_17rem] max-md:short:grid-rows-[auto_minmax(0,1fr)_auto_auto]"
+          data-markup-dialog=""
+          // Laptops: never taller than the window. The stage is sized to fit (desktopStageHeight); if the window is too
+          // short even for that, the dialog scrolls rather than hiding Use image.
+          className="sm:max-w-[73.75rem] md:max-h-[calc(100dvh-1rem)] md:overflow-y-auto md:overscroll-contain max-md:inset-0 max-md:flex max-md:h-dvh max-md:max-h-none max-md:max-w-none max-md:flex-col max-md:gap-2 max-md:overflow-hidden max-md:rounded-none max-md:px-3 max-md:pt-[calc(0.75rem+env(safe-area-inset-top))] max-md:pb-[calc(0.75rem+env(safe-area-inset-bottom))] max-md:short:grid max-md:short:grid-cols-[minmax(0,1fr)_17rem] max-md:short:grid-rows-[auto_minmax(0,1fr)_auto_auto]"
           showGrabber={false}
           showCloseButton={false}
           onKeyDown={onKeyDown} onKeyUp={(e) => e.key === " " && setSpaceHeld(false)}>

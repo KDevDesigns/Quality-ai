@@ -30,7 +30,8 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0e0f12" },
+    // The dark page (--grouped in app/globals.css) with the default indigo.
+    { media: "(prefers-color-scheme: dark)", color: "#14151d" },
   ],
 };
 

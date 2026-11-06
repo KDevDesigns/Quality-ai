@@ -227,7 +227,7 @@ export function DarEditor({
           />
           <p className="-mt-2 text-[0.7813rem] text-muted-foreground">
             Click any day to type in it. Rows marked <span className="font-medium text-primary-text">↻ from my ticket work</span> are filled from the tickets you filed, replied to
-            or moved each day, using the module Codes in Team &amp; modules. A day with nothing is {REST_DAY}; type over it if you worked outside QA Hub (e.g. HR201,
+            or moved each day, using the module Codes in Team &amp; modules. A work day with nothing is &ldquo;-&rdquo;, and Saturdays, Sundays and holidays are {REST_DAY}; type over any of them if you worked outside QA Hub (e.g. HR201,
             encoding). Click the date submitted to change it.
           </p>
         </>

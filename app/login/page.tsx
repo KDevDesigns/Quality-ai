@@ -4,6 +4,9 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { BugIcon, MessagesSquareIcon, PenToolIcon } from "lucide-react";
 import { LoadingBlock } from "@/components/page-header";
+import { WAVE_VIEWBOX, WAVES } from "@/components/preloader";
+import { AccentPicker } from "@/components/accent-picker";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { getCurrentUser } from "@/lib/auth/session";
 import { signupStatus } from "./actions";
 import { AuthTabs } from "./auth-tabs";
@@ -22,20 +25,19 @@ const CHIPS = [
   { icon: MessagesSquareIcon, label: "Talk it through" },
 ];
 
-const WAVES = [
-  { cls: "w1", d: "M0 104 Q 200 54 400 104 T 800 104 T 1200 104 T 1600 104 T 2000 104 V220 H0 Z", fill: "var(--ab-wave-1)" },
-  { cls: "w2", d: "M0 146 Q 200 112 400 146 T 800 146 T 1200 146 T 1600 146 T 2000 146 V220 H0 Z", fill: "var(--ab-wave-2)" },
-  { cls: "w3", d: "M0 184 Q 200 164 400 184 T 800 184 T 1200 184 T 1600 184 T 2000 184 V220 H0 Z", fill: "var(--ab-wave-3)" },
-];
-
 export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
     // The page itself never scrolls; only the form column does. A page scrollbar (it appears on the taller Sign up
     // form) would narrow the window, resize the brand pane and make its text jump when switching tabs.
     <div className="auth-page flex h-dvh overflow-hidden bg-background text-foreground">
       <BrandPane />
-      <div className="flex h-dvh min-w-0 flex-1 flex-col">
-        <div className="flex min-h-0 flex-1 overflow-y-auto px-4 pt-12 pb-8">
+      <div className="relative flex h-dvh min-w-0 flex-1 flex-col">
+        {/* The look, before signing in: theme colour and light or dark, remembered in this browser like inside the app. */}
+        <div className="absolute top-4 right-4 z-10 flex items-center gap-2.5 md:top-6 md:right-6">
+          <AccentPicker />
+          <ThemeToggle />
+        </div>
+        <div className="flex min-h-0 flex-1 overflow-y-auto px-4 pt-20 pb-8 md:pt-12">
           <div className="m-auto w-full max-w-[27.5rem]">
             <MobileBrand />
             <Suspense fallback={<LoadingBlock />}>
@@ -101,8 +103,8 @@ function BrandPane() {
         <BrandText />
       </div>
       {WAVES.map((w) => (
-        <div key={w.cls} className="absolute inset-x-0 bottom-0 h-[13.75rem]" aria-hidden>
-          <svg className={`wave ${w.cls}`} viewBox="0 0 2000 220" preserveAspectRatio="none">
+        <div key={w.cls} className="absolute inset-x-0 bottom-0 h-[13.75rem] overflow-hidden" aria-hidden>
+          <svg className={`wave ${w.cls}`} viewBox={WAVE_VIEWBOX} preserveAspectRatio="none">
             <path d={w.d} style={{ fill: w.fill }} />
           </svg>
         </div>
