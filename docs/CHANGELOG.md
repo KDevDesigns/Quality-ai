@@ -1,5 +1,21 @@
 # Changelog
 
+## Fewer ticket moves, Won't fix reasons, no admins as assignees (2026-11-06)
+
+No database changes. Tickets already Verified or Rejected keep their status.
+
+- **Verify and close:** QA closes a fixed ticket in one move (was Mark as verified, then Close). Undo verify is gone;
+  Reopen covers it. A ticket already Verified closes the same way. The board's Verified column, the Verified step on each
+  ticket's progress tracker and the module report's Verified stage fold into Fixed.
+- **Won't fix asks why:** *It can't be fixed* (Won't fix), *It isn't a bug* (Rejected; the separate Reject button is
+  gone), or *Another developer should take it*: the ticket goes back to the QA tester, unassigned and still open (In
+  progress goes back to New), with the developer they recommend (optional) and why, in the log and in a notification. QA
+  assigns it. Developers still can't assign tickets.
+- **Assigning:** only developers can be picked; admins are no longer in the list (the server refuses them too). Tickets
+  already with an admin keep them until someone reassigns.
+- Code: `within` moves and `canHandBack` in `lib/tickets/workflow.ts`, `ticketStore.handBack`, `handBackTicket`, the
+  `handedBack` notification (all tested).
+
 ## Team Leads and a UI/UX column (2026-11-06)
 
 Two database changes: `User.teamLead` (migration `20261106000300_user_team_lead`) and `AreaMember.asDesigner`

@@ -17,7 +17,8 @@ export async function ticketFormOptions(): Promise<{ areas: AreaOption[]; people
   const [areas, users] = await Promise.all([
     db.erpArea.findMany({ where: { active: true }, select: { id: true, parentId: true, name: true, sortOrder: true } }),
     db.user.findMany({
-      where: { active: true, role: { in: ["DEV", "ADMIN"] } },
+      // Only developers can be assigned; tickets already with an admin keep them until someone reassigns.
+      where: { active: true, role: "DEV" },
       orderBy: { name: "asc" },
       select: { id: true, name: true, role: true, areas: { select: { areaId: true, isLead: true } } },
     }),

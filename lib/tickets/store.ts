@@ -8,6 +8,7 @@ import { memberModules, moduleProgress as buildModuleProgress } from "./progress
 import {
   canAssign,
   canCategorize,
+  canHandBack,
   canReadTicket,
   CATEGORY_LABELS,
   NO_CATEGORY,
@@ -102,11 +103,11 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
     return t;
   }
 
-  /** The assignee must be an active developer or admin. Returns their name for the timeline. */
+  /** The assignee must be an active developer (not QA, not an admin). Returns their name for the timeline. */
   async function assigneeName(assigneeId: string | null): Promise<string | null> {
     if (!assigneeId) return null;
     const u = await db.user.findUnique({ where: { id: assigneeId }, select: { name: true, role: true, active: true } });
-    if (!u || !u.active || u.role === "QA") throw new TicketError("Pick an active developer or admin to assign.");
+    if (!u || !u.active || u.role !== "DEV") throw new TicketError("Pick an active developer to assign.");
     return u.name;
   }
 
@@ -324,6 +325,35 @@ export function ticketStore(db: PrismaClient, now: () => Date = () => new Date()
         if (moved.count === 0) throw new TicketError("Someone else just changed this ticket. Refresh the page and try again.");
         await tx.ticketEvent.create({ data: { ticketId: id, actorId: actor.id, kind: "STATUS", from: t.status, to: input.to, note, createdAt: at } });
       });
+    },
+
+    /**
+     * Won't fix → "Another developer should take it": the ticket goes back to QA unassigned, still open, with who the
+     * developer recommends (optional) and why. In progress goes back to New; other open statuses stay. QA assigns it.
+     */
+    async handBack(actor: Actor, id: string, input: { recommendId: string | null; note: string }): Promise<{ recommended: string | null }> {
+      const t = await load(id, actor);
+      if (!canHandBack(t, actor)) throw new TicketError("Only the assigned developer can hand this ticket back, while it is still open.");
+      const note = input.note.trim();
+      if (!note) throw new TicketError("Add a note explaining why.");
+      if (input.recommendId === actor.id || input.recommendId === t.assigneeId) throw new TicketError("Recommend a different developer, or leave it for QA to pick.");
+      const recommended = await assigneeName(input.recommendId);
+      const from = t.assigneeId ? ((await db.user.findUnique({ where: { id: t.assigneeId }, select: { name: true } }))?.name ?? null) : null;
+      const status = t.status === "IN_PROGRESS" ? "NEW" : t.status;
+      const why = recommended ? `Recommends ${recommended}. ${note}` : `Needs another developer. ${note}`;
+
+      await db.$transaction(async (tx) => {
+        const at = now();
+        // Only if nobody changed it since this page was loaded.
+        const moved = await tx.ticket.updateMany({
+          where: { id, status: t.status, assigneeId: t.assigneeId },
+          data: { assigneeId: null, status, lastActivityAt: at, lastActivityById: actor.id },
+        });
+        if (moved.count === 0) throw new TicketError("Someone else just changed this ticket. Refresh the page and try again.");
+        await tx.ticketEvent.create({ data: { ticketId: id, actorId: actor.id, kind: "ASSIGNEE", from, to: null, note: why, createdAt: at } });
+        if (status !== t.status) await tx.ticketEvent.create({ data: { ticketId: id, actorId: actor.id, kind: "STATUS", from: t.status, to: status, note: why, createdAt: at } });
+      });
+      return { recommended };
     },
 
     async comment(actor: Actor, id: string, body: string, uploadIds: string[] = []): Promise<string> {

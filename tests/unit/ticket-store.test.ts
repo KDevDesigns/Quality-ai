@@ -89,7 +89,9 @@ describe("ticketStore", () => {
 
   it("refuses bad assignees, and developers filing tickets", async () => {
     const s = ticketStore(db, now);
-    await expect(s.create(qa, input({ assigneeId: qa.id }))).rejects.toThrow(/active developer or admin/);
+    await expect(s.create(qa, input({ assigneeId: qa.id }))).rejects.toThrow(/active developer/);
+    // Admins aren't developers: they can't be picked either.
+    await expect(s.create(qa, input({ assigneeId: admin.id }))).rejects.toThrow(/active developer to assign/);
     await expect(s.create(dev, input())).rejects.toThrow(/can't file tickets/);
     const gone = await db.user.create({ data: { name: "Old Dev", email: "old@x.ph", passwordHash: "x", role: "DEV", active: false } });
     await expect(s.create(qa, input({ assigneeId: gone.id }))).rejects.toThrow(TicketError);
@@ -109,8 +111,7 @@ describe("ticketStore", () => {
     tick();
     await s.transition(dev, id, { to: "FIXED", note: "Rounding fixed in build 1.4.2", duplicateOf: null });
     tick();
-    await s.transition(qa, id, { to: "VERIFIED", note: null, duplicateOf: null });
-    tick();
+    // Verify and close: one move.
     await s.transition(qa, id, { to: "CLOSED", note: null, duplicateOf: null });
 
     const d = (await s.get(1, admin))!;
@@ -123,8 +124,7 @@ describe("ticketStore", () => {
       "IN_PROGRESS→NEED_INFO",
       "NEED_INFO→IN_PROGRESS",
       "IN_PROGRESS→FIXED",
-      "FIXED→VERIFIED",
-      "VERIFIED→CLOSED",
+      "FIXED→CLOSED",
     ]);
     expect(d.events.find((e) => e.to === "NEED_INFO")?.note).toBe("Which billing month?");
 
@@ -199,6 +199,40 @@ describe("ticketStore", () => {
       ["Ben Dev", "Cy Dev", "Ben is on leave"],
       ["Cy Dev", null, null],
     ]);
+  });
+
+  it("hands a ticket back to QA unassigned, with who the developer recommends", async () => {
+    const s = ticketStore(db, now);
+    const { id } = await s.create(qa, input({ assigneeId: dev.id }));
+    await s.transition(dev, id, { to: "IN_PROGRESS", note: null, duplicateOf: null });
+    tick();
+    // Only the assigned developer, with a reason, and recommending someone else (a developer).
+    await expect(s.handBack(dev2, id, { recommendId: null, note: "x" })).rejects.toThrow(/no longer exists/);
+    await expect(s.handBack(dev, id, { recommendId: null, note: " " })).rejects.toThrow(/note/);
+    await expect(s.handBack(dev, id, { recommendId: dev.id, note: "x" })).rejects.toThrow(/different developer/);
+    await expect(s.handBack(dev, id, { recommendId: admin.id, note: "x" })).rejects.toThrow(/active developer/);
+
+    expect(await s.handBack(dev, id, { recommendId: dev2.id, note: "It's in the payroll code Cy owns." })).toEqual({ recommended: "Cy Dev" });
+    const d = (await s.get(1, admin))!;
+    // Still open, back to New for QA to reassign.
+    expect(d.status).toBe("NEW");
+    expect(d.assigneeId).toBeNull();
+    expect(d.lastActivityAt.getTime()).toBe(t);
+    const assigneeEvent = d.events.filter((e) => e.kind === "ASSIGNEE").at(-1)!;
+    expect(assigneeEvent).toMatchObject({ from: "Ben Dev", to: null, note: "Recommends Cy Dev. It's in the payroll code Cy owns." });
+    expect(d.events.filter((e) => e.kind === "STATUS").at(-1)).toMatchObject({ from: "IN_PROGRESS", to: "NEW" });
+
+    // Once nobody is assigned, there is nobody to hand it back from; QA assigns it.
+    await expect(s.handBack(admin, id, { recommendId: null, note: "x" })).rejects.toThrow(/Only the assigned developer/);
+    await s.assign(qa, id, dev2.id);
+    expect((await s.get(1, admin))!.assigneeId).toBe(dev2.id);
+  });
+
+  it("closes with Not a bug as Rejected, from inside Won't fix", async () => {
+    const s = ticketStore(db, now);
+    const { id } = await s.create(qa, input({ assigneeId: dev.id }));
+    await s.transition(dev, id, { to: "REJECTED", note: "Works as the business rule says", duplicateOf: null });
+    expect((await s.get(1, admin))!.status).toBe("REJECTED");
   });
 
   it("needs text or an image for a comment", async () => {
@@ -311,7 +345,6 @@ describe("ticketStore", () => {
       doing: { total: 1, numbers: [2] },
       info: { total: 0, numbers: [] },
       fixed: { total: 0, numbers: [] },
-      verified: { total: 0, numbers: [] },
       done: { total: 1, numbers: [3] },
     });
     // The same views as the list: Open (the default) leaves Done empty, Done and one status narrow it.
@@ -592,7 +625,6 @@ describe("module progress", () => {
 
     // Closed after Verified counts as done; Verified alone doesn't.
     await move(s, dev, a.id, "FIXED");
-    await move(s, qa, a.id, "VERIFIED");
     expect((await card(s)).categories.FRONT_END).toEqual({ done: 0, total: 2, pct: 0 });
     await move(s, qa, a.id, "CLOSED");
     expect((await card(s)).categories.FRONT_END).toEqual({ done: 1, total: 2, pct: 50 });
